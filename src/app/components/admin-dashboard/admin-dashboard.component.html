@@ -1,7 +1,7 @@
 <div class="admin-container">
   <header class="admin-header">
-    <h1>Admin Dashboard</h1>
-    <button (click)="logout()" class="logout-btn">Logout</button>
+    <h1>管理者ダッシュボード</h1>
+    <button (click)="logout()" class="logout-btn">ログアウト</button>
   </header>
 
   @if (error()) {
@@ -13,71 +13,71 @@
       (click)="activeTab.set('dashboard')"
       [class.active]="activeTab() === 'dashboard'"
     >
-      Dashboard
+      サマリー
     </button>
     <button
       (click)="activeTab.set('simulation')"
       [class.active]="activeTab() === 'simulation'"
     >
-      Simulation
+      配置シミュレーション
     </button>
     <button
       (click)="activeTab.set('employees')"
       [class.active]="activeTab() === 'employees'"
     >
-      Employees
+      社員一覧
     </button>
   </div>
 
   <div class="content">
     @if (activeTab() === 'dashboard' && dashboard()) {
       <div class="dashboard-section">
-        <h2>Key Metrics</h2>
+        <h2>全体指標</h2>
         <div class="metrics-grid">
           <div class="metric-card">
-            <h3>Total Employees</h3>
+            <h3>総社員数</h3>
             <p class="metric-value">{{ dashboard().totalEmployees }}</p>
           </div>
           <div class="metric-card">
-            <h3>Total Allocations</h3>
+            <h3>総配置数</h3>
             <p class="metric-value">{{ dashboard().totalAllocations }}</p>
           </div>
           <div class="metric-card">
-            <h3>Total Expected Revenue</h3>
+            <h3>予想総収益</h3>
             <p class="metric-value">¥{{ dashboard().totalRevenue | number }}</p>
           </div>
           <div class="metric-card">
-            <h3>Allocation Rate</h3>
+            <h3>配置率</h3>
             <p class="metric-value">
               {{ ((dashboard().totalAllocations / dashboard().totalEmployees) * 100 | number: '1.0-0') }}%
             </p>
           </div>
         </div>
 
-        <h2>Allocation Status</h2>
+        <h2>配置ステータス</h2>
         <div class="status-grid">
           <div class="status-card">
-            <h3>Pending</h3>
+            <h3>未配置（保留）</h3>
             <p class="status-value">{{ dashboard().allocationsByStatus.PENDING }}</p>
           </div>
           <div class="status-card assigned">
-            <h3>Assigned</h3>
+            <h3>配置済み</h3>
             <p class="status-value">{{ dashboard().allocationsByStatus.ASSIGNED }}</p>
           </div>
           <div class="status-card rejected">
-            <h3>Rejected</h3>
+            <h3>見送り</h3>
             <p class="status-value">{{ dashboard().allocationsByStatus.REJECTED }}</p>
           </div>
         </div>
 
-        <h2>Departments</h2>
+        <h2>部署一覧</h2>
         <table class="departments-table">
           <thead>
             <tr>
-              <th>Department Name</th>
-              <th>Required Score</th>
-              <th>Expected Revenue</th>
-              <th>Allocated Count</th>
+              <th>部署名</th>
+              <th>要求スキルスコア</th>
+              <th>見込売上（収益）</th>
+              <th>現在の配置人数</th>
             </tr>
           </thead>
           <tbody>
@@ -96,19 +96,19 @@
 
     @if (activeTab() === 'simulation') {
       <div class="simulation-section">
-        <h2>Run Allocation Simulation</h2>
+        <h2>人材配置シミュレーションの実行</h2>
         <div class="simulation-form">
           <div class="form-group">
-            <label for="dept">Select Department</label>
+            <label for="dept">対象の部署を選択</label>
             <select id="dept" [(ngModel)]="selectedDepartment">
-              <option value="">-- Select --</option>
+              <option value="">-- 選択してください --</option>
               @for (dept of departments(); track dept.id) {
                 <option [value]="dept.id">{{ dept.name }}</option>
               }
             </select>
           </div>
           <div class="form-group">
-            <label for="positions">Number of Positions</label>
+            <label for="positions">募集枠（人数）</label>
             <input
               id="positions"
               type="number"
@@ -118,28 +118,42 @@
             />
           </div>
           <button (click)="runSimulation()" [disabled]="loading()">
-            {{ loading() ? 'Running...' : 'Run Simulation' }}
+            {{ loading() ? 'シミュレーション実行中...' : 'シミュレーションを実行' }}
+          </button>
+        </div>
+
+        <div class="paste-data-form">
+          <h3>データ貼り付けで実行</h3>
+          <p class="hint">Excelからコピペしたデータ（TSV形式）を貼り付けてください。</p>
+          <p class="hint">カラム: employeeId, score, desiredDept</p>
+          <textarea
+            [(ngModel)]="pasteDataText"
+            placeholder="employeeId&#10;score&#10;desiredDept&#10;&#10;1&#9;80&#9;営業&#10;2&#9;75&#9;企画"
+            class="data-textarea"
+          ></textarea>
+          <button (click)="runBatchSimulation()" [disabled]="loading()">
+            {{ loading() ? '実行中...' : 'データから実行' }}
           </button>
         </div>
 
         @if (simulationResults()) {
           <div class="simulation-results">
-            <h3>Simulation Results</h3>
+            <h3>シミュレーション結果</h3>
             <div class="results-summary">
-              <p><strong>Department:</strong> {{ simulationResults().department.name }}</p>
-              <p><strong>Total Expected Revenue:</strong> ¥{{ simulationResults().totalExpectedRevenue | number }}</p>
-              <p><strong>Growth Rate:</strong> {{ simulationResults().growthRate | number: '1.0-0' }}%</p>
+              <p><strong>対象部署:</strong> {{ simulationResults().department.name }}</p>
+              <p><strong>予想総収益:</strong> ¥{{ simulationResults().totalExpectedRevenue | number }}</p>
+              <p><strong>成長率見込み:</strong> {{ simulationResults().growthRate | number: '1.0-0' }}%</p>
             </div>
 
-            <h4>Recommended Candidates</h4>
+            <h4>推奨候補者リスト</h4>
             <table class="candidates-table">
               <thead>
                 <tr>
-                  <th>Name</th>
-                  <th>Score</th>
-                  <th>Match Score</th>
-                  <th>Desired Department</th>
-                  <th>Action</th>
+                  <th>名前</th>
+                  <th>総合スコア</th>
+                  <th>マッチ度</th>
+                  <th>本人の希望部署</th>
+                  <th>操作</th>
                 </tr>
               </thead>
               <tbody>
@@ -151,10 +165,10 @@
                     <td>{{ cand.desiredDept || '-' }}</td>
                     <td>
                       <button
-                        (click)="allocateCandidate(cand.employeeId, simulationResults().department.id, 'Selected from simulation')"
+                        (click)="allocateCandidate(cand.employeeId, simulationResults().department.id, 'シミュレーション結果からの配置')"
                         class="btn-allocate"
                       >
-                        Allocate
+                        この社員を配置する
                       </button>
                     </td>
                   </tr>
@@ -168,16 +182,16 @@
 
     @if (activeTab() === 'employees') {
       <div class="employees-section">
-        <h2>Employees</h2>
+        <h2>社員データ一覧</h2>
         <table class="employees-table">
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Score</th>
-              <th>Current Department</th>
-              <th>Desired Department</th>
-              <th>Status</th>
-              <th>Last Updated</th>
+              <th>名前</th>
+              <th>スキルスコア</th>
+              <th>現在の部署</th>
+              <th>希望部署</th>
+              <th>ステータス</th>
+              <th>最終更新日時</th>
             </tr>
           </thead>
           <tbody>

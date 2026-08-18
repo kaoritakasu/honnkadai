@@ -10,6 +10,12 @@ interface SimulationRequest {
   numPositions: number;
 }
 
+interface BatchSimulationRequest {
+  employeeId: number;
+  score: number;
+  desiredDept: string;
+}
+
 // Simulation logic
 const calculateMatchScore = (employee: any, department: any): number => {
   let score = 0;
@@ -67,6 +73,58 @@ router.post('/simulate', authenticate, isAdmin, async (req: AuthRequest, res: Re
 
     res.json({
       department,
+      candidates: candidates.map((c) => ({
+        employeeId: c.employee.id,
+        employeeName: c.employee.user.name,
+        score: c.employee.score || 0,
+        matchScore: c.matchScore,
+        skills: c.employee.skills,
+        desiredDept: c.employee.desiredDept,
+      })),
+      totalExpectedRevenue,
+      growthRate: (candidates.length / employees.length) * 100,
+    });
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+});
+
+// Admin: Run batch simulation
+router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, res: Response) => {
+  try {
+    const batchData = req.body as BatchSimulationRequest[];
+
+    if (!Array.isArray(batchData) || batchData.length === 0) {
+      return res.status(400).json({ error: 'Invalid batch data' });
+    }
+
+    const departments = await prisma.department.findMany();
+    if (departments.length === 0) {
+      return res.status(404).json({ error: 'No departments found' });
+    }
+
+    const targetDept = departments[0];
+    const employees = await prisma.employee.findMany({
+      include: { user: true },
+    });
+
+    const batchDataMap = new Map(batchData.map(d => [d.employeeId, d]));
+    const filteredEmployees = employees.filter(emp => batchDataMap.has(parseInt(emp.id, 10)));
+
+    const candidates = filteredEmployees
+      .map((emp) => ({
+        employee: emp,
+        matchScore: calculateMatchScore(emp, targetDept),
+      }))
+      .sort((a, b) => {
+        if (b.matchScore !== a.matchScore) return b.matchScore - a.matchScore;
+        return (b.employee.score || 0) - (a.employee.score || 0);
+      });
+
+    const totalExpectedRevenue = targetDept.expectedRevenue * candidates.length;
+
+    res.json({
+      department: targetDept,
       candidates: candidates.map((c) => ({
         employeeId: c.employee.id,
         employeeName: c.employee.user.name,

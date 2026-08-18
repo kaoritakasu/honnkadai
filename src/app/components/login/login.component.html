@@ -1,6 +1,7 @@
 <div class="login-container">
   <div class="login-card">
-    <h1>{{ isLogin() ? 'Login' : 'Register' }}</h1>
+    <!-- タイトル部分：ログインモードなら「ログイン」、登録モードなら「新規登録」 -->
+    <h1>{{ isLogin() ? 'ログイン' : '新規登録' }}</h1>
 
     @if (error()) {
       <div class="error-message">{{ error() }}</div>
@@ -9,7 +10,7 @@
     <form (ngSubmit)="submit()">
       @if (!isLogin()) {
         <div class="form-group">
-          <label for="name">Name</label>
+          <label for="name">名前</label>
           <input
             id="name"
             type="text"
@@ -21,7 +22,7 @@
       }
 
       <div class="form-group">
-        <label for="email">Email</label>
+        <label for="email">メールアドレス</label>
         <input
           id="email"
           type="email"
@@ -32,7 +33,7 @@
       </div>
 
       <div class="form-group">
-        <label for="password">Password</label>
+        <label for="password">パスワード</label>
         <input
           id="password"
           type="password"
@@ -44,27 +45,29 @@
 
       @if (!isLogin()) {
         <div class="form-group">
-          <label for="role">Role</label>
+          <label for="role">権限</label>
           <select
             id="role"
             [(ngModel)]="role"
             name="role"
           >
-            <option value="EMPLOYEE">Employee</option>
-            <option value="ADMIN">Admin</option>
+            <option value="EMPLOYEE">一般社員</option>
+            <option value="ADMIN">管理者（人事）</option>
           </select>
         </div>
       }
 
+      <!-- ボタンの文字も日本語化 -->
       <button type="submit" [disabled]="loading()">
-        {{ loading() ? 'Loading...' : (isLogin() ? 'Login' : 'Register') }}
+        {{ loading() ? '処理中...' : (isLogin() ? 'ログイン' : '登録する') }}
       </button>
     </form>
 
+    <!-- 下部の切り替えリンク -->
     <p class="toggle-mode">
-      {{ isLogin() ? "Don't have an account?" : 'Already have an account?' }}
+      {{ isLogin() ? "アカウントをお持ちでないですか？" : 'すでにアカウントはお持ちですか？' }}
       <a href="javascript:void(0)" (click)="toggleMode()">
-        {{ isLogin() ? 'Register' : 'Login' }}
+        {{ isLogin() ? '新規登録はこちら' : 'ログインはこちら' }}
       </a>
     </p>
   </div>

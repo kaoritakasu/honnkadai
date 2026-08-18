@@ -13,13 +13,13 @@ router.post('/register', async (req: Request, res: Response) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        name,
-        role: role || 'EMPLOYEE',
-      },
-    });
+   data: {
+    name,
+    email,
+    password: hashedPassword,
+    role: 'ADMIN' // ← この1行を追加！
+   }
+ });
 
     if (role === 'ADMIN') {
       await prisma.admin.create({

@@ -19,6 +19,7 @@ export class AdminDashboardComponent implements OnInit {
   simulationResults = signal<any>(null);
   selectedDepartment = signal('');
   numPositions = signal(1);
+  pasteDataText = '';
   loading = signal(false);
   activeTab = signal('dashboard');
   error = signal('');
@@ -73,6 +74,59 @@ export class AdminDashboardComponent implements OnInit {
         this.loading.set(false);
       }
     });
+  }
+
+  runBatchSimulation() {
+    if (!this.pasteDataText.trim()) {
+      this.error.set('Please paste data');
+      return;
+    }
+
+    const parsed = this.parseTsvData(this.pasteDataText);
+    if (!parsed || parsed.length === 0) {
+      this.error.set('Invalid data format');
+      return;
+    }
+
+    this.loading.set(true);
+    this.apiService.simulateBatchAllocation(parsed).subscribe({
+      next: (data) => {
+        this.simulationResults.set(data);
+        this.loading.set(false);
+        this.pasteDataText = '';
+      },
+      error: (error) => {
+        this.error.set(error.error?.error || 'Batch simulation failed');
+        this.loading.set(false);
+      }
+    });
+  }
+
+  private parseTsvData(text: string): Array<{ employeeId: number; score: number; desiredDept: string }> {
+    const lines = text.trim().split('\n').filter(line => line.trim());
+    if (lines.length < 2) return [];
+
+    const headers = lines[0].split('\t').map(h => h.toLowerCase().trim());
+    const employeeIdIdx = headers.indexOf('employeeid');
+    const scoreIdx = headers.indexOf('score');
+    const deptIdx = headers.indexOf('desireddept');
+
+    if (employeeIdIdx === -1 || scoreIdx === -1 || deptIdx === -1) {
+      return [];
+    }
+
+    const data = [];
+    for (let i = 1; i < lines.length; i++) {
+      const cols = lines[i].split('\t');
+      if (cols.length > Math.max(employeeIdIdx, scoreIdx, deptIdx)) {
+        data.push({
+          employeeId: parseInt(cols[employeeIdIdx].trim(), 10),
+          score: parseInt(cols[scoreIdx].trim(), 10),
+          desiredDept: cols[deptIdx].trim()
+        });
+      }
+    }
+    return data;
   }
 
   allocateCandidate(employeeId: string, departmentId: string, reason: string) {
