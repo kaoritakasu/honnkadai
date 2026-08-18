@@ -69,6 +69,11 @@ model Department {
   requiredSkills  String   @default("")
   requiredScore   Int      @default(0)
   expectedRevenue Float    @default(0)
+  basicData       String?
+  status          String?
+  description     String?
+  optimalHeadcount Int?
+  minHeadcount    Int?
 
   allocations     Allocation[]
 

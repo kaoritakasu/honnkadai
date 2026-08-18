@@ -70,27 +70,82 @@
           </div>
         </div>
 
-        <h2>部署一覧</h2>
-        <table class="departments-table">
-          <thead>
-            <tr>
-              <th>部署名</th>
-              <th>要求スキルスコア</th>
-              <th>見込売上（収益）</th>
-              <th>現在の配置人数</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (dept of dashboard().departments; track dept.id) {
-              <tr>
-                <td>{{ dept.name }}</td>
-                <td>{{ dept.requiredScore }}</td>
-                <td>¥{{ dept.expectedRevenue | number }}</td>
-                <td>{{ dept.allocatedCount }}</td>
-              </tr>
-            }
-          </tbody>
-        </table>
+        <h2>部署一覧と編集</h2>
+        <div class="departments-edit-list">
+          @for (dept of departments(); track dept.id) {
+            <div class="department-edit-card">
+              <div class="dept-header">
+                <h3>{{ dept.name }}</h3>
+              </div>
+              <div class="dept-fields">
+                <div class="field-group">
+                  <label>基本データ</label>
+                  <input
+                    type="text"
+                    [(ngModel)]="dept.basicData"
+                    placeholder="事業部に関する基本データ"
+                    class="input-field"
+                  />
+                </div>
+                <div class="field-group">
+                  <label>状態</label>
+                  <input
+                    type="text"
+                    [(ngModel)]="dept.status"
+                    placeholder="事業部の状態"
+                    class="input-field"
+                  />
+                </div>
+                <div class="field-group">
+                  <label>説明</label>
+                  <textarea
+                    [(ngModel)]="dept.description"
+                    placeholder="事業部の説明"
+                    class="input-field"
+                  ></textarea>
+                </div>
+                <div class="field-group">
+                  <label>適性人数</label>
+                  <input
+                    type="number"
+                    [(ngModel)]="dept.optimalHeadcount"
+                    placeholder="適性人数"
+                    class="input-field"
+                  />
+                </div>
+                <div class="field-group">
+                  <label>最低配置人数</label>
+                  <input
+                    type="number"
+                    [(ngModel)]="dept.minHeadcount"
+                    placeholder="最低配置人数"
+                    class="input-field"
+                  />
+                </div>
+              </div>
+              <div class="dept-actions">
+                <button (click)="updateDepartment(dept)" class="btn-update">
+                  更新
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="department-management">
+          <h3>部署を追加</h3>
+          <div class="add-dept-form">
+            <input
+              type="text"
+              [(ngModel)]="newDepartmentName"
+              placeholder="新しい部署名"
+              class="input-field"
+            />
+            <button (click)="addDepartment()" class="btn-add">
+              ＋ 部署を追加
+            </button>
+          </div>
+        </div>
       </div>
     }
 
@@ -123,16 +178,16 @@
         </div>
 
         <div class="paste-data-form">
-          <h3>データ貼り付けで実行</h3>
-          <p class="hint">Excelからコピペしたデータ（TSV形式）を貼り付けてください。</p>
-          <p class="hint">カラム: employeeId, score, desiredDept</p>
+          <h3>データの直接読み込み（コピペ）</h3>
+          <p class="hint">Excelからコピペしたデータ（CSV/TSV形式）を貼り付けてください。</p>
+          <p class="hint">カラム: 社員番号, 営業力, 管理力, 開拓力, 育成力, 人件費</p>
           <textarea
             [(ngModel)]="pasteDataText"
-            placeholder="employeeId&#10;score&#10;desiredDept&#10;&#10;1&#9;80&#9;営業&#10;2&#9;75&#9;企画"
+            placeholder="社員番号,営業力,管理力,開拓力,育成力,人件費&#10;E001,75,46,63,40,6.7&#10;E002,85,67,59,42,9.9"
             class="data-textarea"
           ></textarea>
-          <button (click)="runBatchSimulation()" [disabled]="loading()">
-            {{ loading() ? '実行中...' : 'データから実行' }}
+          <button (click)="runPastedDataSimulation()" [disabled]="loading()">
+            {{ loading() ? 'シミュレーション実行中...' : 'データから実行' }}
           </button>
         </div>
 

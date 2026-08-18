@@ -23,6 +23,7 @@ export class AdminDashboardComponent implements OnInit {
   loading = signal(false);
   activeTab = signal('dashboard');
   error = signal('');
+  newDepartmentName: string = '';
 
   constructor(
     private apiService: ApiService,
@@ -127,6 +128,134 @@ export class AdminDashboardComponent implements OnInit {
       }
     }
     return data;
+  }
+
+  private parsePastedData(): Array<{
+    employeeId: string;
+    salesForce: number;
+    managementForce: number;
+    explorationForce: number;
+    developmentForce: number;
+    laborCost: number;
+  }> {
+    const lines = this.pasteDataText.trim().split(/\r?\n/).filter(line => line.trim());
+
+    if (lines.length < 2) {
+      return [];
+    }
+
+    const parsedEmployees: Array<{
+      employeeId: string;
+      salesForce: number;
+      managementForce: number;
+      explorationForce: number;
+      developmentForce: number;
+      laborCost: number;
+    }> = [];
+
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(/[,\t]+/).map(v => v.trim());
+
+      if (values.length >= 6) {
+        const employeeId = values[0];
+        const salesForce = Number(values[1]) || 0;
+        const managementForce = Number(values[2]) || 0;
+        const explorationForce = Number(values[3]) || 0;
+        const developmentForce = Number(values[4]) || 0;
+        const laborCost = Number(values[5]) || 0;
+
+        parsedEmployees.push({
+          employeeId,
+          salesForce,
+          managementForce,
+          explorationForce,
+          developmentForce,
+          laborCost
+        });
+      }
+    }
+
+    console.log('読み込み成功:', parsedEmployees);
+    alert('読み込みました');
+
+    return parsedEmployees;
+  }
+
+  runPastedDataSimulation() {
+    if (!this.pasteDataText.trim()) {
+      this.error.set('Please paste data');
+      return;
+    }
+
+    const parsed = this.parsePastedData();
+    if (!parsed || parsed.length === 0) {
+      this.error.set('Invalid data format');
+      return;
+    }
+
+    const convertedData = parsed.map(emp => ({
+      employeeId: typeof emp.employeeId === 'string' ? parseInt(emp.employeeId.replace(/\D/g, '')) || 0 : emp.employeeId,
+      score: Math.round((emp.salesForce + emp.managementForce + emp.explorationForce + emp.developmentForce) / 4),
+      desiredDept: ''
+    }));
+
+    this.loading.set(true);
+    this.apiService.simulateBatchAllocation(convertedData).subscribe({
+      next: (data) => {
+        this.simulationResults.set(data);
+        this.loading.set(false);
+        this.pasteDataText = '';
+      },
+      error: (error) => {
+        this.error.set(error.error?.error || 'Simulation failed');
+        this.loading.set(false);
+      }
+    });
+  }
+
+  addDepartment() {
+    if (!this.newDepartmentName.trim()) {
+      this.error.set('部署名を入力してください');
+      return;
+    }
+
+    this.apiService.createDepartment({
+      name: this.newDepartmentName,
+      requiredSkills: '',
+      requiredScore: 0,
+      expectedRevenue: 0
+    }).subscribe({
+      next: (data) => {
+        const currentDepts = this.departments();
+        this.departments.set([...currentDepts, data]);
+        this.newDepartmentName = '';
+        this.error.set('');
+        this.loadDashboard();
+      },
+      error: (error) => {
+        this.error.set(error.error?.error || 'Failed to create department');
+      }
+    });
+  }
+
+  updateDepartment(department: any) {
+    this.apiService.updateDepartment(department.id, {
+      basicData: department.basicData || null,
+      status: department.status || null,
+      description: department.description || null,
+      optimalHeadcount: department.optimalHeadcount || null,
+      minHeadcount: department.minHeadcount || null
+    }).subscribe({
+      next: () => {
+        alert('部署を更新しました');
+        this.error.set('');
+        this.loadDashboard();
+        this.loadDepartments();
+      },
+      error: (error) => {
+        this.error.set(error.error?.error || 'Failed to update department');
+      }
+    });
   }
 
   allocateCandidate(employeeId: string, departmentId: string, reason: string) {
