@@ -240,7 +240,6 @@ export class AdminDashboardComponent implements OnInit {
 
   updateDepartment(department: any) {
     this.apiService.updateDepartment(department.id, {
-      basicData: department.basicData || null,
       status: department.status || null,
       description: department.description || null,
       optimalHeadcount: department.optimalHeadcount || null,
