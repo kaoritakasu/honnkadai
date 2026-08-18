@@ -1,0 +1,276 @@
+<div class="employee-container">
+  <header class="employee-header">
+    <h1>My Page</h1>
+    <button (click)="logout()" class="logout-btn">Logout</button>
+  </header>
+
+  @if (error()) {
+    <div class="alert alert-error">{{ error() }}</div>
+  }
+
+  @if (success()) {
+    <div class="alert alert-success">{{ success() }}</div>
+  }
+
+  <div class="tabs">
+    <button
+      (click)="activeTab.set('profile')"
+      [class.active]="activeTab() === 'profile'"
+    >
+      My Profile
+    </button>
+    <button
+      (click)="activeTab.set('allocations')"
+      [class.active]="activeTab() === 'allocations'"
+    >
+      Allocations
+    </button>
+    <button
+      (click)="activeTab.set('consultation')"
+      [class.active]="activeTab() === 'consultation'"
+    >
+      Consultation
+    </button>
+  </div>
+
+  <div class="content">
+    @if (activeTab() === 'profile' && profile()) {
+      <div class="profile-section">
+        <div class="profile-header">
+          <h2>My Profile</h2>
+          @if (!editing()) {
+            <button (click)="editing.set(true)" class="btn-edit">Edit Profile</button>
+          } @else {
+            <div class="button-group">
+              <button (click)="saveProfile()" [disabled]="loading()" class="btn-save">
+                {{ loading() ? 'Saving...' : 'Save' }}
+              </button>
+              <button (click)="editing.set(false)" class="btn-cancel">Cancel</button>
+            </div>
+          }
+        </div>
+
+        <div class="profile-card">
+          <div class="profile-info">
+            <div class="info-row">
+              <label>Name</label>
+              <span>{{ profile().user.name }}</span>
+            </div>
+            <div class="info-row">
+              <label>Email</label>
+              <span>{{ profile().user.email }}</span>
+            </div>
+            <div class="info-row">
+              <label>Current Department</label>
+              <span>{{ profile().currentDept || '-' }}</span>
+            </div>
+            <div class="info-row">
+              <label>Status</label>
+              <span class="status-badge">{{ profile().status }}</span>
+            </div>
+          </div>
+        </div>
+
+        @if (editing()) {
+          <div class="edit-form">
+            <div class="form-group">
+              <label for="score">Performance Score (0-100)</label>
+              <input
+                id="score"
+                type="number"
+                [(ngModel)]="score"
+                min="0"
+                max="100"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="desiredDept">Desired Department</label>
+              <input
+                id="desiredDept"
+                type="text"
+                [(ngModel)]="desiredDept"
+                placeholder="e.g., Engineering, Sales"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="careerGoals">Career Goals</label>
+              <textarea
+                id="careerGoals"
+                [(ngModel)]="careerGoals"
+                rows="3"
+                placeholder="Share your career aspirations"
+              ></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>Skills</label>
+              <div class="skill-input-group">
+                <input
+                  type="text"
+                  [(ngModel)]="skillInput"
+                  placeholder="Enter a skill and click Add"
+                  (keyup.enter)="addSkill()"
+                />
+                <button (click)="addSkill()" type="button">Add</button>
+              </div>
+              <div class="skills-list">
+                @for (skill of skills(); track skill) {
+                  <span class="skill-tag">
+                    {{ skill }}
+                    <button (click)="removeSkill(skill)" type="button" class="remove-skill">×</button>
+                  </span>
+                }
+              </div>
+            </div>
+          </div>
+        } @else {
+          <div class="profile-details">
+            <div class="detail-card">
+              <h3>Performance</h3>
+              <p class="detail-value">{{ profile().score || 0 }} / 100</p>
+            </div>
+
+            <div class="detail-card">
+              <h3>Desired Department</h3>
+              <p class="detail-value">{{ profile().desiredDept || 'Not specified' }}</p>
+            </div>
+
+            <div class="detail-card">
+              <h3>Career Goals</h3>
+              <p class="detail-text">{{ profile().careerGoals || 'Not specified' }}</p>
+            </div>
+
+            @if (profile().skills && profile().skills.length > 0) {
+              <div class="detail-card">
+                <h3>Skills</h3>
+                <div class="skills-display">
+                  @for (skill of profile().skills; track skill) {
+                    <span class="skill-badge">{{ skill }}</span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    @if (activeTab() === 'allocations') {
+      <div class="allocations-section">
+        <h2>My Allocations & Feedback</h2>
+
+        @if (allocations().length === 0) {
+          <p class="no-data">No allocations yet.</p>
+        } @else {
+          <div class="allocations-grid">
+            @for (alloc of allocations(); track alloc.id) {
+              <div class="allocation-card">
+                <div class="allocation-header">
+                  <h3>{{ alloc.department.name }}</h3>
+                  <span [class]="'status-badge ' + alloc.status.toLowerCase()">
+                    {{ alloc.status }}
+                  </span>
+                </div>
+
+                @if (alloc.reason) {
+                  <div class="allocation-detail">
+                    <h4>Allocation Reason</h4>
+                    <p>{{ alloc.reason }}</p>
+                  </div>
+                }
+
+                @if (alloc.recommendedLearning) {
+                  <div class="allocation-detail">
+                    <h4>Recommended Learning</h4>
+                    <p>{{ alloc.recommendedLearning }}</p>
+                  </div>
+                }
+
+                @if (alloc.feedback) {
+                  <div class="feedback-status">
+                    <span class="feedback-label">
+                      Feedback: {{ alloc.feedback.viewedAt ? 'Viewed' : 'Pending' }}
+                    </span>
+                    @if (alloc.feedback.viewedAt) {
+                      <span class="feedback-date">{{ alloc.feedback.viewedAt | date: 'short' }}</span>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    @if (activeTab() === 'consultation') {
+      <div class="consultation-section">
+        <h2>HR Consultation</h2>
+
+        @if (!showConsultationForm()) {
+          <button (click)="showConsultationForm.set(true)" class="btn-new-consultation">
+            Request Consultation
+          </button>
+        } @else {
+          <div class="consultation-form">
+            <h3>New Consultation Request</h3>
+            <div class="form-group">
+              <label for="title">Title</label>
+              <input
+                id="title"
+                type="text"
+                [(ngModel)]="consultationTitle"
+                placeholder="e.g., Career Development Discussion"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="description">Description</label>
+              <textarea
+                id="description"
+                [(ngModel)]="consultationDescription"
+                rows="4"
+                placeholder="Describe your inquiry or request..."
+              ></textarea>
+            </div>
+
+            <div class="button-group">
+              <button (click)="submitConsultation()" [disabled]="loading()" class="btn-submit">
+                {{ loading() ? 'Submitting...' : 'Submit Request' }}
+              </button>
+              <button (click)="showConsultationForm.set(false)" class="btn-cancel">
+                Cancel
+              </button>
+            </div>
+          </div>
+        }
+
+        @if (consultations().length > 0) {
+          <div class="consultations-list">
+            <h3>Your Requests</h3>
+            @for (cons of consultations(); track cons.id) {
+              <div class="consultation-item">
+                <div class="consultation-header">
+                  <h4>{{ cons.title }}</h4>
+                  <span [class]="'status-badge ' + cons.status.toLowerCase()">
+                    {{ cons.status }}
+                  </span>
+                </div>
+                <p class="consultation-description">{{ cons.description }}</p>
+                @if (cons.response) {
+                  <div class="consultation-response">
+                    <h5>HR Response</h5>
+                    <p>{{ cons.response }}</p>
+                  </div>
+                }
+                <p class="consultation-date">{{ cons.createdAt | date: 'short' }}</p>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

@@ -1,0 +1,199 @@
+<div class="admin-container">
+  <header class="admin-header">
+    <h1>Admin Dashboard</h1>
+    <button (click)="logout()" class="logout-btn">Logout</button>
+  </header>
+
+  @if (error()) {
+    <div class="alert alert-error">{{ error() }}</div>
+  }
+
+  <div class="tabs">
+    <button
+      (click)="activeTab.set('dashboard')"
+      [class.active]="activeTab() === 'dashboard'"
+    >
+      Dashboard
+    </button>
+    <button
+      (click)="activeTab.set('simulation')"
+      [class.active]="activeTab() === 'simulation'"
+    >
+      Simulation
+    </button>
+    <button
+      (click)="activeTab.set('employees')"
+      [class.active]="activeTab() === 'employees'"
+    >
+      Employees
+    </button>
+  </div>
+
+  <div class="content">
+    @if (activeTab() === 'dashboard' && dashboard()) {
+      <div class="dashboard-section">
+        <h2>Key Metrics</h2>
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <h3>Total Employees</h3>
+            <p class="metric-value">{{ dashboard().totalEmployees }}</p>
+          </div>
+          <div class="metric-card">
+            <h3>Total Allocations</h3>
+            <p class="metric-value">{{ dashboard().totalAllocations }}</p>
+          </div>
+          <div class="metric-card">
+            <h3>Total Expected Revenue</h3>
+            <p class="metric-value">¥{{ dashboard().totalRevenue | number }}</p>
+          </div>
+          <div class="metric-card">
+            <h3>Allocation Rate</h3>
+            <p class="metric-value">
+              {{ ((dashboard().totalAllocations / dashboard().totalEmployees) * 100 | number: '1.0-0') }}%
+            </p>
+          </div>
+        </div>
+
+        <h2>Allocation Status</h2>
+        <div class="status-grid">
+          <div class="status-card">
+            <h3>Pending</h3>
+            <p class="status-value">{{ dashboard().allocationsByStatus.PENDING }}</p>
+          </div>
+          <div class="status-card assigned">
+            <h3>Assigned</h3>
+            <p class="status-value">{{ dashboard().allocationsByStatus.ASSIGNED }}</p>
+          </div>
+          <div class="status-card rejected">
+            <h3>Rejected</h3>
+            <p class="status-value">{{ dashboard().allocationsByStatus.REJECTED }}</p>
+          </div>
+        </div>
+
+        <h2>Departments</h2>
+        <table class="departments-table">
+          <thead>
+            <tr>
+              <th>Department Name</th>
+              <th>Required Score</th>
+              <th>Expected Revenue</th>
+              <th>Allocated Count</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (dept of dashboard().departments; track dept.id) {
+              <tr>
+                <td>{{ dept.name }}</td>
+                <td>{{ dept.requiredScore }}</td>
+                <td>¥{{ dept.expectedRevenue | number }}</td>
+                <td>{{ dept.allocatedCount }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    @if (activeTab() === 'simulation') {
+      <div class="simulation-section">
+        <h2>Run Allocation Simulation</h2>
+        <div class="simulation-form">
+          <div class="form-group">
+            <label for="dept">Select Department</label>
+            <select id="dept" [(ngModel)]="selectedDepartment">
+              <option value="">-- Select --</option>
+              @for (dept of departments(); track dept.id) {
+                <option [value]="dept.id">{{ dept.name }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="positions">Number of Positions</label>
+            <input
+              id="positions"
+              type="number"
+              [(ngModel)]="numPositions"
+              min="1"
+              max="100"
+            />
+          </div>
+          <button (click)="runSimulation()" [disabled]="loading()">
+            {{ loading() ? 'Running...' : 'Run Simulation' }}
+          </button>
+        </div>
+
+        @if (simulationResults()) {
+          <div class="simulation-results">
+            <h3>Simulation Results</h3>
+            <div class="results-summary">
+              <p><strong>Department:</strong> {{ simulationResults().department.name }}</p>
+              <p><strong>Total Expected Revenue:</strong> ¥{{ simulationResults().totalExpectedRevenue | number }}</p>
+              <p><strong>Growth Rate:</strong> {{ simulationResults().growthRate | number: '1.0-0' }}%</p>
+            </div>
+
+            <h4>Recommended Candidates</h4>
+            <table class="candidates-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Score</th>
+                  <th>Match Score</th>
+                  <th>Desired Department</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (cand of simulationResults().candidates; track cand.employeeId) {
+                  <tr>
+                    <td>{{ cand.employeeName }}</td>
+                    <td>{{ cand.score }}</td>
+                    <td>{{ cand.matchScore }}</td>
+                    <td>{{ cand.desiredDept || '-' }}</td>
+                    <td>
+                      <button
+                        (click)="allocateCandidate(cand.employeeId, simulationResults().department.id, 'Selected from simulation')"
+                        class="btn-allocate"
+                      >
+                        Allocate
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    }
+
+    @if (activeTab() === 'employees') {
+      <div class="employees-section">
+        <h2>Employees</h2>
+        <table class="employees-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Score</th>
+              <th>Current Department</th>
+              <th>Desired Department</th>
+              <th>Status</th>
+              <th>Last Updated</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (emp of employees(); track emp.id) {
+              <tr>
+                <td>{{ emp.user.name }}</td>
+                <td>{{ emp.score || 0 }}</td>
+                <td>{{ emp.currentDept || '-' }}</td>
+                <td>{{ emp.desiredDept || '-' }}</td>
+                <td>{{ emp.status }}</td>
+                <td>{{ emp.lastUpdated | date: 'short' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>

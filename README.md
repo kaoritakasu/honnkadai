@@ -1,59 +1,88 @@
-# Honnkadai1
+# 人員配置最適化・シミュレーションアプリ
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.1.3.
+Personnel allocation optimization and simulation application for matching company needs with employee career aspirations.
 
-## Development server
+## Features
 
-To start a local development server, run:
+### Admin Features
+- Personnel allocation simulation with skill matching
+- Expected revenue and growth rate calculation
+- Dashboard with key metrics and analytics
+- Allocation decision sending with feedback
+- HR consultation request management
 
+### Employee Features
+- My Page: Update profile, skills, and career goals
+- View allocation feedback with reasons and learning recommendations
+- Request HR consultation meetings
+- Track allocation status
+
+## Tech Stack
+
+### Frontend
+- **Framework**: Angular 22
+- **Language**: TypeScript 6.0
+- **Styling**: SCSS
+- **HTTP**: RxJS
+
+### Backend
+- **Runtime**: Node.js
+- **Framework**: Express
+- **Language**: TypeScript
+- **Database ORM**: Prisma
+- **Database**: PostgreSQL
+- **Authentication**: JWT
+
+## Setup Instructions
+
+### Backend Setup
+
+1. Navigate to the backend directory:
 ```bash
-ng serve
+cd backend
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
+2. Install dependencies:
 ```bash
-ng generate component component-name
+npm install
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
+3. Create `.env` file:
 ```bash
-ng generate --help
+cp .env.example .env
 ```
 
-## Building
+4. Update `.env` with your PostgreSQL connection string
 
-To build the project run:
-
+5. Generate Prisma client and run migrations:
 ```bash
-ng build
+npm run prisma:generate
+npm run prisma:migrate
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
+6. Start the server:
 ```bash
-ng test
+npm run dev
 ```
 
-## Running end-to-end tests
+### Frontend Setup
 
-For end-to-end (e2e) testing, run:
-
+1. Install dependencies:
 ```bash
-ng e2e
+npm install
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+2. Start the development server:
+```bash
+npm start
+```
 
-## Additional Resources
+Frontend: `http://localhost:4200`
+Backend: `http://localhost:3000`
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+## Key Features
+
+- **Simulation Algorithm**: Matches candidates based on performance score (50%) and skills match (50%)
+- **Data Validation**: Missing numerical values treated as 0
+- **Access Control**: Admins have full access; employees can only view their own data
+- **JWT Authentication**: Secure token-based authentication

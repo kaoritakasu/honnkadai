@@ -1,0 +1,125 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  ADMIN
+  EMPLOYEE
+}
+
+enum AllocationStatus {
+  PENDING
+  ASSIGNED
+  REJECTED
+}
+
+model User {
+  id        String     @id @default(cuid())
+  email     String     @unique
+  password  String
+  name      String
+  role      Role       @default(EMPLOYEE)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  employee  Employee?
+  admin     Admin?
+}
+
+model Employee {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  score           Int      @default(0)
+  desiredDept     String?
+  currentDept     String?
+  status          String   @default("active")
+  lastUpdated     DateTime @updatedAt
+
+  skills          String[] @default([])
+  careerGoals     String?
+
+  allocations     Allocation[]
+  feedback        Feedback[]
+  consultations   Consultation[]
+
+  createdAt       DateTime @default(now())
+}
+
+model Admin {
+  id      String @id @default(cuid())
+  userId  String @unique
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}
+
+model Department {
+  id              String   @id @default(cuid())
+  name            String   @unique
+  requiredSkills  String[]
+  requiredScore   Int      @default(0)
+  expectedRevenue Float    @default(0)
+
+  allocations     Allocation[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Allocation {
+  id              String   @id @default(cuid())
+  employeeId      String
+  employee        Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  departmentId    String
+  department      Department @relation(fields: [departmentId], references: [id])
+
+  status          AllocationStatus @default(PENDING)
+  reason          String?
+  recommendedLearning String?
+
+  feedback        Feedback?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([employeeId, departmentId])
+}
+
+model Feedback {
+  id              String   @id @default(cuid())
+  employeeId      String
+  employee        Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  allocationId    String   @unique
+  allocation      Allocation @relation(fields: [allocationId], references: [id], onDelete: Cascade)
+
+  viewedAt        DateTime?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Consultation {
+  id              String   @id @default(cuid())
+  employeeId      String
+  employee        Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  title           String
+  description     String
+  status          String   @default("pending")
+  response        String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
