@@ -200,10 +200,13 @@ export class AdminDashboardComponent implements OnInit {
       return;
     }
 
-    const convertedData = parsed.map(emp => ({
+    const convertedData = parsed.map((emp: any) => ({
       employeeId: typeof emp.employeeId === 'string' ? parseInt(emp.employeeId.replace(/\D/g, '')) || 0 : emp.employeeId,
-      score: Math.round((emp.salesForce + emp.managementForce + emp.explorationForce + emp.developmentForce) / 4),
-      desiredDept: ''
+      salesForce: emp.salesForce,
+      managementForce: emp.managementForce,
+      explorationForce: emp.explorationForce,
+      developmentForce: emp.developmentForce,
+      laborCost: emp.laborCost
     }));
 
     this.loading.set(true);
@@ -270,20 +273,20 @@ export class AdminDashboardComponent implements OnInit {
     this.editingDeptId = null;
   }
 
- updateDepartment(department: any) {
-      this.apiService.updateDepartment(department.id, {
-        status: department.status || null,
-        description: department.description || null,
-        optimalHeadcount: department.optimalHeadcount ? Number(department.optimalHeadcount) : null,
-        minHeadcount: department.minHeadcount ? Number(department.minHeadcount) : null,  // ←【重要】ここにカンマを追加！
-        weightSales: department.weightSales ? Number(department.weightSales) : null,
-        weightManagement: department.weightManagement ? Number(department.weightManagement) : null,
-        weightExploration: department.weightExploration ? Number(department.weightExploration) : null,
-        weightDevelopment: department.weightDevelopment ? Number(department.weightDevelopment) : null,
-        baseRevenue: department.baseRevenue ? Number(department.baseRevenue) : null,
-        growthFactor: department.growthFactor ? Number(department.growthFactor) : null,
-        shortagePenalty: Array.isArray(department.shortagePenalty) ? department.shortagePenalty : null
-      }).subscribe({
+  updateDepartment(department: any) {
+    this.apiService.updateDepartment(department.id, {
+      status: department.status || null,
+      description: department.description || null,
+      optimalHeadcount: department.optimalHeadcount || null,
+      minHeadcount: department.minHeadcount || null,
+      weightSales: department.weightSales || null,
+      weightManagement: department.weightManagement || null,
+      weightExploration: department.weightExploration || null,
+      weightDevelopment: department.weightDevelopment || null,
+      baseRevenue: department.baseRevenue || null,
+      growthFactor: department.growthFactor || null,
+      shortagePenalty: Array.isArray(department.shortagePenalty) ? department.shortagePenalty : null
+    }).subscribe({
       next: () => {
         alert('部署を更新しました');
         this.error.set('');
