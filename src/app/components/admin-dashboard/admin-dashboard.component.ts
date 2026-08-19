@@ -18,8 +18,8 @@ export class AdminDashboardComponent implements OnInit {
   departments = signal<any[]>([]);
   employees = signal<any[]>([]);
   simulationResults: any = null;
-  selectedDepartment = signal('');
-  numPositions = signal(1);
+  simulationSummary: any = null;
+  selectedDepartments = signal<string[]>([]);
   pasteDataText = '';
   loading = signal(false);
   activeTab = signal('dashboard');
@@ -77,22 +77,64 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
-  runSimulation() {
-    if (!this.selectedDepartment() || !this.numPositions()) {
-      this.error.set('Please select a department and number of positions');
+  toggleDepartment(deptId: string) {
+    const current = this.selectedDepartments();
+    if (current.includes(deptId)) {
+      this.selectedDepartments.set(current.filter(id => id !== deptId));
+    } else {
+      this.selectedDepartments.set([...current, deptId]);
+    }
+  }
+
+  runMultiDepartmentSimulation() {
+    if (!this.selectedDepartments() || this.selectedDepartments().length === 0) {
+      this.error.set('Please select at least one department');
       return;
     }
 
     this.loading.set(true);
-    this.apiService.simulateAllocation(this.selectedDepartment(), this.numPositions()).subscribe({
+    this.apiService.simulateMultiDepartment(this.selectedDepartments()).subscribe({
       next: (data: any) => {
-        // シミュレーション結果にマッピングが必要なプロパティを追加
+        if (data && data.results && Array.isArray(data.results)) {
+          this.simulationResults = data.results.map((result: any) => ({
+            ...result,
+            cost: result.totalCost
+          }));
+          // 全社規模の合計情報を保存
+          this.simulationSummary = {
+            totalCompanyRevenue: data.totalCompanyRevenue,
+            totalCompanyCost: data.totalCompanyCost,
+            totalCompanyProfit: data.totalCompanyProfit
+          };
+        } else {
+          this.simulationResults = data;
+          this.simulationSummary = null;
+        }
+        this.loading.set(false);
+      },
+      error: (error: any) => {
+        this.error.set(error.error?.error || 'Multi-department simulation failed');
+        this.loading.set(false);
+      }
+    });
+  }
+
+  runSimulation() {
+    if (!this.selectedDepartments() || this.selectedDepartments().length === 0) {
+      this.error.set('Please select at least one department');
+      return;
+    }
+
+    this.loading.set(true);
+    this.apiService.simulateAllocation(this.selectedDepartments()[0], 1).subscribe({
+      next: (data: any) => {
         const mappedData = {
           ...data,
           allocatedCount: data.candidates ? data.candidates.length : 0,
-          cost: 0
+          cost: data.totalCost || 0
         };
         this.simulationResults = mappedData;
+        this.simulationSummary = null; // 単一部署シミュレーションでは全社合計なし
         this.loading.set(false);
       },
       error: (error: any) => {
@@ -244,8 +286,15 @@ export class AdminDashboardComponent implements OnInit {
             ...result,
             cost: result.totalCost
           }));
+          // 全社規模の合計情報を保存
+          this.simulationSummary = {
+            totalCompanyRevenue: data.totalCompanyRevenue,
+            totalCompanyCost: data.totalCompanyCost,
+            totalCompanyProfit: data.totalCompanyProfit
+          };
         } else {
           this.simulationResults = data;
+          this.simulationSummary = null;
         }
         this.loading.set(false);
         this.pasteDataText = '';

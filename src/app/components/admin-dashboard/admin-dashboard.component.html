@@ -210,19 +210,17 @@
         <h2>人材配置シミュレーションの実行</h2>
         <div class="simulation-form">
           <div class="form-group">
-            <label for="dept">対象の部署を選択</label>
-            <select id="dept" [(ngModel)]="selectedDepartment">
-              <option value="">-- 選択してください --</option>
+            <label>対象の部署を選択（複数選択可）</label>
+            <div class="department-checkboxes" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 10px;">
               @for (dept of departments(); track dept.id) {
-                <option [value]="dept.id">{{ dept.name }}</option>
+                <label style="display: flex; align-items: center; gap: 8px; padding: 8px; border: 1px solid #eee; border-radius: 4px; cursor: pointer;">
+                  <input type="checkbox" [checked]="selectedDepartments().includes(dept.id)" (change)="toggleDepartment(dept.id)" />
+                  {{ dept.name }}
+                </label>
               }
-            </select>
+            </div>
           </div>
-          <div class="form-group">
-            <label for="positions">募集枠（人数）</label>
-            <input id="positions" type="number" [(ngModel)]="numPositions" min="1" max="100" />
-          </div>
-          <button (click)="runSimulation()" [disabled]="loading()">
+          <button (click)="runMultiDepartmentSimulation()" [disabled]="loading() || selectedDepartments().length === 0" style="margin-top: 10px;">
             {{ loading() ? 'シミュレーション実行中...' : 'シミュレーションを実行' }}
           </button>
         </div>
@@ -240,7 +238,27 @@
         @if (simulationResults) {
           <div class="simulation-results">
             <h3>シミュレーション結果</h3>
-            
+
+            @if (simulationSummary) {
+              <div class="company-summary-card" style="margin-bottom: 20px; padding: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px;">
+                <h4 style="margin: 0 0 10px 0;">全社合計</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                  <div style="padding: 10px;">
+                    <p style="margin: 0 0 5px 0; opacity: 0.9;">全社売上</p>
+                    <p style="margin: 0; font-size: 1.5em; font-weight: bold;">¥{{ simulationSummary.totalCompanyRevenue | number }}</p>
+                  </div>
+                  <div style="padding: 10px;">
+                    <p style="margin: 0 0 5px 0; opacity: 0.9;">全社コスト</p>
+                    <p style="margin: 0; font-size: 1.5em; font-weight: bold;">¥{{ simulationSummary.totalCompanyCost | number }}</p>
+                  </div>
+                  <div style="padding: 10px;">
+                    <p style="margin: 0 0 5px 0; opacity: 0.9;">全社利益</p>
+                    <p style="margin: 0; font-size: 1.5em; font-weight: bold;">¥{{ simulationSummary.totalCompanyProfit | number }}</p>
+                  </div>
+                </div>
+              </div>
+            }
+
             <div class="results-table-container">
               <table class="results-table">
                 <thead>
@@ -248,6 +266,7 @@
                     <th>部署名</th>
                     <th>割り当て人数</th>
                     <th>充足率(%)</th>
+                    <th>基本売上</th>
                     <th>最終売上</th>
                     <th>コスト</th>
                     <th>利益</th>
@@ -260,6 +279,7 @@
                         <td>{{ result.departmentName || result.department?.name || '-' }}</td>
                         <td>{{ result.allocatedCount || result.candidates?.length || 0 }}</td>
                         <td>{{ result.fulfillmentRate || '-' }}</td>
+                        <td>¥{{ (result.baseRevenue || 0) | number }}</td>
                         <td>¥{{ (result.finalRevenue || result.totalExpectedRevenue || 0) | number }}</td>
                         <td>¥{{ result.cost || 0 | number }}</td>
                         <td>¥{{ (result.profit || (result.finalRevenue - result.cost) || 0) | number }}</td>
@@ -270,6 +290,7 @@
                       <td>{{ simulationResults.departmentName || simulationResults.department?.name || '-' }}</td>
                       <td>{{ simulationResults.allocatedCount || simulationResults.candidates?.length || 0 }}</td>
                       <td>{{ simulationResults.fulfillmentRate || '-' }}</td>
+                      <td>¥{{ (simulationResults.baseRevenue || 0) | number }}</td>
                       <td>¥{{ (simulationResults.finalRevenue || simulationResults.totalExpectedRevenue || 0) | number }}</td>
                       <td>¥{{ simulationResults.cost || 0 | number }}</td>
                       <td>¥{{ (simulationResults.profit || (simulationResults.finalRevenue - simulationResults.cost) || 0) | number }}</td>

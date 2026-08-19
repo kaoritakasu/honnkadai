@@ -77,6 +77,10 @@ export class ApiService {
     return this.http.post(`${this.apiUrl}/allocations/simulate`, { departmentId, numPositions }, { headers: this.getHeaders() });
   }
 
+  simulateMultiDepartment(departmentIds: string[]): Observable<any> {
+    return this.http.post(`${this.apiUrl}/allocations/simulate-multi`, { departmentIds }, { headers: this.getHeaders() });
+  }
+
   simulateBatchAllocation(data: any[]): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/allocations/simulate-batch`, data, { headers: this.getHeaders() });
   }
