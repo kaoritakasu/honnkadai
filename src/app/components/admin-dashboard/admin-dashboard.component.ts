@@ -13,6 +13,7 @@ import { AuthService } from '../../services/auth.service';
   styleUrl: './admin-dashboard.component.scss'
 })
 export class AdminDashboardComponent implements OnInit {
+  Array = Array;
   dashboard = signal<any>(null);
   departments = signal<any[]>([]);
   employees = signal<any[]>([]);
@@ -316,6 +317,26 @@ export class AdminDashboardComponent implements OnInit {
       },
       error: (error) => {
         this.error.set(error.error?.error || 'Failed to create allocation');
+      }
+    });
+  }
+
+  deleteDepartment(deptId: string) {
+    if (!confirm('本当にこの部署を削除してよろしいですか？')) {
+      return;
+    }
+
+    this.loading.set(true);
+    this.apiService.deleteDepartment(deptId).subscribe({
+      next: () => {
+        this.error.set('部署を削除しました');
+        this.loading.set(false);
+        this.loadDepartments();
+        this.loadDashboard();
+      },
+      error: (error) => {
+        this.error.set(error.error?.error || '部署の削除に失敗しました');
+        this.loading.set(false);
       }
     });
   }

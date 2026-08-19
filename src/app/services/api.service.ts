@@ -68,6 +68,10 @@ export class ApiService {
     return this.http.put(`${this.apiUrl}/departments/${id}`, data, { headers: this.getHeaders() });
   }
 
+  deleteDepartment(id: string): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/departments/${id}`, { headers: this.getHeaders() });
+  }
+
   // Allocations
   simulateAllocation(departmentId: string, numPositions: number): Observable<any> {
     return this.http.post(`${this.apiUrl}/allocations/simulate`, { departmentId, numPositions }, { headers: this.getHeaders() });

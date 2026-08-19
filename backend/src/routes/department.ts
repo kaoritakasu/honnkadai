@@ -140,4 +140,25 @@ router.put('/:id', authenticate, isAdmin, async (req: AuthRequest, res: Response
   }
 });
 
+// Admin: Delete department
+router.delete('/:id', authenticate, isAdmin, async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // Delete related allocations first
+    await prisma.allocation.deleteMany({
+      where: { departmentId: id }
+    });
+
+    // Then delete the department
+    const department = await prisma.department.delete({
+      where: { id }
+    });
+
+    res.json({ message: 'Department deleted successfully', department });
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+});
+
 export default router;
