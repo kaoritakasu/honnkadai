@@ -86,7 +86,13 @@ export class AdminDashboardComponent implements OnInit {
     this.loading.set(true);
     this.apiService.simulateAllocation(this.selectedDepartment(), this.numPositions()).subscribe({
       next: (data: any) => {
-        this.simulationResults = data;
+        // シミュレーション結果にマッピングが必要なプロパティを追加
+        const mappedData = {
+          ...data,
+          allocatedCount: data.candidates ? data.candidates.length : 0,
+          cost: 0
+        };
+        this.simulationResults = mappedData;
         this.loading.set(false);
       },
       error: (error: any) => {
@@ -111,7 +117,15 @@ export class AdminDashboardComponent implements OnInit {
     this.loading.set(true);
     this.apiService.simulateBatchAllocation(parsed).subscribe({
       next: (data: any) => {
-        this.simulationResults = data;
+        // data.results を抽出し、totalCost を cost にマッピング
+        if (data && data.results && Array.isArray(data.results)) {
+          this.simulationResults = data.results.map((result: any) => ({
+            ...result,
+            cost: result.totalCost
+          }));
+        } else {
+          this.simulationResults = data;
+        }
         this.loading.set(false);
         this.pasteDataText = '';
       },
@@ -224,7 +238,15 @@ export class AdminDashboardComponent implements OnInit {
     this.loading.set(true);
     this.apiService.simulateBatchAllocation(convertedData).subscribe({
       next: (data: any) => {
-        this.simulationResults = data;
+        // data.results を抽出し、totalCost を cost にマッピング
+        if (data && data.results && Array.isArray(data.results)) {
+          this.simulationResults = data.results.map((result: any) => ({
+            ...result,
+            cost: result.totalCost
+          }));
+        } else {
+          this.simulationResults = data;
+        }
         this.loading.set(false);
         this.pasteDataText = '';
       },

@@ -9,24 +9,9 @@
   }
 
   <div class="tabs">
-    <button
-      (click)="activeTab.set('dashboard')"
-      [class.active]="activeTab() === 'dashboard'"
-    >
-      サマリー
-    </button>
-    <button
-      (click)="activeTab.set('simulation')"
-      [class.active]="activeTab() === 'simulation'"
-    >
-      配置シミュレーション
-    </button>
-    <button
-      (click)="activeTab.set('employees')"
-      [class.active]="activeTab() === 'employees'"
-    >
-      社員一覧
-    </button>
+    <button (click)="activeTab.set('dashboard')" [class.active]="activeTab() === 'dashboard'">サマリー</button>
+    <button (click)="activeTab.set('simulation')" [class.active]="activeTab() === 'simulation'">配置シミュレーション</button>
+    <button (click)="activeTab.set('employees')" [class.active]="activeTab() === 'employees'">社員一覧</button>
   </div>
 
   <div class="content">
@@ -48,9 +33,7 @@
           </div>
           <div class="metric-card">
             <h3>配置率</h3>
-            <p class="metric-value">
-              {{ ((dashboard().totalAllocations / dashboard().totalEmployees) * 100 | number: '1.0-0') }}%
-            </p>
+            <p class="metric-value">{{ ((dashboard().totalAllocations / dashboard().totalEmployees) * 100 | number: '1.0-0') }}%</p>
           </div>
         </div>
 
@@ -82,126 +65,50 @@
                 <div class="dept-fields" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                   <div class="field-group" style="flex: 0 1 auto; min-width: 150px;">
                     <label>部署名</label>
-                    <input
-                      type="text"
-                      [(ngModel)]="dept.name"
-                      placeholder="部署名"
-                      class="input-field"
-                      style="width: 100%; padding: 5px; box-sizing: border-box;"
-                    />
+                    <input type="text" [(ngModel)]="dept.name" placeholder="部署名" class="input-field" style="width: 100%; padding: 5px; box-sizing: border-box;" />
                   </div>
                   <div class="field-group" style="flex: 0 1 auto; min-width: 120px;">
                     <label>状態</label>
-                    <input
-                      type="text"
-                      [(ngModel)]="dept.status"
-                      placeholder="状態"
-                      class="input-field"
-                      style="width: 100%; padding: 5px; box-sizing: border-box;"
-                    />
+                    <input type="text" [(ngModel)]="dept.status" placeholder="状態" class="input-field" style="width: 100%; padding: 5px; box-sizing: border-box;" />
                   </div>
                   <div class="field-group" style="flex: 0 1 auto; min-width: 150px;">
                     <label>説明</label>
-                    <input
-                      type="text"
-                      [(ngModel)]="dept.description"
-                      placeholder="説明"
-                      class="input-field"
-                      style="width: 100%; padding: 5px; box-sizing: border-box;"
-                    />
+                    <input type="text" [(ngModel)]="dept.description" placeholder="説明" class="input-field" style="width: 100%; padding: 5px; box-sizing: border-box;" />
                   </div>
                   <div class="field-group" style="flex: 0 1 auto; min-width: 100px;">
                     <label>適性人数</label>
-                    <input
-                      type="number"
-                      [(ngModel)]="dept.optimalHeadcount"
-                      placeholder="人数"
-                      class="input-field"
-                      style="width: 100%; padding: 5px; box-sizing: border-box;"
-                    />
+                    <input type="number" [(ngModel)]="dept.optimalHeadcount" placeholder="人数" class="input-field" style="width: 100%; padding: 5px; box-sizing: border-box;" />
                   </div>
                   <div class="field-group" style="flex: 0 1 auto; min-width: 120px;">
                     <label>最低配置人数</label>
-                    <input
-                      type="number"
-                      [(ngModel)]="dept.minHeadcount"
-                      placeholder="人数"
-                      class="input-field"
-                      style="width: 100%; padding: 5px; box-sizing: border-box;"
-                    />
+                    <input type="number" [(ngModel)]="dept.minHeadcount" placeholder="人数" class="input-field" style="width: 100%; padding: 5px; box-sizing: border-box;" />
                   </div>
                   <div class="field-group" style="flex: 0 1 auto; min-width: 120px;">
                     <label>営業力の重み</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      [(ngModel)]="dept.weightSales"
-                      placeholder="営業力"
-                      class="input-field"
-                      style="width: 100%; padding: 5px; box-sizing: border-box;"
-                    />
+                    <input type="number" step="0.1" [(ngModel)]="dept.weightSales" placeholder="営業力" class="input-field" style="width: 100%; padding: 5px; box-sizing: border-box;" />
                   </div>
                   <div class="field-group" style="flex: 0 1 auto; min-width: 120px;">
                     <label>管理力の重み</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      [(ngModel)]="dept.weightManagement"
-                      placeholder="管理力"
-                      class="input-field"
-                      style="width: 100%; padding: 5px; box-sizing: border-box;"
-                    />
+                    <input type="number" step="0.1" [(ngModel)]="dept.weightManagement" placeholder="管理力" class="input-field" style="width: 100%; padding: 5px; box-sizing: border-box;" />
                   </div>
                   <div class="field-group" style="flex: 0 1 auto; min-width: 120px;">
                     <label>開拓力の重み</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      [(ngModel)]="dept.weightExploration"
-                      placeholder="開拓力"
-                      class="input-field"
-                      style="width: 100%; padding: 5px; box-sizing: border-box;"
-                    />
+                    <input type="number" step="0.1" [(ngModel)]="dept.weightExploration" placeholder="開拓力" class="input-field" style="width: 100%; padding: 5px; box-sizing: border-box;" />
                   </div>
                   <div class="field-group" style="flex: 0 1 auto; min-width: 120px;">
                     <label>育成力の重み</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      [(ngModel)]="dept.weightDevelopment"
-                      placeholder="育成力"
-                      class="input-field"
-                      style="width: 100%; padding: 5px; box-sizing: border-box;"
-                    />
+                    <input type="number" step="0.1" [(ngModel)]="dept.weightDevelopment" placeholder="育成力" class="input-field" style="width: 100%; padding: 5px; box-sizing: border-box;" />
                   </div>
                   <div class="field-group" style="flex: 0 1 auto; min-width: 120px;">
                     <label>基準売上</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      [(ngModel)]="dept.baseRevenue"
-                      placeholder="基準売上"
-                      class="input-field"
-                      style="width: 100%; padding: 5px; box-sizing: border-box;"
-                    />
+                    <input type="number" step="0.1" [(ngModel)]="dept.baseRevenue" placeholder="基準売上" class="input-field" style="width: 100%; padding: 5px; box-sizing: border-box;" />
                   </div>
                   <div class="field-group" style="flex: 0 1 auto; min-width: 120px;">
                     <label>成長係数</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      [(ngModel)]="dept.growthFactor"
-                      placeholder="成長係数"
-                      class="input-field"
-                      style="width: 100%; padding: 5px; box-sizing: border-box;"
-                    />
+                    <input type="number" step="0.1" [(ngModel)]="dept.growthFactor" placeholder="成長係数" class="input-field" style="width: 100%; padding: 5px; box-sizing: border-box;" />
                   </div>
-                  <button (click)="updateDepartment(dept)" class="btn-update" style="align-self: flex-end; margin-top: 20px;">
-                    更新
-                  </button>
-                  <button (click)="cancelEdit()" class="btn-cancel" style="align-self: flex-end; margin-top: 20px; padding: 8px 16px; background-color: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                    キャンセル
-                  </button>
+                  <button (click)="updateDepartment(dept)" class="btn-update" style="align-self: flex-end; margin-top: 20px;">更新</button>
+                  <button (click)="cancelEdit()" class="btn-cancel" style="align-self: flex-end; margin-top: 20px; padding: 8px 16px; background-color: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer;">キャンセル</button>
                 </div>
 
                 <div class="shortage-penalty-section" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ccc;">
@@ -219,98 +126,39 @@
                       @for (rule of dept.shortagePenalty || []; track $index) {
                         <tr>
                           <td style="border: 1px solid #ddd; padding: 8px;">
-                            <input
-                              type="number"
-                              [(ngModel)]="rule.threshold"
-                              placeholder="100"
-                              class="input-field"
-                              style="width: 100%; padding: 5px; box-sizing: border-box;"
-                            />
+                            <input type="number" [(ngModel)]="rule.threshold" placeholder="100" class="input-field" style="width: 100%; padding: 5px; box-sizing: border-box;" />
                           </td>
                           <td style="border: 1px solid #ddd; padding: 8px;">
-                            <select
-                              [(ngModel)]="rule.condition"
-                              class="input-field"
-                              style="width: 100%; padding: 5px; box-sizing: border-box;"
-                            >
+                            <select [(ngModel)]="rule.condition" class="input-field" style="width: 100%; padding: 5px; box-sizing: border-box;">
                               <option value="over">以上</option>
                               <option value="under">未満</option>
                             </select>
                           </td>
                           <td style="border: 1px solid #ddd; padding: 8px;">
-                            <input
-                              type="number"
-                              step="0.01"
-                              [(ngModel)]="rule.factor"
-                              placeholder="1.0"
-                              class="input-field"
-                              style="width: 100%; padding: 5px; box-sizing: border-box;"
-                            />
+                            <input type="number" step="0.01" [(ngModel)]="rule.factor" placeholder="1.0" class="input-field" style="width: 100%; padding: 5px; box-sizing: border-box;" />
                           </td>
                           <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">
-                            <button
-                              (click)="removePenaltyRule(dept, $index)"
-                              class="btn-delete"
-                              style="padding: 5px 10px; background-color: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer;"
-                            >
-                              削除
-                            </button>
+                            <button (click)="removePenaltyRule(dept, $index)" class="btn-delete" style="padding: 5px 10px; background-color: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer;">削除</button>
                           </td>
                         </tr>
                       }
                     </tbody>
                   </table>
-                  <button
-                    (click)="addPenaltyRule(dept)"
-                    class="btn-add-rule"
-                    style="margin-top: 10px; padding: 8px 16px; background-color: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer;"
-                  >
-                    ＋ ペナルティ条件を追加
-                  </button>
+                  <button (click)="addPenaltyRule(dept)" class="btn-add-rule" style="margin-top: 10px; padding: 8px 16px; background-color: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer;">＋ ペナルティ条件を追加</button>
                 </div>
               } @else {
                 <div class="dept-view" style="padding: 15px; border: 1px solid #eee; border-radius: 4px;">
                   <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
-                    <div>
-                      <label style="display: block; font-weight: bold; margin-bottom: 5px;">状態</label>
-                      <p style="margin: 0;">{{ dept.status || '-' }}</p>
-                    </div>
-                    <div>
-                      <label style="display: block; font-weight: bold; margin-bottom: 5px;">説明</label>
-                      <p style="margin: 0;">{{ dept.description || '-' }}</p>
-                    </div>
-                    <div>
-                      <label style="display: block; font-weight: bold; margin-bottom: 5px;">適性人数</label>
-                      <p style="margin: 0;">{{ dept.optimalHeadcount || '-' }}</p>
-                    </div>
-                    <div>
-                      <label style="display: block; font-weight: bold; margin-bottom: 5px;">最低配置人数</label>
-                      <p style="margin: 0;">{{ dept.minHeadcount || '-' }}</p>
-                    </div>
-                    <div>
-                      <label style="display: block; font-weight: bold; margin-bottom: 5px;">営業力の重み</label>
-                      <p style="margin: 0;">{{ dept.weightSales || '-' }}</p>
-                    </div>
-                    <div>
-                      <label style="display: block; font-weight: bold; margin-bottom: 5px;">管理力の重み</label>
-                      <p style="margin: 0;">{{ dept.weightManagement || '-' }}</p>
-                    </div>
-                    <div>
-                      <label style="display: block; font-weight: bold; margin-bottom: 5px;">開拓力の重み</label>
-                      <p style="margin: 0;">{{ dept.weightExploration || '-' }}</p>
-                    </div>
-                    <div>
-                      <label style="display: block; font-weight: bold; margin-bottom: 5px;">育成力の重み</label>
-                      <p style="margin: 0;">{{ dept.weightDevelopment || '-' }}</p>
-                    </div>
-                    <div>
-                      <label style="display: block; font-weight: bold; margin-bottom: 5px;">基準売上</label>
-                      <p style="margin: 0;">{{ dept.baseRevenue || '-' }}</p>
-                    </div>
-                    <div>
-                      <label style="display: block; font-weight: bold; margin-bottom: 5px;">成長係数</label>
-                      <p style="margin: 0;">{{ dept.growthFactor || '-' }}</p>
-                    </div>
+                    <div><label style="display: block; font-weight: bold; margin-bottom: 5px;">状態</label><p style="margin: 0;">{{ dept.status || '-' }}</p></div>
+                    <div><label style="display: block; font-weight: bold; margin-bottom: 5px;">説明</label><p style="margin: 0;">{{ dept.description || '-' }}</p></div>
+                    <div><label style="display: block; font-weight: bold; margin-bottom: 5px;">適性人数</label><p style="margin: 0;">{{ dept.optimalHeadcount || '-' }}</p></div>
+                    <div><label style="display: block; font-weight: bold; margin-bottom: 5px;">最低配置人数</label><p style="margin: 0;">{{ dept.minHeadcount || '-' }}</p></div>
+                    <div><label style="display: block; font-weight: bold; margin-bottom: 5px;">営業力の重み</label><p style="margin: 0;">{{ dept.weightSales || '-' }}</p></div>
+                    <div><label style="display: block; font-weight: bold; margin-bottom: 5px;">管理力の重み</label><p style="margin: 0;">{{ dept.weightManagement || '-' }}</p></div>
+                    <div><label style="display: block; font-weight: bold; margin-bottom: 5px;">開拓力の重み</label><p style="margin: 0;">{{ dept.weightExploration || '-' }}</p></div>
+                    <div><label style="display: block; font-weight: bold; margin-bottom: 5px;">育成力の重み</label><p style="margin: 0;">{{ dept.weightDevelopment || '-' }}</p></div>
+                    <div><label style="display: block; font-weight: bold; margin-bottom: 5px;">基準売上</label><p style="margin: 0;">{{ dept.baseRevenue || '-' }}</p></div>
+                    <div><label style="display: block; font-weight: bold; margin-bottom: 5px;">成長係数</label><p style="margin: 0;">{{ dept.growthFactor || '-' }}</p></div>
                   </div>
 
                   <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
@@ -339,12 +187,8 @@
                     }
                   </div>
 
-                  <button (click)="startEdit(dept.id)" class="btn-edit" style="margin-top: 15px; padding: 8px 16px; background-color: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                    編集する
-                  </button>
-                  <button (click)="deleteDepartment(dept.id)" class="btn-delete" style="margin-top: 15px; margin-left: 10px; padding: 8px 16px; background-color: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                    削除する
-                  </button>
+                  <button (click)="startEdit(dept.id)" class="btn-edit" style="margin-top: 15px; padding: 8px 16px; background-color: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;">編集する</button>
+                  <button (click)="deleteDepartment(dept.id)" class="btn-delete" style="margin-top: 15px; margin-left: 10px; padding: 8px 16px; background-color: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer;">削除する</button>
                 </div>
               }
             </div>
@@ -354,15 +198,8 @@
         <div class="department-management">
           <h3>部署を追加</h3>
           <div class="add-dept-form">
-            <input
-              type="text"
-              [(ngModel)]="newDepartmentName"
-              placeholder="新しい部署名"
-              class="input-field"
-            />
-            <button (click)="addDepartment()" class="btn-add">
-              ＋ 部署を追加
-            </button>
+            <input type="text" [(ngModel)]="newDepartmentName" placeholder="新しい部署名" class="input-field" />
+            <button (click)="addDepartment()" class="btn-add">＋ 部署を追加</button>
           </div>
         </div>
       </div>
@@ -383,13 +220,7 @@
           </div>
           <div class="form-group">
             <label for="positions">募集枠（人数）</label>
-            <input
-              id="positions"
-              type="number"
-              [(ngModel)]="numPositions"
-              min="1"
-              max="100"
-            />
+            <input id="positions" type="number" [(ngModel)]="numPositions" min="1" max="100" />
           </div>
           <button (click)="runSimulation()" [disabled]="loading()">
             {{ loading() ? 'シミュレーション実行中...' : 'シミュレーションを実行' }}
@@ -400,17 +231,13 @@
           <h3>データの直接読み込み（コピペ）</h3>
           <p class="hint">Excelからコピペしたデータ（CSV/TSV形式）を貼り付けてください。</p>
           <p class="hint">カラム: 社員番号, 営業力, 管理力, 開拓力, 育成力, 人件費</p>
-          <textarea
-            [(ngModel)]="pasteDataText"
-            placeholder="社員番号,営業力,管理力,開拓力,育成力,人件費&#10;E001,75,46,63,40,6.7&#10;E002,85,67,59,42,9.9"
-            class="data-textarea"
-          ></textarea>
+          <textarea [(ngModel)]="pasteDataText" placeholder="社員番号,営業力,管理力,開拓力,育成力,人件費&#10;E001,75,46,63,40,6.7&#10;E002,85,67,59,42,9.9" class="data-textarea"></textarea>
           <button (click)="runPastedDataSimulation()" [disabled]="loading()">
             {{ loading() ? 'シミュレーション実行中...' : 'データから実行' }}
           </button>
         </div>
 
-        @if (simulationResults()) {
+        @if (simulationResults) {
           <div class="simulation-results">
             <h3>シミュレーション結果</h3>
             
@@ -427,8 +254,8 @@
                   </tr>
                 </thead>
                 <tbody>
-                  @if (Array.isArray(simulationResults())) {
-                    @for (result of simulationResults(); track $index) {
+                  @if (Array.isArray(simulationResults)) {
+                    @for (result of simulationResults; track $index) {
                       <tr>
                         <td>{{ result.departmentName || result.department?.name || '-' }}</td>
                         <td>{{ result.allocatedCount || result.candidates?.length || 0 }}</td>
@@ -440,23 +267,23 @@
                     }
                   } @else {
                     <tr>
-                      <td>{{ simulationResults().departmentName || simulationResults().department?.name || '-' }}</td>
-                      <td>{{ simulationResults().allocatedCount || simulationResults().candidates?.length || 0 }}</td>
-                      <td>{{ simulationResults().fulfillmentRate || '-' }}</td>
-                      <td>¥{{ (simulationResults().finalRevenue || simulationResults().totalExpectedRevenue || 0) | number }}</td>
-                      <td>¥{{ simulationResults().cost || 0 | number }}</td>
-                      <td>¥{{ (simulationResults().profit || (simulationResults().finalRevenue - simulationResults().cost) || 0) | number }}</td>
+                      <td>{{ simulationResults.departmentName || simulationResults.department?.name || '-' }}</td>
+                      <td>{{ simulationResults.allocatedCount || simulationResults.candidates?.length || 0 }}</td>
+                      <td>{{ simulationResults.fulfillmentRate || '-' }}</td>
+                      <td>¥{{ (simulationResults.finalRevenue || simulationResults.totalExpectedRevenue || 0) | number }}</td>
+                      <td>¥{{ simulationResults.cost || 0 | number }}</td>
+                      <td>¥{{ (simulationResults.profit || (simulationResults.finalRevenue - simulationResults.cost) || 0) | number }}</td>
                     </tr>
                   }
                 </tbody>
               </table>
             </div>
 
-            @if (!Array.isArray(simulationResults())) {
+            @if (!Array.isArray(simulationResults)) {
               <div class="results-summary" style="margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 4px;">
-                <p><strong>対象部署:</strong> {{ simulationResults().department?.name || '-' }}</p>
-                <p><strong>予想総収益:</strong> ¥{{ simulationResults().totalExpectedRevenue | number }}</p>
-                <p><strong>成長率見込み:</strong> {{ simulationResults().growthRate | number: '1.0-0' }}%</p>
+                <p><strong>対象部署:</strong> {{ simulationResults.departmentName || simulationResults.department?.name || '-' }}</p>
+                <p><strong>予想総収益:</strong> ¥{{ simulationResults.totalExpectedRevenue | number }}</p>
+                <p><strong>成長率見込み:</strong> {{ simulationResults.growthRate | number: '1.0-0' }}%</p>
               </div>
 
               <h4 style="margin-top: 20px;">推奨候補者リスト</h4>
@@ -471,19 +298,14 @@
                   </tr>
                 </thead>
                 <tbody>
-                  @for (cand of simulationResults().candidates; track cand.employeeId) {
+                  @for (cand of simulationResults.candidates; track cand.employeeId) {
                     <tr>
                       <td>{{ cand.employeeName }}</td>
                       <td>{{ cand.score }}</td>
                       <td>{{ cand.matchScore }}</td>
                       <td>{{ cand.desiredDept || '-' }}</td>
                       <td>
-                        <button
-                          (click)="allocateCandidate(cand.employeeId, simulationResults().department.id, 'シミュレーション結果からの配置')"
-                          class="btn-allocate"
-                        >
-                          この社員を配置する
-                        </button>
+                        <button (click)="allocateCandidate(cand.employeeId, simulationResults.department.id, 'シミュレーション結果からの配置')" class="btn-allocate">この社員を配置する</button>
                       </td>
                     </tr>
                   }
