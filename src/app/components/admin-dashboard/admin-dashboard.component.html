@@ -410,10 +410,10 @@
           </button>
         </div>
 
-        @if (simulationResults) {
+        @if (simulationResults()) {
           <div class="simulation-results">
             <h3>シミュレーション結果</h3>
-
+            
             <div class="results-table-container">
               <table class="results-table">
                 <thead>
@@ -427,8 +427,8 @@
                   </tr>
                 </thead>
                 <tbody>
-                  @if (Array.isArray(simulationResults)) {
-                    @for (result of simulationResults; track $index) {
+                  @if (Array.isArray(simulationResults())) {
+                    @for (result of simulationResults(); track $index) {
                       <tr>
                         <td>{{ result.departmentName || result.department?.name || '-' }}</td>
                         <td>{{ result.allocatedCount || result.candidates?.length || 0 }}</td>
@@ -440,23 +440,23 @@
                     }
                   } @else {
                     <tr>
-                      <td>{{ simulationResults.departmentName || simulationResults.department?.name || '-' }}</td>
-                      <td>{{ simulationResults.allocatedCount || simulationResults.candidates?.length || 0 }}</td>
-                      <td>{{ simulationResults.fulfillmentRate || '-' }}</td>
-                      <td>¥{{ (simulationResults.finalRevenue || simulationResults.totalExpectedRevenue || 0) | number }}</td>
-                      <td>¥{{ simulationResults.cost || 0 | number }}</td>
-                      <td>¥{{ (simulationResults.profit || (simulationResults.finalRevenue - simulationResults.cost) || 0) | number }}</td>
+                      <td>{{ simulationResults().departmentName || simulationResults().department?.name || '-' }}</td>
+                      <td>{{ simulationResults().allocatedCount || simulationResults().candidates?.length || 0 }}</td>
+                      <td>{{ simulationResults().fulfillmentRate || '-' }}</td>
+                      <td>¥{{ (simulationResults().finalRevenue || simulationResults().totalExpectedRevenue || 0) | number }}</td>
+                      <td>¥{{ simulationResults().cost || 0 | number }}</td>
+                      <td>¥{{ (simulationResults().profit || (simulationResults().finalRevenue - simulationResults().cost) || 0) | number }}</td>
                     </tr>
                   }
                 </tbody>
               </table>
             </div>
 
-            @if (!Array.isArray(simulationResults)) {
+            @if (!Array.isArray(simulationResults())) {
               <div class="results-summary" style="margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 4px;">
-                <p><strong>対象部署:</strong> {{ simulationResults.department?.name || '-' }}</p>
-                <p><strong>予想総収益:</strong> ¥{{ simulationResults.totalExpectedRevenue | number }}</p>
-                <p><strong>成長率見込み:</strong> {{ simulationResults.growthRate | number: '1.0-0' }}%</p>
+                <p><strong>対象部署:</strong> {{ simulationResults().department?.name || '-' }}</p>
+                <p><strong>予想総収益:</strong> ¥{{ simulationResults().totalExpectedRevenue | number }}</p>
+                <p><strong>成長率見込み:</strong> {{ simulationResults().growthRate | number: '1.0-0' }}%</p>
               </div>
 
               <h4 style="margin-top: 20px;">推奨候補者リスト</h4>
@@ -471,7 +471,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  @for (cand of simulationResults.candidates; track cand.employeeId) {
+                  @for (cand of simulationResults().candidates; track cand.employeeId) {
                     <tr>
                       <td>{{ cand.employeeName }}</td>
                       <td>{{ cand.score }}</td>
@@ -479,7 +479,7 @@
                       <td>{{ cand.desiredDept || '-' }}</td>
                       <td>
                         <button
-                          (click)="allocateCandidate(cand.employeeId, simulationResults.department.id, 'シミュレーション結果からの配置')"
+                          (click)="allocateCandidate(cand.employeeId, simulationResults().department.id, 'シミュレーション結果からの配置')"
                           class="btn-allocate"
                         >
                           この社員を配置する
@@ -512,11 +512,11 @@
           <tbody>
             @for (emp of employees(); track emp.id) {
               <tr>
-                <td>{{ emp.user.name }}</td>
+                <td>{{ emp.user?.name || emp.name || '-' }}</td>
                 <td>{{ emp.score || 0 }}</td>
                 <td>{{ emp.currentDept || '-' }}</td>
                 <td>{{ emp.desiredDept || '-' }}</td>
-                <td>{{ emp.status }}</td>
+                <td>{{ emp.status || '-' }}</td>
                 <td>{{ emp.lastUpdated | date: 'short' }}</td>
               </tr>
             }

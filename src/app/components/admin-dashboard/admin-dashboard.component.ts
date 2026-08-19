@@ -41,28 +41,39 @@ export class AdminDashboardComponent implements OnInit {
 
   loadDashboard() {
     this.apiService.getDashboard().subscribe({
-      next: (data) => this.dashboard.set(data),
-      error: (error) => this.error.set(error.error?.error || 'Failed to load dashboard')
+      next: (data: any) => this.dashboard.set(data),
+      error: (error: any) => this.error.set(error.error?.error || 'Failed to load dashboard')
     });
   }
 
   loadDepartments() {
     this.apiService.getDepartments().subscribe({
-      next: (data) => {
+      next: (data: any[]) => {
         const deptWithPenalty = data.map((dept: any) => ({
           ...dept,
           shortagePenalty: dept.shortagePenalty && Array.isArray(dept.shortagePenalty) ? dept.shortagePenalty : []
         }));
         this.departments.set(deptWithPenalty);
       },
-      error: (error) => this.error.set(error.error?.error || 'Failed to load departments')
+      error: (error: any) => this.error.set(error.error?.error || 'Failed to load departments')
     });
   }
 
   loadEmployees() {
     this.apiService.getAllEmployees().subscribe({
-      next: (data) => this.employees.set(data),
-      error: (error) => this.error.set(error.error?.error || 'Failed to load employees')
+      next: (data: any) => {
+        // Handle both array and object responses
+        let employeesArray: any[] = [];
+        if (Array.isArray(data)) {
+          employeesArray = data;
+        } else if (data && typeof data === 'object' && data.employees && Array.isArray(data.employees)) {
+          employeesArray = data.employees;
+        } else if (data && typeof data === 'object' && data.data && Array.isArray(data.data)) {
+          employeesArray = data.data;
+        }
+        this.employees.set(employeesArray);
+      },
+      error: (error: any) => this.error.set(error.error?.error || 'Failed to load employees')
     });
   }
 
@@ -74,11 +85,11 @@ export class AdminDashboardComponent implements OnInit {
 
     this.loading.set(true);
     this.apiService.simulateAllocation(this.selectedDepartment(), this.numPositions()).subscribe({
-      next: (data) => {
+      next: (data: any) => {
         this.simulationResults = data;
         this.loading.set(false);
       },
-      error: (error) => {
+      error: (error: any) => {
         this.error.set(error.error?.error || 'Simulation failed');
         this.loading.set(false);
       }
@@ -99,12 +110,12 @@ export class AdminDashboardComponent implements OnInit {
 
     this.loading.set(true);
     this.apiService.simulateBatchAllocation(parsed).subscribe({
-      next: (data) => {
+      next: (data: any) => {
         this.simulationResults = data;
         this.loading.set(false);
         this.pasteDataText = '';
       },
-      error: (error) => {
+      error: (error: any) => {
         this.error.set(error.error?.error || 'Batch simulation failed');
         this.loading.set(false);
       }
@@ -212,12 +223,12 @@ export class AdminDashboardComponent implements OnInit {
 
     this.loading.set(true);
     this.apiService.simulateBatchAllocation(convertedData).subscribe({
-      next: (data) => {
+      next: (data: any) => {
         this.simulationResults = data;
         this.loading.set(false);
         this.pasteDataText = '';
       },
-      error: (error) => {
+      error: (error: any) => {
         this.error.set(error.error?.error || 'Simulation failed');
         this.loading.set(false);
       }
@@ -236,14 +247,14 @@ export class AdminDashboardComponent implements OnInit {
       requiredScore: 0,
       expectedRevenue: 0
     }).subscribe({
-      next: (data) => {
+      next: (data: any) => {
         const currentDepts = this.departments();
         this.departments.set([...currentDepts, { ...data, shortagePenalty: [] }]);
         this.newDepartmentName = '';
         this.error.set('');
         this.loadDashboard();
       },
-      error: (error) => {
+      error: (error: any) => {
         this.error.set(error.error?.error || 'Failed to create department');
       }
     });
@@ -276,6 +287,7 @@ export class AdminDashboardComponent implements OnInit {
 
  updateDepartment(department: any) {
     this.apiService.updateDepartment(department.id, {
+      name: department.name || null,
       status: department.status || null,
       description: department.description || null,
       optimalHeadcount: department.optimalHeadcount ? Number(department.optimalHeadcount) : null,
@@ -294,7 +306,7 @@ export class AdminDashboardComponent implements OnInit {
         this.editingDeptId = null;
         this.loadDepartments();
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Update error:', err);
         this.error.set('部署の更新に失敗しました');
       }
@@ -315,7 +327,7 @@ export class AdminDashboardComponent implements OnInit {
           this.simulationResults = null;
         }, 1000);
       },
-      error: (error) => {
+      error: (error: any) => {
         this.error.set(error.error?.error || 'Failed to create allocation');
       }
     });
@@ -334,7 +346,7 @@ export class AdminDashboardComponent implements OnInit {
         this.loadDepartments();
         this.loadDashboard();
       },
-      error: (error) => {
+      error: (error: any) => {
         this.error.set(error.error?.error || '部署の削除に失敗しました');
         this.loading.set(false);
       }

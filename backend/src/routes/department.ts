@@ -80,8 +80,9 @@ router.put('/:id', authenticate, isAdmin, async (req: AuthRequest, res: Response
 
     const updateData: any = {};
 
-    if (name !== undefined) {
-      updateData.name = name;
+    // Update name (allow empty string or null, but not undefined)
+    if (name !== undefined && name !== null && name.trim() !== '') {
+      updateData.name = name.trim();
     }
     if (requiredSkills !== undefined) {
       updateData.requiredSkills = normalizeRequiredSkills(requiredSkills);
@@ -129,6 +130,11 @@ router.put('/:id', authenticate, isAdmin, async (req: AuthRequest, res: Response
       updateData.shortagePenalty = normalizeShortagePenalty(shortagePenalty);
     }
 
+    // Ensure at least one field is being updated
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+
     const department = await prisma.department.update({
       where: { id: req.params.id },
       data: updateData,
@@ -136,6 +142,7 @@ router.put('/:id', authenticate, isAdmin, async (req: AuthRequest, res: Response
 
     res.json(department);
   } catch (error) {
+    console.error('Department update error:', error);
     res.status(400).json({ error: (error as Error).message });
   }
 });

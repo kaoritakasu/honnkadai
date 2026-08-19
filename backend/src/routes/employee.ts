@@ -48,7 +48,8 @@ router.get('/', authenticate, isAdmin, async (req: AuthRequest, res: Response) =
     const employees = await prisma.employee.findMany({
       include: { user: true, allocations: { include: { department: true } } },
     });
-    res.json(employees);
+    // Ensure response is always an array
+    res.json(Array.isArray(employees) ? employees : []);
   } catch (error) {
     res.status(400).json({ error: (error as Error).message });
   }
