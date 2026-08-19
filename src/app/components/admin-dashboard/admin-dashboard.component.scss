@@ -1,355 +1,227 @@
+/* =========================================
+   テーマカラー設定（全社合計のグラデーションテーマ）
+   ========================================= */
+:host {
+  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --primary-color: #667eea;      /* グラデーション開始色（明るい紫青） */
+  --primary-dark: #764ba2;       /* グラデーション終了色（濃い紫） */
+  --primary-light: #f4f2f9;      /* 薄い紫（ホバー時の背景など） */
+  --bg-color: #f8f9fa;           /* 全体の背景色 */
+  --card-bg: #ffffff;            /* カードの背景色 */
+  --text-main: #333333;          /* メインテキスト */
+  --text-muted: #666666;         /* サブテキスト */
+  --border-color: #e0e0e0;       /* 枠線の色 */
+  --success: #2e7d32;            /* 成功・追加 */
+  --danger: #d32f2f;             /* 削除・警告 */
+}
+
+/* =========================================
+   全体レイアウト
+   ========================================= */
 .admin-container {
+  font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+  background-color: var(--bg-color);
   min-height: 100vh;
-  background: #f5f7fa;
-  padding-bottom: 2rem;
-}
-
-.admin-header {
-  background: white;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  padding: 1.5rem 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-
-  h1 {
-    margin: 0;
-    color: #333;
-  }
-
-  .logout-btn {
-    padding: 0.5rem 1rem;
-    background: #dc3545;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-
-    &:hover {
-      background: #c82333;
-    }
-  }
-}
-
-.alert {
-  margin: 1rem 2rem;
-  padding: 1rem;
-  border-radius: 4px;
-  border-left: 4px solid;
-
-  &.alert-error {
-    background: #fee;
-    color: #c33;
-    border-color: #c33;
-  }
-
-  &.alert-success {
-    background: #efe;
-    color: #3c3;
-    border-color: #3c3;
-  }
-}
-
-.tabs {
-  display: flex;
-  gap: 1rem;
-  padding: 1rem 2rem;
-  border-bottom: 1px solid #e0e0e0;
-  background: white;
-  margin: 1rem 0;
-
-  button {
-    padding: 0.75rem 1.5rem;
-    background: none;
-    border: none;
-    color: #666;
-    cursor: pointer;
-    font-weight: 500;
-    border-bottom: 3px solid transparent;
-    transition: all 0.3s;
-
-    &:hover {
-      color: #333;
-    }
-
-    &.active {
-      color: #667eea;
-      border-bottom-color: #667eea;
-    }
-  }
+  color: var(--text-main);
 }
 
 .content {
-  max-width: 1400px;
+  padding: 30px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 0 2rem;
 }
 
-.dashboard-section,
-.simulation-section,
-.employees-section {
-  h2 {
-    color: #333;
-    margin-top: 2rem;
-    margin-bottom: 1rem;
-  }
+/* ヘッダー（グラデーション適用！） */
+.admin-header {
+  background: var(--primary-gradient);
+  color: #fff;
+  padding: 15px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 12px rgba(118, 75, 162, 0.2);
 }
 
-.metrics-grid {
+.admin-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  letter-spacing: 1px;
+}
+
+/* =========================================
+   タブ・ナビゲーション
+   ========================================= */
+.tabs {
+  display: flex;
+  background-color: var(--card-bg);
+  border-bottom: 2px solid var(--border-color);
+  padding: 0 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.tabs button {
+  background: none;
+  border: none;
+  padding: 15px 25px;
+  font-size: 1rem;
+  font-weight: bold;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all 0.3s;
+}
+
+/* 選択中のタブはグラデーションの濃い紫色で強調！ */
+.tabs button.active, .tabs button:hover {
+  color: var(--primary-dark);
+  border-bottom: 3px solid var(--primary-dark);
+  background-color: var(--primary-light);
+}
+
+/* =========================================
+   見出し・カードデザイン
+   ========================================= */
+h2 {
+  color: var(--primary-dark);
+  border-left: 5px solid var(--primary-color);
+  padding-left: 12px;
+  margin-top: 30px;
+  margin-bottom: 20px;
+}
+
+h3 {
+  color: var(--text-main);
+  margin-bottom: 15px;
+}
+
+/* カードの共通スタイル */
+.metric-card, .status-card, .department-edit-card, .dept-view, .results-summary, .simulation-form, .paste-data-form {
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  padding: 25px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border-color);
+}
+
+/* =========================================
+   サマリー指標（文字自体をグラデーション化！）
+   ========================================= */
+.metrics-grid, .status-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
 }
 
 .metric-card {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-
-  h3 {
-    color: #666;
-    font-size: 0.9rem;
-    margin: 0 0 0.5rem 0;
-    text-transform: uppercase;
-  }
-
-  .metric-value {
-    font-size: 2rem;
-    font-weight: bold;
-    color: #667eea;
-    margin: 0;
-  }
+  text-align: center;
+  border-top: 4px solid var(--primary-color);
 }
 
-.status-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 2rem;
+.metric-value {
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin: 10px 0 0 0;
+  /* 数字をグラデーションにする魔法のCSS */
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-.status-card {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  border-left: 4px solid #ffc107;
-
-  h3 {
-    margin: 0;
-    color: #666;
-  }
-
-  .status-value {
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: #333;
-    margin: 0.5rem 0 0 0;
-  }
-
-  &.assigned {
-    border-left-color: #28a745;
-  }
-
-  &.rejected {
-    border-left-color: #dc3545;
-  }
+.status-value {
+  font-size: 2rem;
+  font-weight: bold;
+  margin: 10px 0 0 0;
+  color: var(--primary-dark);
 }
 
-.departments-table,
-.candidates-table,
-.employees-table {
+/* =========================================
+   テーブル（表のヘッダーにもグラデーション適用！）
+   ========================================= */
+.results-table, .employees-table, .candidates-table, .penalty-table {
   width: 100%;
   border-collapse: collapse;
-  background: white;
+  background-color: var(--card-bg);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  margin-bottom: 2rem;
-
-  thead {
-    background: #f8f9fa;
-    border-bottom: 2px solid #e0e0e0;
-  }
-
-  th {
-    padding: 1rem;
-    text-align: left;
-    color: #666;
-    font-weight: 600;
-  }
-
-  td {
-    padding: 1rem;
-    border-bottom: 1px solid #e0e0e0;
-    color: #333;
-  }
-
-  tbody tr:hover {
-    background: #f8f9fa;
-  }
+  margin-bottom: 20px;
 }
 
-.simulation-form {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  margin-bottom: 2rem;
-  display: flex;
-  gap: 1rem;
-  align-items: flex-end;
-
-  .form-group {
-    flex: 1;
-    min-width: 150px;
-
-    label {
-      display: block;
-      margin-bottom: 0.5rem;
-      color: #666;
-      font-weight: 500;
-    }
-
-    input,
-    select {
-      width: 100%;
-      padding: 0.75rem;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      font-size: 1rem;
-
-      &:focus {
-        outline: none;
-        border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-      }
-    }
-  }
-
-  button {
-    padding: 0.75rem 1.5rem;
-    background: #667eea;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: 500;
-
-    &:hover:not(:disabled) {
-      background: #5568d3;
-    }
-
-    &:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-  }
+.results-table th, .employees-table th, .candidates-table th, .penalty-table th {
+  background: var(--primary-gradient);
+  color: #fff;
+  padding: 14px 15px;
+  text-align: left;
+  font-weight: normal;
 }
 
-.paste-data-form {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  margin-bottom: 2rem;
-
-  h3 {
-    color: #333;
-    margin-top: 0;
-    margin-bottom: 0.5rem;
-  }
-
-  .hint {
-    color: #999;
-    font-size: 0.9rem;
-    margin: 0 0 1rem 0;
-  }
-
-  .data-textarea {
-    width: 100%;
-    min-height: 150px;
-    padding: 0.75rem;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-family: monospace;
-    font-size: 0.9rem;
-    margin-bottom: 1rem;
-    resize: vertical;
-
-    &:focus {
-      outline: none;
-      border-color: #667eea;
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    }
-  }
-
-  button {
-    padding: 0.75rem 1.5rem;
-    background: #667eea;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: 500;
-
-    &:hover:not(:disabled) {
-      background: #5568d3;
-    }
-
-    &:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-  }
+.results-table td, .employees-table td, .candidates-table td, .penalty-table td {
+  padding: 14px 15px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-main);
 }
 
-.simulation-results {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-
-  h3 {
-    color: #333;
-    margin-bottom: 1rem;
-  }
-
-  .results-summary {
-    background: #f8f9fa;
-    padding: 1rem;
-    border-radius: 4px;
-    margin-bottom: 1.5rem;
-
-    p {
-      margin: 0.5rem 0;
-      color: #666;
-
-      strong {
-        color: #333;
-      }
-    }
-  }
-
-  h4 {
-    color: #333;
-    margin-top: 1.5rem;
-    margin-bottom: 1rem;
-  }
-
-  .btn-allocate {
-    padding: 0.5rem 1rem;
-    background: #28a745;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.9rem;
-
-    &:hover {
-      background: #218838;
-    }
-  }
+.results-table tr:hover, .employees-table tr:hover, .candidates-table tr:hover {
+  background-color: var(--primary-light);
 }
+
+/* =========================================
+   入力フォーム・ボタン（ボタンもグラデーション化！）
+   ========================================= */
+.input-field {
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 10px 12px;
+  font-size: 1rem;
+  transition: all 0.3s;
+  background-color: #fafafa;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+  background-color: #fff;
+}
+
+/* ボタン共通 */
+button {
+  border: none;
+  border-radius: 4px;
+  padding: 10px 20px;
+  font-size: 1rem;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s;
+}
+
+/* メインアクションボタン */
+.btn-add, .btn-update, .btn-allocate, button:not([class]) {
+  background: var(--primary-gradient);
+  color: #fff;
+}
+
+.btn-add:hover, .btn-update:hover, .btn-allocate:hover, button:not([class]):hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(118, 75, 162, 0.3);
+}
+
+/* サブ・キャンセル・削除ボタン */
+.btn-cancel {
+  background-color: var(--text-muted);
+  color: #fff;
+}
+.btn-cancel:hover { background-color: #555; }
+
+.btn-delete {
+  background-color: var(--danger);
+  color: #fff;
+}
+.btn-delete:hover { background-color: #b71c1c; }
+
+/* ドラッグ&ドロップ */
+.employee-card { transition: all 0.2s; user-select: none; }
+.employee-card:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(118, 75, 162, 0.3); }
+.department-zone:hover { box-shadow: 0 6px 16px rgba(102, 126, 234, 0.15); border-color: #667eea; }

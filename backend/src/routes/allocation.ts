@@ -601,4 +601,97 @@ router.get('/', authenticate, isAdmin, async (req: AuthRequest, res: Response) =
   }
 });
 
+router.post('/recalculate', authenticate, isAdmin, async (req: AuthRequest, res: Response) => {
+  try {
+    const { adjustedAllocations, newCandidates } = req.body;
+
+    if (!adjustedAllocations || typeof adjustedAllocations !== 'object') {
+      return res.status(400).json({ error: 'adjustedAllocations is required' });
+    }
+
+    const allDepts = await prisma.department.findMany();
+    const departmentIds = allDepts.map(d => d.id);
+
+    // 既存の配置を取得
+    const existingAllocations = await prisma.allocation.findMany({
+      include: { employee: { include: { user: true } }, department: true }
+    });
+
+    // 配置済みの従業員を取得
+    let employees = await prisma.employee.findMany({ include: { user: true } });
+
+    // 新規人材を追加
+    const newEmployees: any[] = [];
+    if (Array.isArray(newCandidates) && newCandidates.length > 0) {
+      for (const cand of newCandidates) {
+        newEmployees.push({
+          id: cand.employeeId,
+          name: cand.employeeName,
+          score: cand.score || 50,
+          skills: cand.skills || [],
+          user: { name: cand.employeeName }
+        });
+      }
+      employees = [...employees, ...newEmployees];
+    }
+
+    // 調整を反映した部署別割り当てマップを作成
+    const departments = await prisma.department.findMany({
+      where: { id: { in: departmentIds } }
+    });
+
+    const departmentAllocations = new Map<string, any[]>();
+    departments.forEach(dept => departmentAllocations.set(dept.id, []));
+
+    // 各従業員の調整後の配置先を決定
+    for (const emp of employees) {
+      const empId = String(emp.id);
+      const adjustedDeptId = adjustedAllocations[empId];
+
+      if (adjustedDeptId && departmentAllocations.has(adjustedDeptId)) {
+        const allocations = departmentAllocations.get(adjustedDeptId) || [];
+        allocations.push(emp);
+        departmentAllocations.set(adjustedDeptId, allocations);
+      }
+    }
+
+    const results = departments.map((department) => {
+      const allocatedEmployees = departmentAllocations.get(department.id) || [];
+      const state = calculateDepartmentState(department, allocatedEmployees);
+
+      return {
+        departmentId: department.id,
+        departmentName: department.name,
+        allocatedCount: allocatedEmployees.length,
+        fulfillmentRate: state.fulfillmentRate,
+        baseRevenue: state.baseRevenue,
+        finalRevenue: state.finalRevenue,
+        totalCost: state.totalCost,
+        profit: state.profit,
+        candidates: allocatedEmployees.map((emp: any) => ({
+          employeeId: emp.id,
+          employeeName: emp.user?.name || emp.name,
+          score: emp.score || 0,
+          departmentId: department.id,
+          departmentName: department.name
+        }))
+      };
+    });
+
+    // 全社合計を計算
+    const totalCompanyRevenue = results.reduce((sum: number, r: any) => sum + (r.finalRevenue || 0), 0);
+    const totalCompanyCost = results.reduce((sum: number, r: any) => sum + (r.totalCost || 0), 0);
+    const totalCompanyProfit = totalCompanyRevenue - totalCompanyCost;
+
+    res.json({
+      results,
+      totalCompanyRevenue,
+      totalCompanyCost,
+      totalCompanyProfit
+    });
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+});
+
 export default router;

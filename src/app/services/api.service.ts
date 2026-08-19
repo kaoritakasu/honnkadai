@@ -85,6 +85,10 @@ export class ApiService {
     return this.http.post<any>(`${this.apiUrl}/allocations/simulate-batch`, data, { headers: this.getHeaders() });
   }
 
+  recalculateSimulation(adjustments: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/allocations/recalculate`, adjustments, { headers: this.getHeaders() });
+  }
+
   createAllocation(employeeId: string, departmentId: string, reason: string, recommendedLearning: string): Observable<any> {
     return this.http.post(`${this.apiUrl}/allocations`, { employeeId, departmentId, reason, recommendedLearning }, { headers: this.getHeaders() });
   }

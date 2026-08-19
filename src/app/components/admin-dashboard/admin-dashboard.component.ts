@@ -26,6 +26,9 @@ export class AdminDashboardComponent implements OnInit {
   error = signal('');
   newDepartmentName: string = '';
   editingDeptId: string | null = null;
+  adjustedAllocations: Map<string, string> = new Map();
+  newCandidates: any[] = [];
+  draggedEmployee: any = null;
 
   constructor(
     private apiService: ApiService,
@@ -427,5 +430,113 @@ export class AdminDashboardComponent implements OnInit {
   logout() {
     this.authService.logout();
     this.router.navigate(['/login']);
+  }
+
+  dragStart(event: DragEvent, employee: any) {
+    this.draggedEmployee = employee;
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+    }
+  }
+
+  dragOver(event: DragEvent) {
+    event.preventDefault();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'move';
+    }
+  }
+
+  drop(event: DragEvent, department: any) {
+    event.preventDefault();
+    if (!this.draggedEmployee) return;
+
+    const originalDept = this.draggedEmployee.departmentId;
+    this.adjustedAllocations.set(this.draggedEmployee.employeeId, department.id);
+    this.draggedEmployee.departmentId = department.id;
+    this.draggedEmployee.departmentName = department.name;
+    this.recalculateResults();
+  }
+
+  addNewCandidate() {
+    const newEmployee = {
+      employeeId: 'NEW_' + Date.now(),
+      employeeName: '新規人材',
+      score: 50,
+      matchScore: 0,
+      departmentId: '',
+      departmentName: '',
+      isNew: true,
+      skills: [],
+      desiredDept: ''
+    };
+    this.newCandidates.push(newEmployee);
+  }
+
+  removeCandidate(index: number) {
+    this.newCandidates.splice(index, 1);
+    this.recalculateResults();
+  }
+
+  reassignCandidate(candidate: any, fromDept: string, toDept: string) {
+    if (candidate.isNew) {
+      candidate.departmentId = toDept;
+      const deptName = this.departments().find((d: any) => d.id === toDept)?.name || '';
+      candidate.departmentName = deptName;
+    } else {
+      this.adjustedAllocations.set(candidate.employeeId, toDept);
+      candidate.departmentId = toDept;
+      const deptName = this.departments().find((d: any) => d.id === toDept)?.name || '';
+      candidate.departmentName = deptName;
+    }
+    this.recalculateResults();
+  }
+
+  updateCandidateDepartment(candidate: any, deptId: string) {
+    candidate.departmentId = deptId;
+    const deptName = this.departments().find((d: any) => d.id === deptId)?.name || '';
+    candidate.departmentName = deptName;
+  }
+
+  private recalculateResults() {
+    if (!this.simulationResults || !Array.isArray(this.simulationResults)) return;
+
+    const adjustments = {
+      adjustedAllocations: Object.fromEntries(this.adjustedAllocations),
+      newCandidates: this.newCandidates.map((c: any) => ({
+        employeeId: c.employeeId,
+        employeeName: c.employeeName,
+        score: c.score,
+        departmentId: c.departmentId,
+        skills: c.skills
+      }))
+    };
+
+    this.loading.set(true);
+    this.apiService.recalculateSimulation(adjustments).subscribe({
+      next: (data: any) => {
+        if (data && data.results && Array.isArray(data.results)) {
+          this.simulationResults = data.results.map((result: any) => ({
+            ...result,
+            cost: result.totalCost
+          }));
+          this.simulationSummary = {
+            totalCompanyRevenue: data.totalCompanyRevenue,
+            totalCompanyCost: data.totalCompanyCost,
+            totalCompanyProfit: data.totalCompanyProfit
+          };
+        }
+        this.loading.set(false);
+      },
+      error: (error: any) => {
+        this.error.set(error.error?.error || 'Failed to recalculate results');
+        this.loading.set(false);
+      }
+    });
+  }
+
+  resetAdjustments() {
+    this.adjustedAllocations.clear();
+    this.newCandidates = [];
+    this.loadDashboard();
   }
 }
