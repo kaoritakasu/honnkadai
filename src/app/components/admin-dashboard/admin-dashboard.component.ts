@@ -273,29 +273,29 @@ export class AdminDashboardComponent implements OnInit {
     this.editingDeptId = null;
   }
 
-  updateDepartment(department: any) {
+ updateDepartment(department: any) {
     this.apiService.updateDepartment(department.id, {
       status: department.status || null,
       description: department.description || null,
-      optimalHeadcount: department.optimalHeadcount || null,
-      minHeadcount: department.minHeadcount || null,
-      weightSales: department.weightSales || null,
-      weightManagement: department.weightManagement || null,
-      weightExploration: department.weightExploration || null,
-      weightDevelopment: department.weightDevelopment || null,
-      baseRevenue: department.baseRevenue || null,
-      growthFactor: department.growthFactor || null,
+      optimalHeadcount: department.optimalHeadcount ? Number(department.optimalHeadcount) : null,
+      minHeadcount: department.minHeadcount ? Number(department.minHeadcount) : null,
+      weightSales: department.weightSales ? Number(department.weightSales) : null,
+      weightManagement: department.weightManagement ? Number(department.weightManagement) : null,
+      weightExploration: department.weightExploration ? Number(department.weightExploration) : null,
+      weightDevelopment: department.weightDevelopment ? Number(department.weightDevelopment) : null,
+      baseRevenue: department.baseRevenue ? Number(department.baseRevenue) : null,
+      growthFactor: department.growthFactor ? Number(department.growthFactor) : null,
       shortagePenalty: Array.isArray(department.shortagePenalty) ? department.shortagePenalty : null
     }).subscribe({
       next: () => {
         alert('部署を更新しました');
         this.error.set('');
         this.editingDeptId = null;
-        this.loadDashboard();
         this.loadDepartments();
       },
-      error: (error) => {
-        this.error.set(error.error?.error || 'Failed to update department');
+      error: (err) => {
+        console.error('Update error:', err);
+        this.error.set('部署の更新に失敗しました');
       }
     });
   }
