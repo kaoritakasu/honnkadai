@@ -125,6 +125,7 @@ h3 {
   /* 数字をグラデーションにする魔法のCSS */
   background: var(--primary-gradient);
   -webkit-background-clip: text;
+  background-clip: text; /* ← この1行を追加！ */
   -webkit-text-fill-color: transparent;
 }
 
@@ -221,7 +222,46 @@ button {
 }
 .btn-delete:hover { background-color: #b71c1c; }
 
-/* ドラッグ&ドロップ */
-.employee-card { transition: all 0.2s; user-select: none; }
-.employee-card:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(118, 75, 162, 0.3); }
-.department-zone:hover { box-shadow: 0 6px 16px rgba(102, 126, 234, 0.15); border-color: #667eea; }
+/* =========================================
+   ドラッグ&ドロップ関連スタイル
+   ========================================= */
+.drag-drop-container {
+  margin: 30px 0;
+}
+
+.department-zone {
+  transition: all 0.3s ease;
+  background-color: #ffffff;
+}
+
+.department-zone:hover {
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.15);
+  border-color: #667eea;
+}
+
+.employee-card {
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.employee-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(118, 75, 162, 0.3);
+}
+
+.adjustment-controls {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.adjustment-controls button {
+  white-space: nowrap;
+}
+
+/* 新しい人材の表示スタイル */
+.new-candidate-card {
+  background: linear-gradient(135deg, #fff8dc 0%, #fffacd 100%);
+  border: 2px dashed #ffa500;
+}

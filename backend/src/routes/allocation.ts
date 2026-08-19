@@ -173,6 +173,10 @@ const calculateDeltaProfit = (
   return newState.profit - currentState.profit;
 };
 
+// =========================================
+// ここから下をすべて上書きコピー＆ペーストしてください
+// =========================================
+
 router.post('/simulate', authenticate, isAdmin, async (req: AuthRequest, res: Response) => {
   try {
     const { departmentId, employees } = req.body;
@@ -189,7 +193,6 @@ router.post('/simulate', authenticate, isAdmin, async (req: AuthRequest, res: Re
 
     const optimalHeadcountValue = Math.max(department.optimalHeadcount ?? 0, 1);
 
-    // 利益最大化アルゴリズム：各候補者を部署に追加した場合のDelta Profitを計算
     const candidatesWithDeltaProfit: Array<{
       employee: any;
       matchScore: number;
@@ -200,7 +203,6 @@ router.post('/simulate', authenticate, isAdmin, async (req: AuthRequest, res: Re
       const matchScore = calculateMatchScore(emp, department);
       const deltaProfit = calculateDeltaProfit(department, [], emp);
 
-      // Delta Profit > 0の候補者のみを対象
       if (deltaProfit > 0) {
         candidatesWithDeltaProfit.push({
           employee: emp,
@@ -210,13 +212,8 @@ router.post('/simulate', authenticate, isAdmin, async (req: AuthRequest, res: Re
       }
     }
 
-    // Delta Profitが大きい順にソート
     candidatesWithDeltaProfit.sort((a, b) => b.deltaProfit - a.deltaProfit);
-
-    // 定員分だけ選択
     const selectedCandidates = candidatesWithDeltaProfit.slice(0, optimalHeadcountValue);
-
-    // 選択された候補者を配置して、部署の状態を計算
     const allocatedEmployees = selectedCandidates.map(c => c.employee);
     const state = calculateDepartmentState(department, allocatedEmployees);
 
@@ -234,7 +231,8 @@ router.post('/simulate', authenticate, isAdmin, async (req: AuthRequest, res: Re
       profit: Math.round(state.profit),
       candidates: selectedCandidates.map((c: any) => ({
         employeeId: c.employee.id,
-        employeeName: c.employee.user?.name || c.employee.name || 'Unknown',
+        // ★修正: 名前がない場合は社員IDを表示
+        employeeName: c.employee.user?.name || c.employee.id, 
         score: c.employee.score || 0,
         matchScore: c.matchScore,
         skills: c.employee.skills,
@@ -270,7 +268,6 @@ router.post('/simulate-multi', authenticate, isAdmin, async (req: AuthRequest, r
       return res.status(404).json({ error: 'No employees found' });
     }
 
-    // 全従業員と全部署のマッチスコアを計算
     const employeesWithScores = allEmployees.map((emp: any) => ({
       employee: emp,
       scores: departments.map(dept => ({
@@ -279,31 +276,10 @@ router.post('/simulate-multi', authenticate, isAdmin, async (req: AuthRequest, r
       }))
     }));
 
-    // (従業員, 部署, スコア) タプルを生成してスコア降順でソート
-    const candidatePairs: Array<{
-      employee: any;
-      department: any;
-      matchScore: number;
-    }> = [];
-
-    for (const empData of employeesWithScores) {
-      for (const scoreData of empData.scores) {
-        candidatePairs.push({
-          employee: empData.employee,
-          department: departments.find(d => d.id === scoreData.departmentId)!,
-          matchScore: scoreData.matchScore
-        });
-      }
-    }
-
-    // 利益最大化のGreedy法アルゴリズム
-    // 割り当て結果を管理
     const allocations = new Map<string, any[]>();
     const allocatedEmployeeIds = new Set<number>();
-
     departments.forEach(dept => allocations.set(dept.id, []));
 
-    // ループ: 利益が最も増加するペアを見つけて割り当てることを繰り返す
     let improved = true;
     while (improved) {
       improved = false;
@@ -311,19 +287,13 @@ router.post('/simulate-multi', authenticate, isAdmin, async (req: AuthRequest, r
       let bestEmployeeId: number | null = null;
       let bestDepartmentId: string | null = null;
 
-      // すべての未割当社員と定員に空きのある部署の組み合わせについて、Delta Profitを計算
       for (const empData of employeesWithScores) {
         if (allocatedEmployeeIds.has(empData.employee.id)) continue;
-
         for (const dept of departments) {
           const optimalHeadcount = dept.optimalHeadcount ?? 0;
           const currentAllocations = allocations.get(dept.id) || [];
-
-          // 定員に達していなければ、Delta Profitを計算
           if (currentAllocations.length < optimalHeadcount) {
             const deltaProfit = calculateDeltaProfit(dept, currentAllocations, empData.employee);
-
-            // 最大のDelta Profitを持つペアを見つける
             if (deltaProfit > bestDeltaProfit) {
               bestDeltaProfit = deltaProfit;
               bestEmployeeId = empData.employee.id;
@@ -333,7 +303,6 @@ router.post('/simulate-multi', authenticate, isAdmin, async (req: AuthRequest, r
         }
       }
 
-      // 最良のペアが見つかり、かつ利益増加がプラスの場合、確定させる
       if (bestDeltaProfit > 0 && bestEmployeeId && bestDepartmentId) {
         const emp = employeesWithScores.find(e => e.employee.id === bestEmployeeId);
         const deptAllocations = allocations.get(bestDepartmentId) || [];
@@ -344,7 +313,6 @@ router.post('/simulate-multi', authenticate, isAdmin, async (req: AuthRequest, r
       }
     }
 
-    // 結果の作成
     const results = [];
     let totalCompanyRevenue = 0;
     let totalCompanyCost = 0;
@@ -373,7 +341,8 @@ router.post('/simulate-multi', authenticate, isAdmin, async (req: AuthRequest, r
           const matchScoreForDept = scoreData?.scores.find((s: any) => s.departmentId === department.id)?.matchScore || 0;
           return {
             employeeId: emp.id,
-            employeeName: emp.user.name,
+            // ★修正: 名前がない場合は社員IDを表示
+            employeeName: emp.user?.name || emp.id, 
             score: emp.score || 0,
             matchScore: matchScoreForDept,
             skills: emp.skills,
@@ -381,14 +350,12 @@ router.post('/simulate-multi', authenticate, isAdmin, async (req: AuthRequest, r
           };
         })
       };
-
       results.push(resultObj);
       totalCompanyRevenue += Math.round(resultObj.finalRevenue);
       totalCompanyCost += resultObj.totalCost;
       totalCompanyProfit += resultObj.profit;
     }
 
-    // 【式6】全社売上 = 各事業部の最終売上の合計
     res.json({
       results,
       totalCompanyRevenue,
@@ -405,19 +372,14 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
     let departmentIds: string[] = [];
     let employees: any[] = [];
 
-    // リクエスト形式を判定（構造化形式か配列形式か）
     if (Array.isArray(req.body)) {
-      // フロントエンドが直接配列を送信した場合（従業員配列のみ）
       employees = req.body;
-      // 全部署を使用
       const allDepts = await prisma.department.findMany();
       departmentIds = allDepts.map(d => d.id);
     } else if (req.body.departmentIds && req.body.employees) {
-      // 構造化形式: { departmentIds, employees }
       departmentIds = req.body.departmentIds;
       employees = req.body.employees;
     } else if (req.body.departmentIds && Array.isArray(req.body.departmentIds)) {
-      // departmentIds のみが指定された場合（全社員を使用）
       departmentIds = req.body.departmentIds;
       const allEmps = await prisma.employee.findMany({ include: { user: true } });
       employees = allEmps;
@@ -437,22 +399,10 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
       return res.status(404).json({ error: 'No departments found' });
     }
 
-    // 全従業員と全部署のマッチスコアを計算し、(従業員, 部署, スコア) タプルを生成
-    const candidatePairs: Array<{
-      employee: any;
-      department: any;
-      matchScore: number;
-      contribution: number;
-    }> = [];
-
-    // 利益最大化のGreedy法アルゴリズム
-    // 各部署の割り当て結果を管理
     const allocations = new Map<string, any[]>();
     const allocatedEmployeeIds = new Set<number | string>();
-
     departments.forEach(dept => allocations.set(dept.id, []));
 
-    // ループ: 利益が最も増加するペアを見つけて割り当てることを繰り返す
     let improved = true;
     while (improved) {
       improved = false;
@@ -460,7 +410,6 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
       let bestEmployeeId: string | null = null;
       let bestDepartmentId: string | null = null;
 
-      // すべての未割当社員と定員に空きのある部署の組み合わせについて、Delta Profitを計算
       for (const emp of employees) {
         const empId = emp.id || emp.employeeId;
         if (allocatedEmployeeIds.has(empId)) continue;
@@ -469,11 +418,8 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
           const optimalHeadcount = dept.optimalHeadcount ?? 0;
           const currentAllocations = allocations.get(dept.id) || [];
 
-          // 定員に達していなければ、Delta Profitを計算
           if (currentAllocations.length < optimalHeadcount) {
             const deltaProfit = calculateDeltaProfit(dept, currentAllocations, emp);
-
-            // 最大のDelta Profitを持つペアを見つける
             if (deltaProfit > bestDeltaProfit) {
               bestDeltaProfit = deltaProfit;
               bestEmployeeId = empId;
@@ -483,7 +429,6 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
         }
       }
 
-      // 最良のペアが見つかり、かつ利益増加がプラスの場合、確定させる
       if (bestDeltaProfit > 0 && bestEmployeeId && bestDepartmentId) {
         const emp = employees.find(e => (e.id || e.employeeId) === bestEmployeeId);
         const deptAllocations = allocations.get(bestDepartmentId) || [];
@@ -494,7 +439,6 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
       }
     }
 
-    // 結果の作成
     const results = departments.map((department) => {
       const allocatedEmployees = allocations.get(department.id) || [];
       const state = calculateDepartmentState(department, allocatedEmployees);
@@ -514,7 +458,8 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
         profit: Math.round(state.profit),
         candidates: allocatedEmployees.map((emp: any) => ({
           employeeId: emp.id || emp.employeeId,
-          employeeName: emp.name || emp.user?.name || 'Unknown',
+          // ★修正: 名前がない場合は社員IDを表示
+          employeeName: emp.user?.name || emp.id || emp.employeeId, 
           score: emp.score || 0,
           skills: emp.skills,
           desiredDept: emp.desiredDept,
@@ -522,9 +467,6 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
       };
     });
 
-    // 【式6】全社売上 = 各事業部の最終売上の合計
-    const totalCompanyRevenue = results.reduce((sum, result) => sum + Math.round(results.find(r => r.departmentId === result.departmentId)?.finalRevenue ?? 0), 0);
-    // より効率的な計算
     const totalCompanyRevenue_Optimized = results.reduce((sum, result) => sum + (Math.round(result.finalRevenue)), 0);
 
     res.json({
@@ -538,150 +480,89 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
   }
 });
 
-router.post('/', authenticate, isAdmin, async (req: AuthRequest, res: Response) => {
-  try {
-    const { employeeId, departmentId, reason, recommendedLearning } = req.body;
-
-    const allocation = await prisma.allocation.create({
-      data: {
-        employeeId,
-        departmentId,
-        status: 'ASSIGNED',
-        reason,
-        recommendedLearning,
-      },
-      include: { employee: { include: { user: true } }, department: true },
-    });
-
-    await prisma.feedback.create({
-      data: {
-        employeeId,
-        allocationId: allocation.id,
-      },
-    });
-
-    res.json(allocation);
-  } catch (error) {
-    res.status(400).json({ error: (error as Error).message });
-  }
-});
-
-router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
-  try {
-    const employee = await prisma.employee.findUnique({
-      where: { userId: req.user!.id },
-    });
-
-    if (!employee) return res.status(404).json({ error: 'Employee not found' });
-
-    const allocations = await prisma.allocation.findMany({
-      where: { employeeId: employee.id },
-      include: { department: true, feedback: true },
-    });
-
-    res.json(allocations);
-  } catch (error) {
-    res.status(400).json({ error: (error as Error).message });
-  }
-});
-
-router.get('/', authenticate, isAdmin, async (req: AuthRequest, res: Response) => {
-  try {
-    const allocations = await prisma.allocation.findMany({
-      include: {
-        employee: { include: { user: true } },
-        department: true,
-        feedback: true,
-      },
-    });
-
-    res.json(allocations);
-  } catch (error) {
-    res.status(400).json({ error: (error as Error).message });
-  }
-});
-
 router.post('/recalculate', authenticate, isAdmin, async (req: AuthRequest, res: Response) => {
   try {
-    const { adjustedAllocations, newCandidates } = req.body;
+    let requestedData = req.body.results || req.body.departments || req.body;
 
-    if (!adjustedAllocations || typeof adjustedAllocations !== 'object') {
-      return res.status(400).json({ error: 'adjustedAllocations is required' });
+    // ▼フロントエンドのドラッグ＆ドロップデータ形式に対応
+    if (req.body.adjustedAllocations) {
+      requestedData = Object.entries(req.body.adjustedAllocations).map(([deptId, emps]) => ({
+        departmentId: deptId,
+        candidates: emps
+      }));
+    } else if (req.body.data && Array.isArray(req.body.data)) {
+      requestedData = req.body.data;
     }
 
-    const allDepts = await prisma.department.findMany();
-    const departmentIds = allDepts.map(d => d.id);
-
-    // 既存の配置を取得
-    const existingAllocations = await prisma.allocation.findMany({
-      include: { employee: { include: { user: true } }, department: true }
-    });
-
-    // 配置済みの従業員を取得
-    let employees = await prisma.employee.findMany({ include: { user: true } });
-
-    // 新規人材を追加
-    const newEmployees: any[] = [];
-    if (Array.isArray(newCandidates) && newCandidates.length > 0) {
-      for (const cand of newCandidates) {
-        newEmployees.push({
-          id: cand.employeeId,
-          name: cand.employeeName,
-          score: cand.score || 50,
-          skills: cand.skills || [],
-          user: { name: cand.employeeName }
-        });
-      }
-      employees = [...employees, ...newEmployees];
+    if (!Array.isArray(requestedData)) {
+      console.error('エラー: 送られてきたデータが配列ではありません', req.body);
+      return res.status(400).json({ error: 'Invalid data format: Expected an array' });
     }
 
-    // 調整を反映した部署別割り当てマップを作成
-    const departments = await prisma.department.findMany({
+    const departmentIds = requestedData.map((d: any) => d.departmentId || d.id).filter(id => id);
+
+    const dbDepartments = await prisma.department.findMany({
       where: { id: { in: departmentIds } }
     });
 
-    const departmentAllocations = new Map<string, any[]>();
-    departments.forEach(dept => departmentAllocations.set(dept.id, []));
-
-    // 各従業員の調整後の配置先を決定
-    for (const emp of employees) {
-      const empId = String(emp.id);
-      const adjustedDeptId = adjustedAllocations[empId];
-
-      if (adjustedDeptId && departmentAllocations.has(adjustedDeptId)) {
-        const allocations = departmentAllocations.get(adjustedDeptId) || [];
-        allocations.push(emp);
-        departmentAllocations.set(adjustedDeptId, allocations);
-      }
-    }
-
-    const results = departments.map((department) => {
-      const allocatedEmployees = departmentAllocations.get(department.id) || [];
-      const state = calculateDepartmentState(department, allocatedEmployees);
-
-      return {
-        departmentId: department.id,
-        departmentName: department.name,
-        allocatedCount: allocatedEmployees.length,
-        fulfillmentRate: state.fulfillmentRate,
-        baseRevenue: state.baseRevenue,
-        finalRevenue: state.finalRevenue,
-        totalCost: state.totalCost,
-        profit: state.profit,
-        candidates: allocatedEmployees.map((emp: any) => ({
-          employeeId: emp.id,
-          employeeName: emp.user?.name || emp.name,
-          score: emp.score || 0,
-          departmentId: department.id,
-          departmentName: department.name
-        }))
-      };
+    const allEmployeesDB = await prisma.employee.findMany({
+      include: { user: true }
     });
 
-    // 全社合計を計算
-    const totalCompanyRevenue = results.reduce((sum: number, r: any) => sum + (r.finalRevenue || 0), 0);
-    const totalCompanyCost = results.reduce((sum: number, r: any) => sum + (r.totalCost || 0), 0);
-    const totalCompanyProfit = totalCompanyRevenue - totalCompanyCost;
+    const results = [];
+    let totalCompanyRevenue = 0;
+    let totalCompanyCost = 0;
+    let totalCompanyProfit = 0;
+
+    for (const reqDept of requestedData) {
+      const deptId = reqDept.departmentId || reqDept.id;
+      const dbDept = dbDepartments.find(d => d.id === deptId);
+      if (!dbDept) continue;
+
+      const candidates = reqDept.candidates || reqDept.employees || [];
+
+      // DBに社員がいなければ、画面から送られてきたデータをそのまま計算に使う
+      const allocatedEmployees = candidates.map((c: any) => {
+        const empId = c.employeeId || c.id;
+        const dbEmp = allEmployeesDB.find((e: any) => e.id === empId || e.employeeId === empId);
+        return dbEmp || c;
+      });
+
+      const state = calculateDepartmentState(dbDept, allocatedEmployees);
+
+      const resultObj = {
+        departmentId: dbDept.id,
+        departmentName: dbDept.name,
+        allocatedCount: state.allocatedCount,
+        minHeadcount: dbDept.minHeadcount ?? 0,
+        optimalHeadcount: dbDept.optimalHeadcount ?? 0,
+        fulfillmentRate: Math.round(state.fulfillmentRate),
+        departmentCapability: Math.round(state.departmentCapability),
+        baseRevenue: Math.round(state.baseRevenue),
+        shortagePenaltyFactor: state.shortagePenaltyFactor,
+        overallocationPenaltyFactor: state.overallocationPenaltyFactor,
+        finalRevenue: Math.round(state.finalRevenue),
+        totalCost: Math.round(state.totalCost),
+        profit: Math.round(state.profit),
+        candidates: allocatedEmployees.map((emp: any) => ({
+          employeeId: emp.id || emp.employeeId,
+          employeeName: emp.user?.name || emp.name || emp.employeeName || emp.id || emp.employeeId || 'Unknown',
+          score: emp.score || 0,
+          skills: emp.skills,
+          desiredDept: emp.desiredDept,
+          salesForce: emp.salesForce,
+          managementForce: emp.managementForce,
+          explorationForce: emp.explorationForce,
+          developmentForce: emp.developmentForce,
+          laborCost: emp.laborCost
+        }))
+      };
+
+      results.push(resultObj);
+      totalCompanyRevenue += Math.round(resultObj.finalRevenue);
+      totalCompanyCost += resultObj.totalCost;
+      totalCompanyProfit += resultObj.profit;
+    }
 
     res.json({
       results,
@@ -690,6 +571,7 @@ router.post('/recalculate', authenticate, isAdmin, async (req: AuthRequest, res:
       totalCompanyProfit
     });
   } catch (error) {
+    console.error('--- RECALCULATE ERROR ---', error);
     res.status(400).json({ error: (error as Error).message });
   }
 });

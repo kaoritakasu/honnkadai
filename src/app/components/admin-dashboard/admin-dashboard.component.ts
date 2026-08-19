@@ -2,13 +2,14 @@ import { Component, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { CdkDragDrop, moveItemInArray, transferArrayItem, DragDropModule } from '@angular/cdk/drag-drop';
 import { ApiService } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, DragDropModule],
   templateUrl: './admin-dashboard.component.html',
   styleUrl: './admin-dashboard.component.scss'
 })
@@ -446,15 +447,44 @@ export class AdminDashboardComponent implements OnInit {
     }
   }
 
-  drop(event: DragEvent, department: any) {
-    event.preventDefault();
-    if (!this.draggedEmployee) return;
+  drop(event: CdkDragDrop<any[]>, targetId?: any) {
+    // 1. 画面上の配列（リスト）のアイテムを移動する
+    if (event.previousContainer === event.container) {
+      moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+    } else {
+      transferArrayItem(
+        event.previousContainer.data,
+        event.container.data,
+        event.previousIndex,
+        event.currentIndex
+      );
+    }
 
-    const originalDept = this.draggedEmployee.departmentId;
-    this.adjustedAllocations.set(this.draggedEmployee.employeeId, department.id);
-    this.draggedEmployee.departmentId = department.id;
-    this.draggedEmployee.departmentName = department.name;
-    this.recalculateResults();
+    // 2. 移動後の最新の this.simulationResults 全体をバックエンドに送って再計算
+    if (this.simulationResults) {
+      this.apiService.recalculate({ data: this.simulationResults }).subscribe({
+        next: (data: any) => {
+          if (data && data.results) {
+            this.simulationResults = data.results.map((result: any) => ({
+              ...result,
+              cost: result.totalCost
+            }));
+
+            if (data.totalCompanyRevenue !== undefined) {
+              this.simulationSummary = {
+                totalCompanyRevenue: data.totalCompanyRevenue,
+                totalCompanyCost: data.totalCompanyCost,
+                totalCompanyProfit: data.totalCompanyProfit
+              };
+            }
+          }
+        },
+        error: (err) => {
+          console.error('再計算エラー:', err);
+          this.error.set('再計算に失敗しました');
+        }
+      });
+    }
   }
 
   addNewCandidate() {
@@ -500,30 +530,21 @@ export class AdminDashboardComponent implements OnInit {
   private recalculateResults() {
     if (!this.simulationResults || !Array.isArray(this.simulationResults)) return;
 
-    const adjustments = {
-      adjustedAllocations: Object.fromEntries(this.adjustedAllocations),
-      newCandidates: this.newCandidates.map((c: any) => ({
-        employeeId: c.employeeId,
-        employeeName: c.employeeName,
-        score: c.score,
-        departmentId: c.departmentId,
-        skills: c.skills
-      }))
-    };
-
     this.loading.set(true);
-    this.apiService.recalculateSimulation(adjustments).subscribe({
+    this.apiService.recalculateSimulation({ results: this.simulationResults }).subscribe({
       next: (data: any) => {
         if (data && data.results && Array.isArray(data.results)) {
           this.simulationResults = data.results.map((result: any) => ({
             ...result,
             cost: result.totalCost
           }));
-          this.simulationSummary = {
-            totalCompanyRevenue: data.totalCompanyRevenue,
-            totalCompanyCost: data.totalCompanyCost,
-            totalCompanyProfit: data.totalCompanyProfit
-          };
+          if (data.totalCompanyRevenue !== undefined) {
+            this.simulationSummary = {
+              totalCompanyRevenue: data.totalCompanyRevenue,
+              totalCompanyCost: data.totalCompanyCost,
+              totalCompanyProfit: data.totalCompanyProfit
+            };
+          }
         }
         this.loading.set(false);
       },
