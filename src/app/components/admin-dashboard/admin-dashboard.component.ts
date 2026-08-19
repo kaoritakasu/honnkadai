@@ -24,6 +24,7 @@ export class AdminDashboardComponent implements OnInit {
   activeTab = signal('dashboard');
   error = signal('');
   newDepartmentName: string = '';
+  editingDeptId: string | null = null;
 
   constructor(
     private apiService: ApiService,
@@ -46,7 +47,13 @@ export class AdminDashboardComponent implements OnInit {
 
   loadDepartments() {
     this.apiService.getDepartments().subscribe({
-      next: (data) => this.departments.set(data),
+      next: (data) => {
+        const deptWithPenalty = data.map((dept: any) => ({
+          ...dept,
+          shortagePenalty: dept.shortagePenalty && Array.isArray(dept.shortagePenalty) ? dept.shortagePenalty : []
+        }));
+        this.departments.set(deptWithPenalty);
+      },
       error: (error) => this.error.set(error.error?.error || 'Failed to load departments')
     });
   }
@@ -195,8 +202,11 @@ export class AdminDashboardComponent implements OnInit {
 
     const convertedData = parsed.map(emp => ({
       employeeId: typeof emp.employeeId === 'string' ? parseInt(emp.employeeId.replace(/\D/g, '')) || 0 : emp.employeeId,
-      score: Math.round((emp.salesForce + emp.managementForce + emp.explorationForce + emp.developmentForce) / 4),
-      desiredDept: ''
+      salesForce: emp.salesForce,
+      managementForce: emp.managementForce,
+      explorationForce: emp.explorationForce,
+      developmentForce: emp.developmentForce,
+      laborCost: emp.laborCost
     }));
 
     this.loading.set(true);
@@ -227,7 +237,7 @@ export class AdminDashboardComponent implements OnInit {
     }).subscribe({
       next: (data) => {
         const currentDepts = this.departments();
-        this.departments.set([...currentDepts, data]);
+        this.departments.set([...currentDepts, { ...data, shortagePenalty: [] }]);
         this.newDepartmentName = '';
         this.error.set('');
         this.loadDashboard();
@@ -238,16 +248,49 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
+  addPenaltyRule(department: any) {
+    if (!Array.isArray(department.shortagePenalty)) {
+      department.shortagePenalty = [];
+    }
+    department.shortagePenalty.push({
+      threshold: 100,
+      condition: 'over',
+      factor: 1.0
+    });
+  }
+
+  removePenaltyRule(department: any, index: number) {
+    if (Array.isArray(department.shortagePenalty)) {
+      department.shortagePenalty.splice(index, 1);
+    }
+  }
+
+  startEdit(deptId: string) {
+    this.editingDeptId = deptId;
+  }
+
+  cancelEdit() {
+    this.editingDeptId = null;
+  }
+
   updateDepartment(department: any) {
     this.apiService.updateDepartment(department.id, {
       status: department.status || null,
       description: department.description || null,
       optimalHeadcount: department.optimalHeadcount || null,
-      minHeadcount: department.minHeadcount || null
+      minHeadcount: department.minHeadcount || null,
+      weightSales: department.weightSales || null,
+      weightManagement: department.weightManagement || null,
+      weightExploration: department.weightExploration || null,
+      weightDevelopment: department.weightDevelopment || null,
+      baseRevenue: department.baseRevenue || null,
+      growthFactor: department.growthFactor || null,
+      shortagePenalty: Array.isArray(department.shortagePenalty) ? department.shortagePenalty : null
     }).subscribe({
       next: () => {
         alert('部署を更新しました');
         this.error.set('');
+        this.editingDeptId = null;
         this.loadDashboard();
         this.loadDepartments();
       },

@@ -12,23 +12,29 @@ interface SimulationRequest {
 
 interface BatchSimulationRequest {
   employeeId: number;
-  score: number;
-  desiredDept: string;
+  salesForce: number;
+  managementForce: number;
+  explorationForce: number;
+  developmentForce: number;
+  laborCost: number;
 }
 
-// Simulation logic
+interface PenaltyRule {
+  threshold: number;
+  condition: 'over' | 'under';
+  factor: number;
+}
+
 const calculateMatchScore = (employee: any, department: any): number => {
   let score = 0;
   const employeeScore = employee.score || 0;
 
-  // Score requirement matching
   if (employeeScore >= (department.requiredScore || 0)) {
     score += 50;
   } else {
     score += Math.max(0, (employeeScore / (department.requiredScore || 1)) * 50);
   }
 
-  // Skills matching
   const requiredSkills = department.requiredSkills || [];
   const employeeSkills = employee.skills || [];
   if (requiredSkills.length > 0) {
@@ -43,7 +49,22 @@ const calculateMatchScore = (employee: any, department: any): number => {
   return Math.round(score);
 };
 
-// Admin: Run simulation
+const calculateCorrectionFactor = (fulfillmentRate: number, shortagePenaltyRules: any[]): number => {
+  if (!Array.isArray(shortagePenaltyRules) || shortagePenaltyRules.length === 0) {
+    return 1.0;
+  }
+
+  for (const rule of shortagePenaltyRules) {
+    if (rule.condition === 'over' && fulfillmentRate > rule.threshold) {
+      return rule.factor;
+    } else if (rule.condition === 'under' && fulfillmentRate < rule.threshold) {
+      return rule.factor;
+    }
+  }
+
+  return 1.0;
+};
+
 router.post('/simulate', authenticate, isAdmin, async (req: AuthRequest, res: Response) => {
   try {
     const { departmentId, numPositions } = req.body as SimulationRequest;
@@ -89,7 +110,6 @@ router.post('/simulate', authenticate, isAdmin, async (req: AuthRequest, res: Re
   }
 });
 
-// Admin: Run batch simulation
 router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, res: Response) => {
   try {
     const batchData = req.body as BatchSimulationRequest[];
@@ -103,45 +123,56 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
       return res.status(404).json({ error: 'No departments found' });
     }
 
-    const targetDept = departments[0];
-    const employees = await prisma.employee.findMany({
-      include: { user: true },
+    const results = departments.map((department) => {
+      const allocatedCount = batchData.length;
+
+      const employeeContributions = batchData.map((emp) => ({
+        employeeContribution: (emp.salesForce * (department.weightSales ?? 0)) +
+          (emp.managementForce * (department.weightManagement ?? 0)) +
+          (emp.explorationForce * (department.weightExploration ?? 0)) +
+          (emp.developmentForce * (department.weightDevelopment ?? 0)),
+        laborCost: emp.laborCost
+      }));
+
+      const departmentCapability = employeeContributions.reduce((sum, ec) => sum + ec.employeeContribution, 0);
+
+      const baseRevenue = (department.baseRevenue ?? 0) * (1 + ((departmentCapability / 100) * (department.growthFactor ?? 0)));
+
+      const optimalHeadcountValue = Math.max(department.optimalHeadcount ?? 0, 1);
+      const fulfillmentRate = (allocatedCount / optimalHeadcountValue) * 100;
+
+      const penaltyRules = Array.isArray(department.shortagePenalty) ? department.shortagePenalty as unknown as PenaltyRule[] : [];
+      const correctionFactor = calculateCorrectionFactor(fulfillmentRate, penaltyRules);
+
+      const finalRevenue = baseRevenue * correctionFactor;
+
+      const totalCost = employeeContributions.reduce((sum, ec) => sum + (ec.laborCost * 3), 0);
+
+      const profit = finalRevenue - totalCost;
+
+      return {
+        departmentId: department.id,
+        departmentName: department.name,
+        allocatedCount,
+        optimalHeadcount: department.optimalHeadcount ?? 0,
+        fulfillmentRate: Math.round(fulfillmentRate),
+        departmentCapability: Math.round(departmentCapability),
+        baseRevenue: Math.round(baseRevenue),
+        correctionFactor,
+        finalRevenue: Math.round(finalRevenue),
+        totalCost: Math.round(totalCost),
+        profit: Math.round(profit)
+      };
     });
 
-    const batchDataMap = new Map(batchData.map(d => [d.employeeId, d]));
-    const filteredEmployees = employees.filter(emp => batchDataMap.has(parseInt(emp.id, 10)));
-
-    const candidates = filteredEmployees
-      .map((emp) => ({
-        employee: emp,
-        matchScore: calculateMatchScore(emp, targetDept),
-      }))
-      .sort((a, b) => {
-        if (b.matchScore !== a.matchScore) return b.matchScore - a.matchScore;
-        return (b.employee.score || 0) - (a.employee.score || 0);
-      });
-
-    const totalExpectedRevenue = targetDept.expectedRevenue * candidates.length;
-
     res.json({
-      department: targetDept,
-      candidates: candidates.map((c) => ({
-        employeeId: c.employee.id,
-        employeeName: c.employee.user.name,
-        score: c.employee.score || 0,
-        matchScore: c.matchScore,
-        skills: c.employee.skills,
-        desiredDept: c.employee.desiredDept,
-      })),
-      totalExpectedRevenue,
-      growthRate: (candidates.length / employees.length) * 100,
+      results
     });
   } catch (error) {
     res.status(400).json({ error: (error as Error).message });
   }
 });
 
-// Admin: Create allocation
 router.post('/', authenticate, isAdmin, async (req: AuthRequest, res: Response) => {
   try {
     const { employeeId, departmentId, reason, recommendedLearning } = req.body;
@@ -157,7 +188,6 @@ router.post('/', authenticate, isAdmin, async (req: AuthRequest, res: Response) 
       include: { employee: { include: { user: true } }, department: true },
     });
 
-    // Create feedback entry
     await prisma.feedback.create({
       data: {
         employeeId,
@@ -171,7 +201,6 @@ router.post('/', authenticate, isAdmin, async (req: AuthRequest, res: Response) 
   }
 });
 
-// Get own allocations
 router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const employee = await prisma.employee.findUnique({
@@ -191,7 +220,6 @@ router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
   }
 });
 
-// Admin: Get all allocations
 router.get('/', authenticate, isAdmin, async (req: AuthRequest, res: Response) => {
   try {
     const allocations = await prisma.allocation.findMany({

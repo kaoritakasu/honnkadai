@@ -77,51 +77,263 @@
               <div class="dept-header">
                 <h3>{{ dept.name }}</h3>
               </div>
-              <div class="dept-fields" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                <div class="field-group" style="flex: 0 1 auto; min-width: 120px;">
-                  <label>状態</label>
-                  <input
-                    type="text"
-                    [(ngModel)]="dept.status"
-                    placeholder="状態"
-                    class="input-field"
-                    style="width: 100%; padding: 5px; box-sizing: border-box;"
-                  />
+
+              @if (editingDeptId === dept.id) {
+                <div class="dept-fields" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                  <div class="field-group" style="flex: 0 1 auto; min-width: 120px;">
+                    <label>状態</label>
+                    <input
+                      type="text"
+                      [(ngModel)]="dept.status"
+                      placeholder="状態"
+                      class="input-field"
+                      style="width: 100%; padding: 5px; box-sizing: border-box;"
+                    />
+                  </div>
+                  <div class="field-group" style="flex: 0 1 auto; min-width: 150px;">
+                    <label>説明</label>
+                    <input
+                      type="text"
+                      [(ngModel)]="dept.description"
+                      placeholder="説明"
+                      class="input-field"
+                      style="width: 100%; padding: 5px; box-sizing: border-box;"
+                    />
+                  </div>
+                  <div class="field-group" style="flex: 0 1 auto; min-width: 100px;">
+                    <label>適性人数</label>
+                    <input
+                      type="number"
+                      [(ngModel)]="dept.optimalHeadcount"
+                      placeholder="人数"
+                      class="input-field"
+                      style="width: 100%; padding: 5px; box-sizing: border-box;"
+                    />
+                  </div>
+                  <div class="field-group" style="flex: 0 1 auto; min-width: 120px;">
+                    <label>最低配置人数</label>
+                    <input
+                      type="number"
+                      [(ngModel)]="dept.minHeadcount"
+                      placeholder="人数"
+                      class="input-field"
+                      style="width: 100%; padding: 5px; box-sizing: border-box;"
+                    />
+                  </div>
+                  <div class="field-group" style="flex: 0 1 auto; min-width: 120px;">
+                    <label>営業力の重み</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      [(ngModel)]="dept.weightSales"
+                      placeholder="営業力"
+                      class="input-field"
+                      style="width: 100%; padding: 5px; box-sizing: border-box;"
+                    />
+                  </div>
+                  <div class="field-group" style="flex: 0 1 auto; min-width: 120px;">
+                    <label>管理力の重み</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      [(ngModel)]="dept.weightManagement"
+                      placeholder="管理力"
+                      class="input-field"
+                      style="width: 100%; padding: 5px; box-sizing: border-box;"
+                    />
+                  </div>
+                  <div class="field-group" style="flex: 0 1 auto; min-width: 120px;">
+                    <label>開拓力の重み</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      [(ngModel)]="dept.weightExploration"
+                      placeholder="開拓力"
+                      class="input-field"
+                      style="width: 100%; padding: 5px; box-sizing: border-box;"
+                    />
+                  </div>
+                  <div class="field-group" style="flex: 0 1 auto; min-width: 120px;">
+                    <label>育成力の重み</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      [(ngModel)]="dept.weightDevelopment"
+                      placeholder="育成力"
+                      class="input-field"
+                      style="width: 100%; padding: 5px; box-sizing: border-box;"
+                    />
+                  </div>
+                  <div class="field-group" style="flex: 0 1 auto; min-width: 120px;">
+                    <label>基準売上</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      [(ngModel)]="dept.baseRevenue"
+                      placeholder="基準売上"
+                      class="input-field"
+                      style="width: 100%; padding: 5px; box-sizing: border-box;"
+                    />
+                  </div>
+                  <div class="field-group" style="flex: 0 1 auto; min-width: 120px;">
+                    <label>成長係数</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      [(ngModel)]="dept.growthFactor"
+                      placeholder="成長係数"
+                      class="input-field"
+                      style="width: 100%; padding: 5px; box-sizing: border-box;"
+                    />
+                  </div>
+                  <button (click)="updateDepartment(dept)" class="btn-update" style="align-self: flex-end; margin-top: 20px;">
+                    更新
+                  </button>
+                  <button (click)="cancelEdit()" class="btn-cancel" style="align-self: flex-end; margin-top: 20px; padding: 8px 16px; background-color: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    キャンセル
+                  </button>
                 </div>
-                <div class="field-group" style="flex: 0 1 auto; min-width: 150px;">
-                  <label>説明</label>
-                  <input
-                    type="text"
-                    [(ngModel)]="dept.description"
-                    placeholder="説明"
-                    class="input-field"
-                    style="width: 100%; padding: 5px; box-sizing: border-box;"
-                  />
+
+                <div class="shortage-penalty-section" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ccc;">
+                  <h4>人員不足ペナルティ条件</h4>
+                  <table class="penalty-table" style="width: 100%; border-collapse: collapse; margin: 10px 0;">
+                    <thead>
+                      <tr style="background-color: #f5f5f5;">
+                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">充足率(%)</th>
+                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">条件</th>
+                        <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">補正係数</th>
+                        <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">操作</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (rule of dept.shortagePenalty || []; track $index) {
+                        <tr>
+                          <td style="border: 1px solid #ddd; padding: 8px;">
+                            <input
+                              type="number"
+                              [(ngModel)]="rule.threshold"
+                              placeholder="100"
+                              class="input-field"
+                              style="width: 100%; padding: 5px; box-sizing: border-box;"
+                            />
+                          </td>
+                          <td style="border: 1px solid #ddd; padding: 8px;">
+                            <select
+                              [(ngModel)]="rule.condition"
+                              class="input-field"
+                              style="width: 100%; padding: 5px; box-sizing: border-box;"
+                            >
+                              <option value="over">以上</option>
+                              <option value="under">未満</option>
+                            </select>
+                          </td>
+                          <td style="border: 1px solid #ddd; padding: 8px;">
+                            <input
+                              type="number"
+                              step="0.01"
+                              [(ngModel)]="rule.factor"
+                              placeholder="1.0"
+                              class="input-field"
+                              style="width: 100%; padding: 5px; box-sizing: border-box;"
+                            />
+                          </td>
+                          <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">
+                            <button
+                              (click)="removePenaltyRule(dept, $index)"
+                              class="btn-delete"
+                              style="padding: 5px 10px; background-color: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer;"
+                            >
+                              削除
+                            </button>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                  <button
+                    (click)="addPenaltyRule(dept)"
+                    class="btn-add-rule"
+                    style="margin-top: 10px; padding: 8px 16px; background-color: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer;"
+                  >
+                    ＋ ペナルティ条件を追加
+                  </button>
                 </div>
-                <div class="field-group" style="flex: 0 1 auto; min-width: 100px;">
-                  <label>適性人数</label>
-                  <input
-                    type="number"
-                    [(ngModel)]="dept.optimalHeadcount"
-                    placeholder="人数"
-                    class="input-field"
-                    style="width: 100%; padding: 5px; box-sizing: border-box;"
-                  />
+              } @else {
+                <div class="dept-view" style="padding: 15px; border: 1px solid #eee; border-radius: 4px;">
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
+                    <div>
+                      <label style="display: block; font-weight: bold; margin-bottom: 5px;">状態</label>
+                      <p style="margin: 0;">{{ dept.status || '-' }}</p>
+                    </div>
+                    <div>
+                      <label style="display: block; font-weight: bold; margin-bottom: 5px;">説明</label>
+                      <p style="margin: 0;">{{ dept.description || '-' }}</p>
+                    </div>
+                    <div>
+                      <label style="display: block; font-weight: bold; margin-bottom: 5px;">適性人数</label>
+                      <p style="margin: 0;">{{ dept.optimalHeadcount || '-' }}</p>
+                    </div>
+                    <div>
+                      <label style="display: block; font-weight: bold; margin-bottom: 5px;">最低配置人数</label>
+                      <p style="margin: 0;">{{ dept.minHeadcount || '-' }}</p>
+                    </div>
+                    <div>
+                      <label style="display: block; font-weight: bold; margin-bottom: 5px;">営業力の重み</label>
+                      <p style="margin: 0;">{{ dept.weightSales || '-' }}</p>
+                    </div>
+                    <div>
+                      <label style="display: block; font-weight: bold; margin-bottom: 5px;">管理力の重み</label>
+                      <p style="margin: 0;">{{ dept.weightManagement || '-' }}</p>
+                    </div>
+                    <div>
+                      <label style="display: block; font-weight: bold; margin-bottom: 5px;">開拓力の重み</label>
+                      <p style="margin: 0;">{{ dept.weightExploration || '-' }}</p>
+                    </div>
+                    <div>
+                      <label style="display: block; font-weight: bold; margin-bottom: 5px;">育成力の重み</label>
+                      <p style="margin: 0;">{{ dept.weightDevelopment || '-' }}</p>
+                    </div>
+                    <div>
+                      <label style="display: block; font-weight: bold; margin-bottom: 5px;">基準売上</label>
+                      <p style="margin: 0;">{{ dept.baseRevenue || '-' }}</p>
+                    </div>
+                    <div>
+                      <label style="display: block; font-weight: bold; margin-bottom: 5px;">成長係数</label>
+                      <p style="margin: 0;">{{ dept.growthFactor || '-' }}</p>
+                    </div>
+                  </div>
+
+                  <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+                    <h4 style="margin: 0 0 10px 0;">人員不足ペナルティ条件</h4>
+                    @if (dept.shortagePenalty && dept.shortagePenalty.length > 0) {
+                      <table class="penalty-table" style="width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.9em;">
+                        <thead>
+                          <tr style="background-color: #f5f5f5;">
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">充足率(%)</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">条件</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">補正係数</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (rule of dept.shortagePenalty; track $index) {
+                            <tr>
+                              <td style="border: 1px solid #ddd; padding: 8px;">{{ rule.threshold }}</td>
+                              <td style="border: 1px solid #ddd; padding: 8px;">{{ rule.condition === 'over' ? '以上' : '未満' }}</td>
+                              <td style="border: 1px solid #ddd; padding: 8px;">{{ rule.factor }}</td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    } @else {
+                      <p style="margin: 0; color: #999;">ペナルティ条件は設定されていません</p>
+                    }
+                  </div>
+
+                  <button (click)="startEdit(dept.id)" class="btn-edit" style="margin-top: 15px; padding: 8px 16px; background-color: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    編集する
+                  </button>
                 </div>
-                <div class="field-group" style="flex: 0 1 auto; min-width: 120px;">
-                  <label>最低配置人数</label>
-                  <input
-                    type="number"
-                    [(ngModel)]="dept.minHeadcount"
-                    placeholder="人数"
-                    class="input-field"
-                    style="width: 100%; padding: 5px; box-sizing: border-box;"
-                  />
-                </div>
-                <button (click)="updateDepartment(dept)" class="btn-update" style="align-self: flex-end; margin-top: 20px;">
-                  更新
-                </button>
-              </div>
+              }
             </div>
           }
         </div>

@@ -19,6 +19,16 @@ const normalizeRequiredSkills = (skills: any): string => {
   return '';
 };
 
+const normalizeShortagePenalty = (penalty: any): any => {
+  if (!penalty) {
+    return null;
+  }
+  if (Array.isArray(penalty)) {
+    return penalty.length > 0 ? penalty : null;
+  }
+  return null;
+};
+
 // Get all departments
 router.get('/', async (req: Request, res: Response) => {
   try {
@@ -32,7 +42,7 @@ router.get('/', async (req: Request, res: Response) => {
 // Admin: Create department
 router.post('/', authenticate, isAdmin, async (req: AuthRequest, res: Response) => {
   try {
-    const { name, requiredSkills, requiredScore, expectedRevenue, basicData, status, description, optimalHeadcount, minHeadcount } = req.body;
+    const { name, requiredSkills, requiredScore, expectedRevenue, basicData, status, description, optimalHeadcount, minHeadcount, weightSales, weightManagement, weightExploration, weightDevelopment, baseRevenue, growthFactor, shortagePenalty } = req.body;
 
     const convertedSkills = normalizeRequiredSkills(requiredSkills);
 
@@ -47,6 +57,13 @@ router.post('/', authenticate, isAdmin, async (req: AuthRequest, res: Response) 
         description: description || null,
         optimalHeadcount: optimalHeadcount || null,
         minHeadcount: minHeadcount || null,
+        weightSales: weightSales || null,
+        weightManagement: weightManagement || null,
+        weightExploration: weightExploration || null,
+        weightDevelopment: weightDevelopment || null,
+        baseRevenue: baseRevenue || null,
+        growthFactor: growthFactor || null,
+        shortagePenalty: normalizeShortagePenalty(shortagePenalty),
       },
     });
 
@@ -59,7 +76,7 @@ router.post('/', authenticate, isAdmin, async (req: AuthRequest, res: Response) 
 // Admin: Update department
 router.put('/:id', authenticate, isAdmin, async (req: AuthRequest, res: Response) => {
   try {
-    const { name, requiredSkills, requiredScore, expectedRevenue, basicData, status, description, optimalHeadcount, minHeadcount } = req.body;
+    const { name, requiredSkills, requiredScore, expectedRevenue, basicData, status, description, optimalHeadcount, minHeadcount, weightSales, weightManagement, weightExploration, weightDevelopment, baseRevenue, growthFactor, shortagePenalty } = req.body;
 
     const updateData: any = {};
 
@@ -89,6 +106,27 @@ router.put('/:id', authenticate, isAdmin, async (req: AuthRequest, res: Response
     }
     if (minHeadcount !== undefined) {
       updateData.minHeadcount = minHeadcount;
+    }
+    if (weightSales !== undefined) {
+      updateData.weightSales = weightSales;
+    }
+    if (weightManagement !== undefined) {
+      updateData.weightManagement = weightManagement;
+    }
+    if (weightExploration !== undefined) {
+      updateData.weightExploration = weightExploration;
+    }
+    if (weightDevelopment !== undefined) {
+      updateData.weightDevelopment = weightDevelopment;
+    }
+    if (baseRevenue !== undefined) {
+      updateData.baseRevenue = baseRevenue;
+    }
+    if (growthFactor !== undefined) {
+      updateData.growthFactor = growthFactor;
+    }
+    if (shortagePenalty !== undefined) {
+      updateData.shortagePenalty = normalizeShortagePenalty(shortagePenalty);
     }
 
     const department = await prisma.department.update({

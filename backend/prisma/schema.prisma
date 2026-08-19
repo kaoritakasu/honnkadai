@@ -74,6 +74,13 @@ model Department {
   description     String?
   optimalHeadcount Int?
   minHeadcount    Int?
+  weightSales     Float?
+  weightManagement Float?
+  weightExploration Float?
+  weightDevelopment Float?
+  baseRevenue     Float?
+  growthFactor    Float?
+  shortagePenalty Json?
 
   allocations     Allocation[]
 
