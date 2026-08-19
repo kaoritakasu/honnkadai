@@ -16,7 +16,7 @@ export class AdminDashboardComponent implements OnInit {
   dashboard = signal<any>(null);
   departments = signal<any[]>([]);
   employees = signal<any[]>([]);
-  simulationResults = signal<any>(null);
+  simulationResults: any = null;
   selectedDepartment = signal('');
   numPositions = signal(1);
   pasteDataText = '';
@@ -74,7 +74,7 @@ export class AdminDashboardComponent implements OnInit {
     this.loading.set(true);
     this.apiService.simulateAllocation(this.selectedDepartment(), this.numPositions()).subscribe({
       next: (data) => {
-        this.simulationResults.set(data);
+        this.simulationResults = data;
         this.loading.set(false);
       },
       error: (error) => {
@@ -99,7 +99,7 @@ export class AdminDashboardComponent implements OnInit {
     this.loading.set(true);
     this.apiService.simulateBatchAllocation(parsed).subscribe({
       next: (data) => {
-        this.simulationResults.set(data);
+        this.simulationResults = data;
         this.loading.set(false);
         this.pasteDataText = '';
       },
@@ -212,7 +212,7 @@ export class AdminDashboardComponent implements OnInit {
     this.loading.set(true);
     this.apiService.simulateBatchAllocation(convertedData).subscribe({
       next: (data) => {
-        this.simulationResults.set(data);
+        this.simulationResults = data;
         this.loading.set(false);
         this.pasteDataText = '';
       },
@@ -311,7 +311,7 @@ export class AdminDashboardComponent implements OnInit {
         this.error.set('Allocation created successfully');
         setTimeout(() => {
           this.loadDashboard();
-          this.simulationResults.set(null);
+          this.simulationResults = null;
         }, 1000);
       },
       error: (error) => {
