@@ -75,16 +75,25 @@ router.post('/simulate', authenticate, isAdmin, async (req: AuthRequest, res: Re
 
     if (!department) return res.status(404).json({ error: 'Department not found' });
 
-    const employees = await prisma.employee.findMany({
-      include: { user: true },
+   const employees = req.body; 
+
+    // ▼ ここを追加！ データベースから最新の部署データ（適性人数など）を自分で取得する
+    const departments = await prisma.department.findMany({
+      where: {
+        optimalHeadcount: { not: null } // 適性人数が設定されている部署だけに絞り込む
+      }
     });
 
+    // 部署データが1つも取れなかった場合はエラーを返す
+    if (!departments || departments.length === 0) {
+      return res.status(400).json({ error: "Please select a department and number of positions" });
+    }
     const candidates = employees
-      .map((emp) => ({
+      .map((emp: any) => ({
         employee: emp,
         matchScore: calculateMatchScore(emp, department),
       }))
-      .sort((a, b) => {
+     .sort((a: any, b: any) => {
         if (b.matchScore !== a.matchScore) return b.matchScore - a.matchScore;
         return (b.employee.score || 0) - (a.employee.score || 0);
       })
@@ -94,7 +103,7 @@ router.post('/simulate', authenticate, isAdmin, async (req: AuthRequest, res: Re
 
     res.json({
       department,
-      candidates: candidates.map((c) => ({
+     candidates: candidates.map((c: any) => ({
         employeeId: c.employee.id,
         employeeName: c.employee.user.name,
         score: c.employee.score || 0,
@@ -126,7 +135,7 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
     const results = departments.map((department) => {
       const allocatedCount = batchData.length;
 
-      const employeeContributions = batchData.map((emp) => ({
+     const employeeContributions = batchData.map((emp: any) => ({
         employeeContribution: (emp.salesForce * (department.weightSales ?? 0)) +
           (emp.managementForce * (department.weightManagement ?? 0)) +
           (emp.explorationForce * (department.weightExploration ?? 0)) +
