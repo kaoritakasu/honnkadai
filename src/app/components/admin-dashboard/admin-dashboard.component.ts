@@ -103,7 +103,8 @@ export class AdminDashboardComponent implements OnInit {
     this.apiService.simulateMultiDepartment(this.selectedDepartments()).subscribe({
       next: (data: any) => {
         if (data && data.results && Array.isArray(data.results)) {
-          this.simulationResults.set(data.results.map((result: any) => ({
+          const enrichedResults = this.enrichWithMyPageData(data.results);
+          this.simulationResults.set(enrichedResults.map((result: any) => ({
             ...result,
             cost: result.totalCost
           })));
@@ -135,10 +136,11 @@ export class AdminDashboardComponent implements OnInit {
     this.loading.set(true);
     this.apiService.simulateAllocation(this.selectedDepartments()[0], 1).subscribe({
       next: (data: any) => {
+        const enrichedData = this.enrichWithMyPageData(data);
         const mappedData = {
-          ...data,
-          allocatedCount: data.candidates ? data.candidates.length : 0,
-          cost: data.totalCost || 0
+          ...enrichedData,
+          allocatedCount: enrichedData.candidates ? enrichedData.candidates.length : 0,
+          cost: enrichedData.totalCost || 0
         };
         this.simulationResults.set(mappedData);
         this.simulationSummary.set(null);
@@ -168,7 +170,8 @@ export class AdminDashboardComponent implements OnInit {
     this.apiService.simulateBatchAllocation(parsed).subscribe({
       next: (data: any) => {
         if (data && data.results && Array.isArray(data.results)) {
-          this.simulationResults.set(data.results.map((result: any) => ({
+          const enrichedResults = this.enrichWithMyPageData(data.results);
+          this.simulationResults.set(enrichedResults.map((result: any) => ({
             ...result,
             cost: result.totalCost
           })));
@@ -309,7 +312,8 @@ export class AdminDashboardComponent implements OnInit {
     this.apiService.simulateBatchAllocation(convertedData).subscribe({
       next: (data: any) => {
         if (data && data.results && Array.isArray(data.results)) {
-          this.simulationResults.set(data.results.map((result: any) => ({
+          const enrichedResults = this.enrichWithMyPageData(data.results);
+          this.simulationResults.set(enrichedResults.map((result: any) => ({
             ...result,
             cost: result.totalCost
           })));
@@ -571,7 +575,8 @@ const empCost = (Number(movedEmployee?.laborCost) || 0) * 1000000;
     this.apiService.recalculateSimulation({ results: currentResults }).subscribe({
       next: (data: any) => {
         if (data && data.results && Array.isArray(data.results)) {
-          this.simulationResults.set(data.results.map((result: any) => ({
+          const enrichedResults = this.enrichWithMyPageData(data.results);
+          this.simulationResults.set(enrichedResults.map((result: any) => ({
             ...result,
             cost: result.totalCost
           })));
@@ -632,5 +637,33 @@ const empCost = (Number(movedEmployee?.laborCost) || 0) * 1000000;
       const bVal = b[sortKey] || 0;
       return bVal - aVal;
     });
+  }
+
+  private enrichWithMyPageData(results: any): any {
+    const dbEmployees = this.employees(); // 取得済みの全社員データ
+
+    const enrich = (candidates: any[]) => {
+      if (!candidates) return;
+      candidates.forEach(cand => {
+        // データ側の社員番号をキーにしてマイページのデータを検索
+        const match = dbEmployees.find(e => e.employeeNumber && e.employeeNumber === cand.employeeNumber);
+
+        if (match) {
+          // 氏名はマイページ（DB）のものを優先して上書き
+          cand.employeeName = match.user?.name || match.name || cand.employeeName;
+
+          // 希望部署やフラグを紐づけ（※タグの紐づけは行わない）
+          cand.desiredDept = match.desiredDept;
+          cand.isExecutiveCandidate = match.isExecutiveCandidate;
+        }
+      });
+    };
+
+    if (Array.isArray(results)) {
+      results.forEach(r => enrich(r.candidates));
+    } else if (results && results.candidates) {
+      enrich(results.candidates);
+    }
+    return results;
   }
 }

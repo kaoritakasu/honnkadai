@@ -14,7 +14,7 @@ import { AuthService } from '../../services/auth.service';
 })
 export class MyPageComponent implements OnInit {
   user: any = null;
-  careerDesire = '';
+  desiredDept = '';
   workLifeBalance = '';
   inquiry = '';
   assignmentDetails: any = null;
@@ -51,7 +51,8 @@ export class MyPageComponent implements OnInit {
   savePreferences() {
     if (this.user?.id) {
       this.apiService.saveEmployeePreferences(this.user.id, {
-        careerDesire: this.careerDesire,
+        careerDesire: this.desiredDept,
+        desiredDept: this.desiredDept,
         workLifeBalance: this.workLifeBalance
       }).subscribe(() => {
         alert('キャリア希望と働き方を保存しました');

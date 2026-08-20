@@ -312,7 +312,7 @@
                                [style.display]="isMatch(emp, activeFilters[result.departmentId]) ? 'flex' : 'none'"
                                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 6px; border-radius: 4px; cursor: move; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex-direction: column;">
                             <p style="margin: 0; font-weight: bold; font-size: 0.95em; line-height: 1.4; white-space: normal; word-break: break-all;">
-                              {{ emp.employeeNumber ? emp.employeeNumber + ' - ' : '' }}{{ emp.employeeName }}
+                              {{ emp.employeeNumber ? emp.employeeNumber + ' ' : '' }}{{ emp.employeeName }}
                               @if (emp.isExecutiveCandidate) { <span title="幹部候補" style="margin-left: 4px;">👑</span> }
                             </p>
                             @if (emp.tags && emp.tags.length > 0) {

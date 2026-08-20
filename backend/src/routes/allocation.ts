@@ -199,6 +199,25 @@ const calculateTags = (emp: any): string[] => {
   return tags;
 };
 
+// バリデーション関数：employeeNumber をサポート
+const validateSimulateBatchPayload = (data: any): boolean => {
+  if (Array.isArray(data)) {
+    return data.every((emp: any) => {
+      return (
+        (emp.id !== undefined || emp.employeeId !== undefined || emp.employeeNumber !== undefined) &&
+        typeof emp === 'object' &&
+        emp !== null
+      );
+    });
+  }
+  return (
+    data &&
+    typeof data === 'object' &&
+    (data.departmentIds || data.departmentIds === undefined) &&
+    (Array.isArray(data.employees) || Array.isArray(data.departmentIds))
+  );
+};
+
 // =========================================
 // ここから下をすべて上書きコピー＆ペーストしてください
 // =========================================
@@ -227,12 +246,22 @@ router.post('/simulate', authenticate, isAdmin, async (req: AuthRequest, res: Re
     }> = [];
 
     for (const emp of employees) {
-      const matchScore = calculateMatchScore(emp, department);
-      const deltaProfit = calculateDeltaProfit(department, [], emp);
+      const safeEmp = {
+        ...emp,
+        salesForce: emp.salesForce ?? 0,
+        managementForce: emp.managementForce ?? 0,
+        explorationForce: emp.explorationForce ?? 0,
+        developmentForce: emp.developmentForce ?? 0,
+        laborCost: emp.laborCost ?? 0,
+        score: emp.score ?? 0,
+        skills: emp.skills || []
+      };
+      const matchScore = calculateMatchScore(safeEmp, department);
+      const deltaProfit = calculateDeltaProfit(department, [], safeEmp);
 
       if (deltaProfit > 0) {
         candidatesWithDeltaProfit.push({
-          employee: emp,
+          employee: safeEmp,
           matchScore,
           deltaProfit
         });
@@ -469,33 +498,37 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
     // employeeNumber を使用して DB から社員情報を検索・マージ
     const dbEmployees = await prisma.employee.findMany({ include: { user: true } });
     const enrichedEmployees = employees.map((emp: any) => {
-      let dbEmp = null;
+      let dbEmp: any = null;
 
       // employeeNumber がある場合は優先的に検索
       if (emp.employeeNumber) {
-        dbEmp = dbEmployees.find(e => e.employeeNumber === emp.employeeNumber);
+        dbEmp = dbEmployees.find((e: any) => e.employeeNumber === emp.employeeNumber);
       }
 
       // employeeNumber で見つからない、またはないの場合は employeeId で検索
       if (!dbEmp) {
         const empId = emp.id || emp.employeeId;
-        dbEmp = dbEmployees.find(e => e.id === empId || e.employeeId === empId);
+        dbEmp = dbEmployees.find((e: any) => e.id === empId);
       }
 
-      // DB情報がある場合はマージ
-      if (dbEmp) {
-        return {
-          ...emp,
-          id: dbEmp.id,
-          employeeNumber: dbEmp.employeeNumber,
-          employeeName: dbEmp.user?.name || dbEmp.name,
-          desiredDept: dbEmp.desiredDept,
-          tags: dbEmp.tags || [],
-          isExecutiveCandidate: (dbEmp.managementForce || 0) >= 70 && (dbEmp.developmentForce || 0) >= 70
-        };
-      }
-
-      return emp;
+      // DB情報がある場合はマージ、なければフロントエンドのデータを使用
+      const result = {
+        ...emp,
+        id: dbEmp?.id || emp.id || emp.employeeId,
+        employeeNumber: dbEmp?.employeeNumber || emp.employeeNumber,
+        employeeName: dbEmp?.user?.name || (dbEmp as any)?.name || emp.name || emp.employeeName,
+        desiredDept: (dbEmp as any)?.desiredDept || emp.desiredDept,
+        tags: (dbEmp as any)?.tags || emp.tags || [],
+        salesForce: (dbEmp as any)?.salesForce ?? emp.salesForce ?? 0,
+        managementForce: (dbEmp as any)?.managementForce ?? emp.managementForce ?? 0,
+        explorationForce: (dbEmp as any)?.explorationForce ?? emp.explorationForce ?? 0,
+        developmentForce: (dbEmp as any)?.developmentForce ?? emp.developmentForce ?? 0,
+        laborCost: (dbEmp as any)?.laborCost ?? emp.laborCost ?? 0,
+        score: (dbEmp as any)?.score ?? emp.score ?? 0,
+        skills: (dbEmp as any)?.skills || emp.skills || [],
+        isExecutiveCandidate: (((dbEmp as any)?.managementForce || emp.managementForce || 0) >= 70 && ((dbEmp as any)?.developmentForce || emp.developmentForce || 0) >= 70)
+      };
+      return result;
     });
 
     const allocations = new Map<string, any[]>();
@@ -655,7 +688,7 @@ router.post('/recalculate', authenticate, isAdmin, async (req: AuthRequest, res:
 
       // DBに社員がいなければ、画面から送られてきたデータをそのまま計算に使う
       const allocatedEmployees = candidates.map((c: any) => {
-        let dbEmp = null;
+        let dbEmp: any = null;
 
         // employeeNumber がある場合は優先的に検索
         if (c.employeeNumber) {
@@ -665,21 +698,26 @@ router.post('/recalculate', authenticate, isAdmin, async (req: AuthRequest, res:
         // employeeNumber で見つからない、またはない場合は employeeId で検索
         if (!dbEmp) {
           const empId = c.employeeId || c.id;
-          dbEmp = allEmployeesDB.find((e: any) => e.id === empId || e.employeeId === empId);
+          dbEmp = allEmployeesDB.find((e: any) => e.id === empId);
         }
 
-        if (dbEmp) {
-          return {
-            ...c,
-            id: dbEmp.id,
-            employeeNumber: dbEmp.employeeNumber,
-            employeeName: dbEmp.user?.name || c.employeeName,
-            desiredDept: dbEmp.desiredDept,
-            tags: dbEmp.tags || [],
-            isExecutiveCandidate: (dbEmp.managementForce || 0) >= 70 && (dbEmp.developmentForce || 0) >= 70
-          };
-        }
-        return c;
+        const result = {
+          ...c,
+          id: dbEmp?.id || c.id || c.employeeId,
+          employeeNumber: dbEmp?.employeeNumber || c.employeeNumber,
+          employeeName: dbEmp?.user?.name || c.employeeName || c.name || 'Unknown',
+          desiredDept: dbEmp?.desiredDept || c.desiredDept,
+          tags: dbEmp?.tags || c.tags || [],
+          salesForce: (dbEmp as any)?.salesForce ?? c.salesForce ?? 0,
+          managementForce: (dbEmp as any)?.managementForce ?? c.managementForce ?? 0,
+          explorationForce: (dbEmp as any)?.explorationForce ?? c.explorationForce ?? 0,
+          developmentForce: (dbEmp as any)?.developmentForce ?? c.developmentForce ?? 0,
+          laborCost: (dbEmp as any)?.laborCost ?? c.laborCost ?? 0,
+          score: (dbEmp as any)?.score ?? c.score ?? 0,
+          skills: (dbEmp as any)?.skills || c.skills || [],
+          isExecutiveCandidate: (((dbEmp as any)?.managementForce || c.managementForce || 0) >= 70 && ((dbEmp as any)?.developmentForce || c.developmentForce || 0) >= 70)
+        };
+        return result;
       });
 
       const state = calculateDepartmentState(dbDept, allocatedEmployees);

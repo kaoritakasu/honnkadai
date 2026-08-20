@@ -15,10 +15,10 @@
         <label for="careerDesire">希望部署</label>
         <select
           id="careerDesire"
-          [(ngModel)]="careerDesire"
+          [(ngModel)]="desiredDept"
           class="select-field">
           <option value="">部署を選択してください</option>
-          <option *ngFor="let dept of departments" [value]="dept.id">
+          <option *ngFor="let dept of departments" [value]="dept.name">
             {{ dept.name }}
           </option>
         </select>
