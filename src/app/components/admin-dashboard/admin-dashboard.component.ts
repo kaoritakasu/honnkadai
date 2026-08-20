@@ -290,14 +290,20 @@ export class AdminDashboardComponent implements OnInit {
       return;
     }
 
-    const convertedData = parsed.map((emp: any) => ({
-      employeeId: typeof emp.employeeId === 'string' ? parseInt(emp.employeeId.replace(/\D/g, '')) || 0 : emp.employeeId,
-      salesForce: emp.salesForce,
-      managementForce: emp.managementForce,
-      explorationForce: emp.explorationForce,
-      developmentForce: emp.developmentForce,
-      laborCost: emp.laborCost
-    }));
+    const convertedData = parsed.map((emp: any) => {
+      const data: any = {
+        employeeId: typeof emp.employeeId === 'string' ? parseInt(emp.employeeId.replace(/\D/g, '')) || 0 : emp.employeeId,
+        salesForce: emp.salesForce,
+        managementForce: emp.managementForce,
+        explorationForce: emp.explorationForce,
+        developmentForce: emp.developmentForce,
+        laborCost: emp.laborCost
+      };
+      if (emp.employeeNumber) {
+        data.employeeNumber = emp.employeeNumber;
+      }
+      return data;
+    });
 
     this.loading.set(true);
     this.apiService.simulateBatchAllocation(convertedData).subscribe({

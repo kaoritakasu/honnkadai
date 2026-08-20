@@ -62,6 +62,7 @@ export class LoginComponent {
           this.isLogin.set(true);
           this.error.set('Registration successful! Please login.');
           this.password.set('');
+          this.loading.set(false);
         },
         error: (error) => {
           this.error.set(error.error?.error || 'Registration failed');

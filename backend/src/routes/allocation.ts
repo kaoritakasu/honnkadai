@@ -466,6 +466,38 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
       return res.status(404).json({ error: 'No departments found' });
     }
 
+    // employeeNumber を使用して DB から社員情報を検索・マージ
+    const dbEmployees = await prisma.employee.findMany({ include: { user: true } });
+    const enrichedEmployees = employees.map((emp: any) => {
+      let dbEmp = null;
+
+      // employeeNumber がある場合は優先的に検索
+      if (emp.employeeNumber) {
+        dbEmp = dbEmployees.find(e => e.employeeNumber === emp.employeeNumber);
+      }
+
+      // employeeNumber で見つからない、またはないの場合は employeeId で検索
+      if (!dbEmp) {
+        const empId = emp.id || emp.employeeId;
+        dbEmp = dbEmployees.find(e => e.id === empId || e.employeeId === empId);
+      }
+
+      // DB情報がある場合はマージ
+      if (dbEmp) {
+        return {
+          ...emp,
+          id: dbEmp.id,
+          employeeNumber: dbEmp.employeeNumber,
+          employeeName: dbEmp.user?.name || dbEmp.name,
+          desiredDept: dbEmp.desiredDept,
+          tags: dbEmp.tags || [],
+          isExecutiveCandidate: (dbEmp.managementForce || 0) >= 70 && (dbEmp.developmentForce || 0) >= 70
+        };
+      }
+
+      return emp;
+    });
+
     const allocations = new Map<string, any[]>();
     const allocatedEmployeeIds = new Set<number | string>();
     departments.forEach(dept => allocations.set(dept.id, []));
@@ -477,7 +509,7 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
       let bestEmployeeId: string | null = null;
       let bestDepartmentId: string | null = null;
 
-      for (const emp of employees) {
+      for (const emp of enrichedEmployees) {
         const empId = emp.id || emp.employeeId;
         if (allocatedEmployeeIds.has(empId)) continue;
 
@@ -507,7 +539,7 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
     }
 
     // フォールバック処理: 未配置の社員を全員割り当て
-    for (const emp of employees) {
+    for (const emp of enrichedEmployees) {
       const empId = emp.id || emp.employeeId;
       if (allocatedEmployeeIds.has(empId)) continue;
 
@@ -623,9 +655,31 @@ router.post('/recalculate', authenticate, isAdmin, async (req: AuthRequest, res:
 
       // DBに社員がいなければ、画面から送られてきたデータをそのまま計算に使う
       const allocatedEmployees = candidates.map((c: any) => {
-        const empId = c.employeeId || c.id;
-        const dbEmp = allEmployeesDB.find((e: any) => e.id === empId || e.employeeId === empId);
-        return dbEmp || c;
+        let dbEmp = null;
+
+        // employeeNumber がある場合は優先的に検索
+        if (c.employeeNumber) {
+          dbEmp = allEmployeesDB.find((e: any) => e.employeeNumber === c.employeeNumber);
+        }
+
+        // employeeNumber で見つからない、またはない場合は employeeId で検索
+        if (!dbEmp) {
+          const empId = c.employeeId || c.id;
+          dbEmp = allEmployeesDB.find((e: any) => e.id === empId || e.employeeId === empId);
+        }
+
+        if (dbEmp) {
+          return {
+            ...c,
+            id: dbEmp.id,
+            employeeNumber: dbEmp.employeeNumber,
+            employeeName: dbEmp.user?.name || c.employeeName,
+            desiredDept: dbEmp.desiredDept,
+            tags: dbEmp.tags || [],
+            isExecutiveCandidate: (dbEmp.managementForce || 0) >= 70 && (dbEmp.developmentForce || 0) >= 70
+          };
+        }
+        return c;
       });
 
       const state = calculateDepartmentState(dbDept, allocatedEmployees);

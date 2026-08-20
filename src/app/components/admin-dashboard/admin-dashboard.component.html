@@ -12,7 +12,8 @@
     <p style="margin: 2px 0 0 0; font-size: 0.85em; color: #6b7280 !important;">Talent Allocation System</p>
   </div>
 </div>
-     <button (click)="logout()" class="logout-btn">ログアウト</button>
+     <button (click)="logout()" class="lo
+     gout-btn">ログアウト</button>
   </header>
 
   @if (error()) {
@@ -279,10 +280,10 @@
               }
             </div>
 
-            <div class="drag-drop-container" cdkDropListGroup style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 30px; align-items: stretch; width: 100%; box-sizing: border-box;" [attr.id]="'dropListGroup'">
+            <div class="drag-drop-container" cdkDropListGroup style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; margin-bottom: 30px; align-items: stretch; width: 100%; box-sizing: border-box;" [attr.id]="'dropListGroup'">
               @if (Array.isArray(simulationResults())) {
                 @for (result of simulationResults(); track $index; let i = $index) {
-                  <div class="department-zone" style="width: calc(33.333% - 7px); display: flex; flex-direction: column; box-sizing: border-box; border: 2px dashed #667eea; border-radius: 8px; padding: 10px; background-color: #f9f9f9; min-width: 0; overflow-x: hidden;" cdkDropList [cdkDropListData]="result.candidates" (cdkDropListDropped)="drop($event)">
+                  <div class="department-zone" style="display: flex; flex-direction: column; box-sizing: border-box; border: 2px dashed #667eea; border-radius: 8px; padding: 10px; background-color: #f9f9f9; min-width: 0; overflow-x: hidden;" cdkDropList [cdkDropListData]="result.candidates" (cdkDropListDropped)="drop($event)">
                     <h4 style="margin: 0 0 8px 0; color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 6px; font-size: 0.85em;">{{ result.departmentName || result.department?.name || '-' }}</h4>
                     <div class="dept-controls" style="margin-bottom: 8px; display: flex; flex-direction: column; gap: 4px; flex-wrap: wrap;">
                       <div style="display: flex; gap: 4px; margin-bottom: 8px;">
@@ -309,8 +310,8 @@
                         @for (emp of result.candidates; track emp.employeeId) {
                           <div class="employee-card" cdkDrag [cdkDragData]="emp"
                                [style.display]="isMatch(emp, activeFilters[result.departmentId]) ? 'flex' : 'none'"
-                               style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 6px; border-radius: 4px; cursor: move; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex-direction: column;">
-                            <p style="margin: 0; font-weight: bold; font-size: 0.9em; overflow: hidden; text-overflow: ellipsis;">
+                               style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 6px; border-radius: 4px; cursor: move; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex-direction: column;">
+                            <p style="margin: 0; font-weight: bold; font-size: 0.95em; line-height: 1.4; white-space: normal; word-break: break-all;">
                               {{ emp.employeeNumber ? emp.employeeNumber + ' - ' : '' }}{{ emp.employeeName }}
                               @if (emp.isExecutiveCandidate) { <span title="幹部候補" style="margin-left: 4px;">👑</span> }
                             </p>
@@ -319,6 +320,13 @@
                                 @for (tag of emp.tags; track tag) {
                                   <span class="tag">{{ tag }}</span>
                                 }
+                                @if (emp.desiredDept) {
+                                  <span class="tag" style="background-color: #ff9800; color: white; font-weight: bold;">希望: {{ emp.desiredDept }}</span>
+                                }
+                              </div>
+                            } @else if (emp.desiredDept) {
+                              <div class="tags-container">
+                                <span class="tag" style="background-color: #ff9800; color: white; font-weight: bold;">希望: {{ emp.desiredDept }}</span>
                               </div>
                             }
                             <div class="ability-scores" style="font-size: 0.65em;">
