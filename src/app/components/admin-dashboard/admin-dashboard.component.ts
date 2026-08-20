@@ -215,6 +215,7 @@ export class AdminDashboardComponent implements OnInit {
 
   private parsePastedData(): Array<{
     employeeId: string;
+    employeeNumber?: string;
     salesForce: number;
     managementForce: number;
     explorationForce: number;
@@ -227,8 +228,18 @@ export class AdminDashboardComponent implements OnInit {
       return [];
     }
 
+    const headers = lines[0].split(/[,\t]+/).map(h => h.toLowerCase().trim());
+    const employeeNumberIdx = headers.indexOf('社員番号');
+    const employeeIdIdx = headers.indexOf('社員id') >= 0 ? headers.indexOf('社員id') : 0;
+    const salesForceIdx = headers.indexOf('営業力') >= 0 ? headers.indexOf('営業力') : 1;
+    const managementForceIdx = headers.indexOf('管理力') >= 0 ? headers.indexOf('管理力') : 2;
+    const explorationForceIdx = headers.indexOf('開拓力') >= 0 ? headers.indexOf('開拓力') : 3;
+    const developmentForceIdx = headers.indexOf('育成力') >= 0 ? headers.indexOf('育成力') : 4;
+    const laborCostIdx = headers.indexOf('人件費') >= 0 ? headers.indexOf('人件費') : 5;
+
     const parsedEmployees: Array<{
       employeeId: string;
+      employeeNumber?: string;
       salesForce: number;
       managementForce: number;
       explorationForce: number;
@@ -239,22 +250,29 @@ export class AdminDashboardComponent implements OnInit {
     for (let i = 1; i < lines.length; i++) {
       const values = lines[i].split(/[,\t]+/).map(v => v.trim());
 
-      if (values.length >= 6) {
-        const employeeId = values[0];
-        const salesForce = Number(values[1]) || 0;
-        const managementForce = Number(values[2]) || 0;
-        const explorationForce = Number(values[3]) || 0;
-        const developmentForce = Number(values[4]) || 0;
-        const laborCost = Number(values[5]) || 0;
+      if (values.length >= Math.max(employeeIdIdx, salesForceIdx, managementForceIdx, explorationForceIdx, developmentForceIdx, laborCostIdx)) {
+        const employeeId = values[employeeIdIdx];
+        const employeeNumber = employeeNumberIdx >= 0 ? values[employeeNumberIdx] : undefined;
+        const salesForce = Number(values[salesForceIdx]) || 0;
+        const managementForce = Number(values[managementForceIdx]) || 0;
+        const explorationForce = Number(values[explorationForceIdx]) || 0;
+        const developmentForce = Number(values[developmentForceIdx]) || 0;
+        const laborCost = Number(values[laborCostIdx]) || 0;
 
-        parsedEmployees.push({
+        const emp: any = {
           employeeId,
           salesForce,
           managementForce,
           explorationForce,
           developmentForce,
           laborCost
-        });
+        };
+
+        if (employeeNumber) {
+          emp.employeeNumber = employeeNumber;
+        }
+
+        parsedEmployees.push(emp);
       }
     }
     return parsedEmployees;

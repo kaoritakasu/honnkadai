@@ -258,6 +258,7 @@ router.post('/simulate', authenticate, isAdmin, async (req: AuthRequest, res: Re
       profit: Math.round(state.profit),
       candidates: selectedCandidates.map((c: any) => ({
   employeeId: c.employee.id,
+  employeeNumber: c.employee.employeeNumber,
   employeeName: c.employee.user?.name || c.employee.id,
   score: c.employee.score || 0,
   matchScore: c.matchScore,
@@ -399,6 +400,7 @@ router.post('/simulate-multi', authenticate, isAdmin, async (req: AuthRequest, r
           const matchScoreForDept = scoreData?.scores.find((s: any) => s.departmentId === department.id)?.matchScore || 0;
           return {
     employeeId: emp.id,
+    employeeNumber: emp.employeeNumber,
     employeeName: emp.user?.name || emp.id,
     score: emp.score || 0,
     matchScore: matchScoreForDept,
@@ -548,6 +550,7 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
        profit: Math.round(state.profit),
 candidates: allocatedEmployees.map((emp: any) => ({
   employeeId: emp.id || emp.employeeId,
+  employeeNumber: emp.employeeNumber,
   employeeName: emp.user?.name || emp.id || emp.employeeId || 'Unknown',
   score: emp.score || 0,
   skills: emp.skills,
@@ -643,6 +646,7 @@ router.post('/recalculate', authenticate, isAdmin, async (req: AuthRequest, res:
         profit: Math.round(state.profit),
         candidates: allocatedEmployees.map((emp: any) => ({
           employeeId: emp.id || emp.employeeId,
+          employeeNumber: emp.employeeNumber,
           employeeName: emp.user?.name || emp.name || emp.employeeName || emp.id || emp.employeeId || 'Unknown',
           score: emp.score || 0,
           skills: emp.skills,

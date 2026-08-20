@@ -18,6 +18,7 @@ export class MyPageComponent implements OnInit {
   workLifeBalance = '';
   inquiry = '';
   assignmentDetails: any = null;
+  departments: any[] = [];
 
   constructor(
     private authService: AuthService,
@@ -28,6 +29,7 @@ export class MyPageComponent implements OnInit {
   ngOnInit() {
     this.authService.currentUser$.subscribe(u => this.user = u);
     this.loadAssignmentDetails();
+    this.loadDepartments();
   }
 
   loadAssignmentDetails() {
@@ -37,6 +39,13 @@ export class MyPageComponent implements OnInit {
         () => this.assignmentDetails = null
       );
     }
+  }
+
+  loadDepartments() {
+    this.apiService.getDepartments().subscribe({
+      next: (data: any[]) => this.departments = data,
+      error: (err) => console.error('部署データの取得に失敗しました', err)
+    });
   }
 
   savePreferences() {

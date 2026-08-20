@@ -16,8 +16,8 @@ export class AuthService {
     return this.currentUserSubject.value;
   }
 
-  register(email: string, password: string, name: string, role: string): Observable<any> {
-    return this.apiService.register(email, password, name, role).pipe(
+  register(email: string, password: string, name: string, role: string, employeeNumber?: string): Observable<any> {
+    return this.apiService.register(email, password, name, role, employeeNumber).pipe(
       map(response => {
         if (response && response.token) {
           localStorage.setItem('currentUser', JSON.stringify(response.user));

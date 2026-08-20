@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 
 router.post('/register', async (req: Request, res: Response) => {
   try {
-    const { email, password, name, role } = req.body;
+    const { email, password, name, role, employeeNumber } = req.body;
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -17,17 +17,17 @@ router.post('/register', async (req: Request, res: Response) => {
     name,
     email,
     password: hashedPassword,
-    role: 'ADMIN' // ← この1行を追加！
+    role: role || 'EMPLOYEE'
    }
  });
 
-    if (role === 'ADMIN') {
+    if (user.role === 'ADMIN') {
       await prisma.admin.create({
         data: { userId: user.id },
       });
     } else {
       await prisma.employee.create({
-        data: { userId: user.id },
+        data: { userId: user.id, employeeNumber },
       });
     }
 

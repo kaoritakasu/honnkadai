@@ -16,6 +16,7 @@ export class LoginComponent {
   email = signal('');
   password = signal('');
   name = signal('');
+  employeeNumber = signal('');
   role = signal('EMPLOYEE');
   loading = signal(false);
   error = signal('');
@@ -36,8 +37,15 @@ export class LoginComponent {
 
     if (this.isLogin()) {
       this.authService.login(this.email(), this.password()).subscribe({
-        next: (user) => {
-          if (user.role === 'EMPLOYEE') {
+        next: (response: any) => {
+          // データ構造の違いを吸収し、すべて大文字（EMPLOYEE）に変換して判定する
+          const userRole = (response.role || response.user?.role || '').toUpperCase();
+          
+          // デバッグ用：ブラウザのConsoleに実際のデータを表示
+          console.log('認証データ:', response);
+          console.log('判定された権限:', userRole);
+
+          if (userRole === 'EMPLOYEE') {
             this.router.navigate(['/mypage']);
           } else {
             this.router.navigate(['/admin/dashboard']);
@@ -45,11 +53,11 @@ export class LoginComponent {
         },
         error: (error) => {
           this.error.set(error.error?.error || 'Login failed');
-          this.loading.set(false);
         }
       });
-    } else {
-      this.authService.register(this.email(), this.password(), this.name(), this.role()).subscribe({
+    }
+   else {
+      this.authService.register(this.email(), this.password(), this.name(), this.role(), this.employeeNumber()).subscribe({
         next: () => {
           this.isLogin.set(true);
           this.error.set('Registration successful! Please login.');

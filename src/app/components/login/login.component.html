@@ -45,6 +45,19 @@
 
       @if (!isLogin()) {
         <div class="form-group">
+          <label for="employeeNumber">社員番号</label>
+          <input
+            id="employeeNumber"
+            type="text"
+            [(ngModel)]="employeeNumber"
+            name="employeeNumber"
+            placeholder="例: EMP001"
+          />
+        </div>
+      }
+
+      @if (!isLogin()) {
+        <div class="form-group">
           <label for="role">権限</label>
           <select
             id="role"
