@@ -65,18 +65,16 @@ const calculateShortagePenaltyFactor = (fulfillmentRate: number, shortagePenalty
 };
 
 // 充足率に基づいて過剰補正ファクターを計算（fulfillmentRate > 100%時）
-const calculateOverallocationPenaltyFactor = (fulfillmentRate: number, overallocationPenaltyRules: any[]): number => {
-  if (!Array.isArray(overallocationPenaltyRules) || overallocationPenaltyRules.length === 0) {
-    return 1.0;
+const calculateOverallocationPenaltyFactor = (fulfillmentRate: number): number => {
+  if (fulfillmentRate >= 160) {
+    return 0.80;
+  } else if (fulfillmentRate >= 140) {
+    return 0.90;
+  } else if (fulfillmentRate >= 120) {
+    return 0.95;
+  } else {
+    return 1.00;
   }
-
-  for (const rule of overallocationPenaltyRules) {
-    if (rule.condition === 'over' && fulfillmentRate > rule.threshold) {
-      return rule.factor;
-    }
-  }
-
-  return 1.0;
 };
 
 // 部署の現在の状態（能力値、売上、コスト、利益など）を計算
@@ -130,7 +128,7 @@ const calculateDepartmentState = (
     penaltyRules
   );
   const overallocationPenaltyFactor =
-    calculateOverallocationPenaltyFactor(fulfillmentRate, penaltyRules);
+    calculateOverallocationPenaltyFactor(fulfillmentRate);
 
   const finalRevenue =
     baseRevenue * shortagePenaltyFactor * overallocationPenaltyFactor;
@@ -172,12 +170,42 @@ const calculateDeltaProfit = (
   return newState.profit - currentState.profit;
 };
 
+// タグ計算ロジック
+const calculateTags = (emp: any): string[] => {
+  const tags: string[] = [];
+
+  // 4つの能力で最も高いものをタグ付け
+  const abilities = {
+    '営業力': emp.salesForce || 0,
+    '管理力': emp.managementForce || 0,
+    '開拓力': emp.explorationForce || 0,
+    '育成力': emp.developmentForce || 0
+  };
+
+  let maxAbility = '';
+  let maxValue = 0;
+
+  for (const [name, value] of Object.entries(abilities)) {
+    if (value > maxValue) {
+      maxValue = value;
+      maxAbility = name;
+    }
+  }
+
+  if (maxAbility && maxValue > 0) {
+    tags.push(maxAbility);
+  }
+
+  return tags;
+};
+
 // =========================================
 // ここから下をすべて上書きコピー＆ペーストしてください
 // =========================================
 
 router.post('/simulate', authenticate, isAdmin, async (req: AuthRequest, res: Response) => {
   try {
+    const isAdminUser = req.user?.role === 'ADMIN';
     const { departmentId, employees } = req.body;
 
     const department = await prisma.department.findUnique({
@@ -229,14 +257,20 @@ router.post('/simulate', authenticate, isAdmin, async (req: AuthRequest, res: Re
       totalCost: Math.round(state.totalCost),
       profit: Math.round(state.profit),
       candidates: selectedCandidates.map((c: any) => ({
-        employeeId: c.employee.id,
-        // ★修正: 名前がない場合は社員IDを表示
-        employeeName: c.employee.user?.name || c.employee.id, 
-        score: c.employee.score || 0,
-        matchScore: c.matchScore,
-        skills: c.employee.skills,
-        desiredDept: c.employee.desiredDept,
-      }))
+  employeeId: c.employee.id,
+  employeeName: c.employee.user?.name || c.employee.id,
+  score: c.employee.score || 0,
+  matchScore: c.matchScore,
+  skills: c.employee.skills,
+  desiredDept: c.employee.desiredDept,
+  laborCost: c.employee.laborCost,
+  salesForce: c.employee.salesForce,
+  managementForce: c.employee.managementForce,
+  explorationForce: c.employee.explorationForce,
+  developmentForce: c.employee.developmentForce,
+  tags: calculateTags(c.employee),
+  isExecutiveCandidate: isAdminUser ? ((c.employee.managementForce || 0) >= 70 && (c.employee.developmentForce || 0) >= 70) : false
+})).sort((a: any, b: any) => (a.employeeId || 0) - (b.employeeId || 0))
     });
   } catch (error) {
     res.status(400).json({ error: (error as Error).message });
@@ -245,6 +279,7 @@ router.post('/simulate', authenticate, isAdmin, async (req: AuthRequest, res: Re
 
 router.post('/simulate-multi', authenticate, isAdmin, async (req: AuthRequest, res: Response) => {
   try {
+    const isAdminUser = req.user?.role === 'ADMIN';
     const { departmentIds } = req.body;
 
     if (!Array.isArray(departmentIds) || departmentIds.length === 0) {
@@ -312,6 +347,30 @@ router.post('/simulate-multi', authenticate, isAdmin, async (req: AuthRequest, r
       }
     }
 
+    // フォールバック処理: 未配置の社員を全員割り当て
+    for (const empData of employeesWithScores) {
+      if (allocatedEmployeeIds.has(empData.employee.id)) continue;
+
+      let bestDept: string | null = null;
+      let bestDeltaProfit = -Infinity;
+
+      for (const dept of departments) {
+        const currentAllocations = allocations.get(dept.id) || [];
+        const deltaProfit = calculateDeltaProfit(dept, currentAllocations, empData.employee);
+        if (deltaProfit > bestDeltaProfit) {
+          bestDeltaProfit = deltaProfit;
+          bestDept = dept.id;
+        }
+      }
+
+      if (bestDept) {
+        const deptAllocations = allocations.get(bestDept) || [];
+        deptAllocations.push(empData.employee);
+        allocations.set(bestDept, deptAllocations);
+        allocatedEmployeeIds.add(empData.employee.id);
+      }
+    }
+
     const results = [];
     let totalCompanyRevenue = 0;
     let totalCompanyCost = 0;
@@ -339,15 +398,21 @@ router.post('/simulate-multi', authenticate, isAdmin, async (req: AuthRequest, r
           const scoreData = employeesWithScores.find(e => e.employee.id === emp.id);
           const matchScoreForDept = scoreData?.scores.find((s: any) => s.departmentId === department.id)?.matchScore || 0;
           return {
-            employeeId: emp.id,
-            // ★修正: 名前がない場合は社員IDを表示
-            employeeName: emp.user?.name || emp.id, 
-            score: emp.score || 0,
-            matchScore: matchScoreForDept,
-            skills: emp.skills,
-            desiredDept: emp.desiredDept,
-          };
-        })
+    employeeId: emp.id,
+    employeeName: emp.user?.name || emp.id,
+    score: emp.score || 0,
+    matchScore: matchScoreForDept,
+    skills: emp.skills,
+    desiredDept: emp.desiredDept,
+    laborCost: emp.laborCost,
+    salesForce: emp.salesForce,
+    managementForce: emp.managementForce,
+    explorationForce: emp.explorationForce,
+    developmentForce: emp.developmentForce,
+    tags: calculateTags(emp),
+    isExecutiveCandidate: isAdminUser ? ((emp.managementForce || 0) >= 70 && (emp.developmentForce || 0) >= 70) : false
+  };
+}).sort((a, b) => (a.employeeId || 0) - (b.employeeId || 0))
       };
       results.push(resultObj);
       totalCompanyRevenue += Math.round(resultObj.finalRevenue);
@@ -368,6 +433,7 @@ router.post('/simulate-multi', authenticate, isAdmin, async (req: AuthRequest, r
 
 router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, res: Response) => {
   try {
+    const isAdminUser = req.user?.role === 'ADMIN';
     let departmentIds: string[] = [];
     let employees: any[] = [];
 
@@ -438,6 +504,31 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
       }
     }
 
+    // フォールバック処理: 未配置の社員を全員割り当て
+    for (const emp of employees) {
+      const empId = emp.id || emp.employeeId;
+      if (allocatedEmployeeIds.has(empId)) continue;
+
+      let bestDept: string | null = null;
+      let bestDeltaProfit = -Infinity;
+
+      for (const dept of departments) {
+        const currentAllocations = allocations.get(dept.id) || [];
+        const deltaProfit = calculateDeltaProfit(dept, currentAllocations, emp);
+        if (deltaProfit > bestDeltaProfit) {
+          bestDeltaProfit = deltaProfit;
+          bestDept = dept.id;
+        }
+      }
+
+      if (bestDept) {
+        const deptAllocations = allocations.get(bestDept) || [];
+        deptAllocations.push(emp);
+        allocations.set(bestDept, deptAllocations);
+        allocatedEmployeeIds.add(empId);
+      }
+    }
+
     const results = departments.map((department) => {
       const allocatedEmployees = allocations.get(department.id) || [];
       const state = calculateDepartmentState(department, allocatedEmployees);
@@ -454,15 +545,21 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
         overallocationPenaltyFactor: state.overallocationPenaltyFactor,
         finalRevenue: Math.round(state.finalRevenue),
         totalCost: Math.round(state.totalCost),
-        profit: Math.round(state.profit),
-        candidates: allocatedEmployees.map((emp: any) => ({
-          employeeId: emp.id || emp.employeeId,
-          // ★修正: 名前がない場合は社員IDを表示
-          employeeName: emp.user?.name || emp.id || emp.employeeId, 
-          score: emp.score || 0,
-          skills: emp.skills,
-          desiredDept: emp.desiredDept,
-        }))
+       profit: Math.round(state.profit),
+candidates: allocatedEmployees.map((emp: any) => ({
+  employeeId: emp.id || emp.employeeId,
+  employeeName: emp.user?.name || emp.id || emp.employeeId || 'Unknown',
+  score: emp.score || 0,
+  skills: emp.skills,
+  desiredDept: emp.desiredDept,
+  laborCost: emp.laborCost,
+  salesForce: emp.salesForce,
+  managementForce: emp.managementForce,
+  explorationForce: emp.explorationForce,
+  developmentForce: emp.developmentForce,
+  tags: calculateTags(emp),
+  isExecutiveCandidate: isAdminUser ? ((emp.managementForce || 0) >= 70 && (emp.developmentForce || 0) >= 70) : false
+})).sort((a, b) => (Number(a.employeeId) || 0) - (Number(b.employeeId) || 0))
       };
     });
 
@@ -481,6 +578,7 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
 
 router.post('/recalculate', authenticate, isAdmin, async (req: AuthRequest, res: Response) => {
   try {
+    const isAdminUser = req.user?.role === 'ADMIN';
     let requestedData = req.body.results || req.body.departments || req.body;
 
     // ▼フロントエンドのドラッグ＆ドロップデータ形式に対応
@@ -553,8 +651,10 @@ router.post('/recalculate', authenticate, isAdmin, async (req: AuthRequest, res:
           managementForce: emp.managementForce,
           explorationForce: emp.explorationForce,
           developmentForce: emp.developmentForce,
-          laborCost: emp.laborCost
-        }))
+          laborCost: emp.laborCost,
+          tags: calculateTags(emp),
+          isExecutiveCandidate: isAdminUser ? ((emp.managementForce || 0) >= 70 && (emp.developmentForce || 0) >= 70) : false
+        })).sort((a: any, b: any) => (Number(a.employeeId) || 0) - (Number(b.employeeId) || 0))
       };
 
       results.push(resultObj);

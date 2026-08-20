@@ -55,6 +55,14 @@ export class ApiService {
     return this.http.get(`${this.apiUrl}/employees/${id}`, { headers: this.getHeaders() });
   }
 
+  getAssignmentDetails(userId: string | number) {
+    return this.http.get(`${this.apiUrl}/employees/${userId}/assignment`, { headers: this.getHeaders() });
+  }
+
+  saveEmployeePreferences(userId: string | number, data: any) {
+    return this.http.post(`${this.apiUrl}/employees/${userId}/preferences`, data, { headers: this.getHeaders() });
+  }
+
   // Departments
   getDepartments(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/departments`);
@@ -129,5 +137,9 @@ export class ApiService {
 
   respondToConsultation(id: string, response: string, status: string): Observable<any> {
     return this.http.put(`${this.apiUrl}/consultations/${id}`, { response, status }, { headers: this.getHeaders() });
+  }
+
+  submitConsultation(userId: string | number, inquiry: string) {
+    return this.http.post(`${this.apiUrl}/employees/${userId}/consultation`, { inquiry }, { headers: this.getHeaders() });
   }
 }

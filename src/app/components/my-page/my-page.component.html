@@ -1,0 +1,71 @@
+<div class="my-page-container">
+  <div class="header">
+    <div>
+      <h1>マイページ</h1>
+      <p class="user-info" *ngIf="user">{{ user.name }} さん</p>
+    </div>
+    <button (click)="logout()" class="logout-btn">ログアウト</button>
+  </div>
+
+  <div class="content">
+    <!-- キャリア希望・働き方セクション -->
+    <section class="card">
+      <h2>キャリア希望・働き方について</h2>
+      <div class="form-group">
+        <label for="careerDesire">キャリア希望</label>
+        <textarea
+          id="careerDesire"
+          [(ngModel)]="careerDesire"
+          placeholder="今後のキャリアについてお聞かせください"
+          class="textarea">
+        </textarea>
+      </div>
+      <div class="form-group">
+        <label for="workLifeBalance">ワークライフバランス</label>
+        <textarea
+          id="workLifeBalance"
+          [(ngModel)]="workLifeBalance"
+          placeholder="希望する働き方についてお聞かせください"
+          class="textarea">
+        </textarea>
+      </div>
+      <button (click)="savePreferences()" class="btn btn-primary">保存</button>
+    </section>
+
+    <!-- 配置・内示情報セクション -->
+    <section class="card" *ngIf="assignmentDetails">
+      <h2>配置・内示情報</h2>
+      <div class="info-block" *ngIf="assignmentDetails.department">
+        <p class="label">配置部門</p>
+        <p class="value">{{ assignmentDetails.department }}</p>
+      </div>
+      <div class="info-block" *ngIf="assignmentDetails.position">
+        <p class="label">配置予定職務</p>
+        <p class="value">{{ assignmentDetails.position }}</p>
+      </div>
+      <div class="info-block" *ngIf="assignmentDetails.reason">
+        <p class="label">配置理由</p>
+        <p class="value">{{ assignmentDetails.reason }}</p>
+      </div>
+      <div class="info-block" *ngIf="assignmentDetails.startDate">
+        <p class="label">配置予定日</p>
+        <p class="value">{{ assignmentDetails.startDate }}</p>
+      </div>
+    </section>
+
+    <!-- 相談フォームセクション -->
+    <section class="card">
+      <h2>人事への相談</h2>
+      <div class="form-group">
+        <label for="inquiry">相談内容</label>
+        <textarea
+          id="inquiry"
+          [(ngModel)]="inquiry"
+          placeholder="配置や働き方について相談があれば入力してください"
+          class="textarea">
+        </textarea>
+      </div>
+      <button (click)="submitConsultation()" class="btn btn-primary">送信</button>
+    </section>
+  </div>
+</div>

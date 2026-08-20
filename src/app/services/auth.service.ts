@@ -53,6 +53,10 @@ export class AuthService {
   }
 
   isAdmin(): boolean {
-    return this.currentUser && this.currentUser.role === 'ADMIN';
+    return this.currentUser && (this.currentUser.role === 'ADMIN' || this.currentUser.role === 'HR');
+  }
+
+  isEmployee(): boolean {
+    return this.currentUser && this.currentUser.role === 'EMPLOYEE';
   }
 }

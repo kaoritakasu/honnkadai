@@ -1,7 +1,18 @@
 <div class="admin-container">
   <header class="admin-header">
-    <h1>管理者ダッシュボード</h1>
-    <button (click)="logout()" class="logout-btn">ログアウト</button>
+   <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 30px; padding: 0 !important; background: transparent !important; border: none !important; box-shadow: none !important;">
+  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#4b5563" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+    <circle cx="9" cy="7" r="4"></circle>
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+  </svg>
+  <div style="border: none !important; background: transparent !important;">
+    <h1 style="margin: 0; font-size: 1.8em; font-weight: bold; color: #1f2937 !important; border: none !important; box-shadow: none !important;">人材配置システム</h1>
+    <p style="margin: 2px 0 0 0; font-size: 0.85em; color: #6b7280 !important;">Talent Allocation System</p>
+  </div>
+</div>
+     <button (click)="logout()" class="logout-btn">ログアウト</button>
   </header>
 
   @if (error()) {
@@ -235,25 +246,25 @@
           </button>
         </div>
 
-        @if (simulationResults) {
+        @if (simulationResults()) {
           <div class="simulation-results">
             <h3>シミュレーション結果</h3>
 
-            @if (simulationSummary) {
+            @if (simulationSummary()) {
               <div class="company-summary-card" style="margin-bottom: 20px; padding: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px;">
                 <h4 style="margin: 0 0 10px 0;">全社合計</h4>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
                   <div style="padding: 10px;">
                     <p style="margin: 0 0 5px 0; opacity: 0.9;">全社売上</p>
-                    <p style="margin: 0; font-size: 1.5em; font-weight: bold;">¥{{ simulationSummary.totalCompanyRevenue | number }}</p>
+                    <p style="margin: 0; font-size: 1.5em; font-weight: bold;">¥{{ simulationSummary().totalCompanyRevenue | number }}</p>
                   </div>
                   <div style="padding: 10px;">
                     <p style="margin: 0 0 5px 0; opacity: 0.9;">全社コスト</p>
-                    <p style="margin: 0; font-size: 1.5em; font-weight: bold;">¥{{ simulationSummary.totalCompanyCost | number }}</p>
+                    <p style="margin: 0; font-size: 1.5em; font-weight: bold;">¥{{ simulationSummary().totalCompanyCost | number }}</p>
                   </div>
                   <div style="padding: 10px;">
                     <p style="margin: 0 0 5px 0; opacity: 0.9;">全社利益</p>
-                    <p style="margin: 0; font-size: 1.5em; font-weight: bold;">¥{{ simulationSummary.totalCompanyProfit | number }}</p>
+                    <p style="margin: 0; font-size: 1.5em; font-weight: bold;">¥{{ simulationSummary().totalCompanyProfit | number }}</p>
                   </div>
                 </div>
               </div>
@@ -268,18 +279,54 @@
               }
             </div>
 
-            <div class="drag-drop-container" cdkDropListGroup style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px;" [attr.id]="'dropListGroup'">
-              @if (Array.isArray(simulationResults)) {
-                @for (result of simulationResults; track $index; let i = $index) {
-                  <div class="department-zone" style="border: 2px dashed #667eea; border-radius: 8px; padding: 20px; background-color: #f9f9f9; min-height: 300px;" [attr.id]="'dropList_' + i" cdkDropList [cdkDropListData]="result.candidates" [cdkDropListConnectedTo]="dropListIds" (cdkDropListDropped)="drop($event, i)">
-                    <h4 style="margin: 0 0 15px 0; color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 10px;">{{ result.departmentName || result.department?.name || '-' }}</h4>
+            <div class="drag-drop-container" cdkDropListGroup style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 30px; align-items: stretch; width: 100%; box-sizing: border-box;" [attr.id]="'dropListGroup'">
+              @if (Array.isArray(simulationResults())) {
+                @for (result of simulationResults(); track $index; let i = $index) {
+                  <div class="department-zone" style="width: calc(33.333% - 7px); display: flex; flex-direction: column; box-sizing: border-box; border: 2px dashed #667eea; border-radius: 8px; padding: 10px; background-color: #f9f9f9; min-width: 0; overflow-x: hidden;" cdkDropList [cdkDropListData]="result.candidates" (cdkDropListDropped)="drop($event)">
+                    <h4 style="margin: 0 0 8px 0; color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 6px; font-size: 0.85em;">{{ result.departmentName || result.department?.name || '-' }}</h4>
+                    <div class="dept-controls" style="margin-bottom: 8px; display: flex; flex-direction: column; gap: 4px; flex-wrap: wrap;">
+                      <div style="display: flex; gap: 4px; margin-bottom: 8px;">
+                        <input type="text" placeholder="名前/タグ..."
+                               [(ngModel)]="filterInputs[result.departmentId]"
+                               style="flex: 1; font-size: 0.7em; padding: 4px; box-sizing: border-box;">
+                        <button (click)="applyFilter(result.departmentId)"
+                                style="font-size: 0.7em; padding: 4px 8px; background-color: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                          絞り込む
+                        </button>
+                      </div>
+                      <select (change)="sortCandidates(result.candidates, $event)" style="font-size: 0.7em; padding: 2px; border: 1px solid #ddd; border-radius: 3px;">
+                        <option value="">並び替え...</option>
+                        <option value="salesForce">営業力順</option>
+                        <option value="managementForce">管理力順</option>
+                        <option value="explorationForce">開拓力順</option>
+                        <option value="developmentForce">育成力順</option>
+                      </select>
+                    </div>
                     <p style="margin: 0 0 5px 0; font-size: 0.9em; color: #666;"><strong>充足率:</strong> {{ result.fulfillmentRate || '-' }}%</p>
                     <p style="margin: 0 0 15px 0; font-size: 0.9em; color: #666;"><strong>利益:</strong> ¥{{ (result.profit || (result.finalRevenue - result.cost) || 0) | number }}</p>
-                    <div style="background-color: white; border-radius: 4px; padding: 10px; min-height: 200px; border: 1px dashed #ddd;">
+                    <div style="flex: 1 1 auto; min-width: 0; min-height: 0; overflow-x: hidden; background-color: white; border-radius: 4px; padding: 5px; border: 1px dashed #ddd; display: flex; flex-direction: column; gap: 4px;">
                       @if (Array.isArray(result.candidates) && result.candidates.length > 0) {
                         @for (emp of result.candidates; track emp.employeeId) {
-                          <div class="employee-card" cdkDrag [cdkDragData]="emp" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 10px; margin: 8px 0; border-radius: 4px; cursor: move; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                            <p style="margin: 0; font-weight: bold;">{{ emp.employeeName }}</p>
+                          <div class="employee-card" cdkDrag [cdkDragData]="emp"
+                               [style.display]="isMatch(emp, activeFilters[result.departmentId]) ? 'flex' : 'none'"
+                               style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 6px; border-radius: 4px; cursor: move; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex-direction: column;">
+                            <p style="margin: 0; font-weight: bold; font-size: 0.9em; overflow: hidden; text-overflow: ellipsis;">
+                              {{ emp.employeeName }}
+                              @if (emp.isExecutiveCandidate) { <span title="幹部候補" style="margin-left: 4px;">👑</span> }
+                            </p>
+                            @if (emp.tags && emp.tags.length > 0) {
+                              <div class="tags-container">
+                                @for (tag of emp.tags; track tag) {
+                                  <span class="tag">{{ tag }}</span>
+                                }
+                              </div>
+                            }
+                            <div class="ability-scores" style="font-size: 0.65em;">
+                              <span style="padding: 2px;">営:{{ emp.salesForce || 0 }}</span>
+                              <span style="padding: 2px;">管:{{ emp.managementForce || 0 }}</span>
+                              <span style="padding: 2px;">開:{{ emp.explorationForce || 0 }}</span>
+                              <span style="padding: 2px;">育:{{ emp.developmentForce || 0 }}</span>
+                            </div>
                           </div>
                         }
                       } @else {
@@ -331,38 +378,38 @@
                   </tr>
                 </thead>
                 <tbody>
-                  @if (Array.isArray(simulationResults)) {
-                    @for (result of simulationResults; track $index) {
+                  @if (Array.isArray(simulationResults())) {
+                    @for (result of simulationResults(); track $index) {
                       <tr>
                         <td>{{ result.departmentName || result.department?.name || '-' }}</td>
                         <td>{{ result.allocatedCount || result.candidates?.length || 0 }}</td>
                         <td>{{ result.fulfillmentRate || '-' }}</td>
                         <td>¥{{ (result.baseRevenue || 0) | number }}</td>
                         <td>¥{{ (result.finalRevenue || result.totalExpectedRevenue || 0) | number }}</td>
-                        <td>¥{{ result.cost || 0 | number }}</td>
+                        <td>¥{{ (result.cost || 0) | number }}</td>
                         <td>¥{{ (result.profit || (result.finalRevenue - result.cost) || 0) | number }}</td>
                       </tr>
                     }
                   } @else {
                     <tr>
-                      <td>{{ simulationResults.departmentName || simulationResults.department?.name || '-' }}</td>
-                      <td>{{ simulationResults.allocatedCount || simulationResults.candidates?.length || 0 }}</td>
-                      <td>{{ simulationResults.fulfillmentRate || '-' }}</td>
-                      <td>¥{{ (simulationResults.baseRevenue || 0) | number }}</td>
-                      <td>¥{{ (simulationResults.finalRevenue || simulationResults.totalExpectedRevenue || 0) | number }}</td>
-                      <td>¥{{ simulationResults.cost || 0 | number }}</td>
-                      <td>¥{{ (simulationResults.profit || (simulationResults.finalRevenue - simulationResults.cost) || 0) | number }}</td>
+                      <td>{{ simulationResults().departmentName || simulationResults().department?.name || '-' }}</td>
+                      <td>{{ simulationResults().allocatedCount || simulationResults().candidates?.length || 0 }}</td>
+                      <td>{{ simulationResults().fulfillmentRate || '-' }}</td>
+                      <td>¥{{ (simulationResults().baseRevenue || 0) | number }}</td>
+                      <td>¥{{ (simulationResults().finalRevenue || simulationResults().totalExpectedRevenue || 0) | number }}</td>
+                      <td>¥{{ (simulationResults().cost || 0) | number }}</td>
+                      <td>¥{{ (simulationResults().profit || (simulationResults().finalRevenue - simulationResults().cost) || 0) | number }}</td>
                     </tr>
                   }
                 </tbody>
               </table>
             </div>
 
-            @if (!Array.isArray(simulationResults)) {
+            @if (!Array.isArray(simulationResults())) {
               <div class="results-summary" style="margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 4px;">
-                <p><strong>対象部署:</strong> {{ simulationResults.departmentName || simulationResults.department?.name || '-' }}</p>
-                <p><strong>予想総収益:</strong> ¥{{ simulationResults.totalExpectedRevenue | number }}</p>
-                <p><strong>成長率見込み:</strong> {{ simulationResults.growthRate | number: '1.0-0' }}%</p>
+                <p><strong>対象部署:</strong> {{ simulationResults().departmentName || simulationResults().department?.name || '-' }}</p>
+                <p><strong>予想総収益:</strong> ¥{{ simulationResults().totalExpectedRevenue | number }}</p>
+                <p><strong>成長率見込み:</strong> {{ simulationResults().growthRate | number: '1.0-0' }}%</p>
               </div>
 
               <h4 style="margin-top: 20px;">推奨候補者リスト</h4>
@@ -372,17 +419,29 @@
                     <th>名前</th>
                     <th>マッチ度</th>
                     <th>本人の希望部署</th>
+                    <th>タグ</th>
                     <th>操作</th>
                   </tr>
                 </thead>
                 <tbody>
-                  @for (cand of simulationResults.candidates; track cand.employeeId) {
+                  @for (cand of simulationResults().candidates; track cand.employeeId) {
                     <tr>
                       <td>{{ cand.employeeName }}</td>
                       <td>{{ cand.matchScore }}</td>
                       <td>{{ cand.desiredDept || '-' }}</td>
                       <td>
-                        <button (click)="allocateCandidate(cand.employeeId, simulationResults.department.id, 'シミュレーション結果からの配置')" class="btn-allocate">この社員を配置する</button>
+                        @if (cand.tags && cand.tags.length > 0) {
+                          <div class="tags-container">
+                            @for (tag of cand.tags; track tag) {
+                              <span class="tag">{{ tag }}</span>
+                            }
+                          </div>
+                        } @else {
+                          <span style="color: #999;">-</span>
+                        }
+                      </td>
+                      <td>
+                        <button (click)="allocateCandidate(cand.employeeId, simulationResults().department.id, 'シミュレーション結果からの配置')" class="btn-allocate">この社員を配置する</button>
                       </td>
                     </tr>
                   }
@@ -404,6 +463,7 @@
               <th>現在の部署</th>
               <th>希望部署</th>
               <th>ステータス</th>
+              <th>タグ</th>
               <th>最終更新日時</th>
             </tr>
           </thead>
@@ -414,6 +474,17 @@
                 <td>{{ emp.currentDept || '-' }}</td>
                 <td>{{ emp.desiredDept || '-' }}</td>
                 <td>{{ emp.status || '-' }}</td>
+                <td>
+                  @if (emp.tags && emp.tags.length > 0) {
+                    <div class="tags-container">
+                      @for (tag of emp.tags; track tag) {
+                        <span class="tag">{{ tag }}</span>
+                      }
+                    </div>
+                  } @else {
+                    <span style="color: #999;">-</span>
+                  }
+                </td>
                 <td>{{ emp.lastUpdated | date: 'short' }}</td>
               </tr>
             }

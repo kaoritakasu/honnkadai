@@ -18,8 +18,8 @@ export class AdminDashboardComponent implements OnInit {
   dashboard = signal<any>(null);
   departments = signal<any[]>([]);
   employees = signal<any[]>([]);
-  simulationResults: any = null;
-  simulationSummary: any = null;
+  simulationResults = signal<any>(null);
+  simulationSummary = signal<any>(null);
   selectedDepartments = signal<string[]>([]);
   pasteDataText = '';
   loading = signal(false);
@@ -29,8 +29,10 @@ export class AdminDashboardComponent implements OnInit {
   editingDeptId: string | null = null;
   adjustedAllocations: Map<string, string> = new Map();
   newCandidates: any[] = [];
-  draggedEmployee: any = null;
   dropListIds: string[] = [];
+  filterTexts: { [key: string]: string } = {};
+  filterInputs: { [key: string]: string } = {};
+  activeFilters: { [key: string]: string } = {};
 
   constructor(
     private apiService: ApiService,
@@ -59,6 +61,7 @@ export class AdminDashboardComponent implements OnInit {
           shortagePenalty: dept.shortagePenalty && Array.isArray(dept.shortagePenalty) ? dept.shortagePenalty : []
         }));
         this.departments.set(deptWithPenalty);
+        this.selectedDepartments.set(deptWithPenalty.map((dept: any) => dept.id));
       },
       error: (error: any) => this.error.set(error.error?.error || 'Failed to load departments')
     });
@@ -67,7 +70,6 @@ export class AdminDashboardComponent implements OnInit {
   loadEmployees() {
     this.apiService.getAllEmployees().subscribe({
       next: (data: any) => {
-        // Handle both array and object responses
         let employeesArray: any[] = [];
         if (Array.isArray(data)) {
           employeesArray = data;
@@ -101,19 +103,18 @@ export class AdminDashboardComponent implements OnInit {
     this.apiService.simulateMultiDepartment(this.selectedDepartments()).subscribe({
       next: (data: any) => {
         if (data && data.results && Array.isArray(data.results)) {
-          this.simulationResults = data.results.map((result: any) => ({
+          this.simulationResults.set(data.results.map((result: any) => ({
             ...result,
             cost: result.totalCost
-          }));
-          // 全社規模の合計情報を保存
-          this.simulationSummary = {
+          })));
+          this.simulationSummary.set({
             totalCompanyRevenue: data.totalCompanyRevenue,
             totalCompanyCost: data.totalCompanyCost,
             totalCompanyProfit: data.totalCompanyProfit
-          };
+          });
         } else {
-          this.simulationResults = data;
-          this.simulationSummary = null;
+          this.simulationResults.set(data);
+          this.simulationSummary.set(null);
         }
         this.updateDropListIds();
         this.loading.set(false);
@@ -139,8 +140,8 @@ export class AdminDashboardComponent implements OnInit {
           allocatedCount: data.candidates ? data.candidates.length : 0,
           cost: data.totalCost || 0
         };
-        this.simulationResults = mappedData;
-        this.simulationSummary = null; // 単一部署シミュレーションでは全社合計なし
+        this.simulationResults.set(mappedData);
+        this.simulationSummary.set(null);
         this.updateDropListIds();
         this.loading.set(false);
       },
@@ -166,14 +167,13 @@ export class AdminDashboardComponent implements OnInit {
     this.loading.set(true);
     this.apiService.simulateBatchAllocation(parsed).subscribe({
       next: (data: any) => {
-        // data.results を抽出し、totalCost を cost にマッピング
         if (data && data.results && Array.isArray(data.results)) {
-          this.simulationResults = data.results.map((result: any) => ({
+          this.simulationResults.set(data.results.map((result: any) => ({
             ...result,
             cost: result.totalCost
-          }));
+          })));
         } else {
-          this.simulationResults = data;
+          this.simulationResults.set(data);
         }
         this.updateDropListIds();
         this.loading.set(false);
@@ -257,10 +257,6 @@ export class AdminDashboardComponent implements OnInit {
         });
       }
     }
-
-    console.log('読み込み成功:', parsedEmployees);
-    alert('読み込みました');
-
     return parsedEmployees;
   }
 
@@ -288,21 +284,19 @@ export class AdminDashboardComponent implements OnInit {
     this.loading.set(true);
     this.apiService.simulateBatchAllocation(convertedData).subscribe({
       next: (data: any) => {
-        // data.results を抽出し、totalCost を cost にマッピング
         if (data && data.results && Array.isArray(data.results)) {
-          this.simulationResults = data.results.map((result: any) => ({
+          this.simulationResults.set(data.results.map((result: any) => ({
             ...result,
             cost: result.totalCost
-          }));
-          // 全社規模の合計情報を保存
-          this.simulationSummary = {
+          })));
+          this.simulationSummary.set({
             totalCompanyRevenue: data.totalCompanyRevenue,
             totalCompanyCost: data.totalCompanyCost,
             totalCompanyProfit: data.totalCompanyProfit
-          };
+          });
         } else {
-          this.simulationResults = data;
-          this.simulationSummary = null;
+          this.simulationResults.set(data);
+          this.simulationSummary.set(null);
         }
         this.updateDropListIds();
         this.loading.set(false);
@@ -344,11 +338,7 @@ export class AdminDashboardComponent implements OnInit {
     if (!Array.isArray(department.shortagePenalty)) {
       department.shortagePenalty = [];
     }
-    department.shortagePenalty.push({
-      threshold: 100,
-      condition: 'over',
-      factor: 1.0
-    });
+    department.shortagePenalty.push({ threshold: 100, condition: 'over', factor: 1.0 });
   }
 
   removePenaltyRule(department: any, index: number) {
@@ -365,7 +355,7 @@ export class AdminDashboardComponent implements OnInit {
     this.editingDeptId = null;
   }
 
- updateDepartment(department: any) {
+  updateDepartment(department: any) {
     this.apiService.updateDepartment(department.id, {
       name: department.name || null,
       status: department.status || null,
@@ -387,7 +377,6 @@ export class AdminDashboardComponent implements OnInit {
         this.loadDepartments();
       },
       error: (err: any) => {
-        console.error('Update error:', err);
         this.error.set('部署の更新に失敗しました');
       }
     });
@@ -404,7 +393,7 @@ export class AdminDashboardComponent implements OnInit {
         this.error.set('Allocation created successfully');
         setTimeout(() => {
           this.loadDashboard();
-          this.simulationResults = null;
+          this.simulationResults.set(null);
         }, 1000);
       },
       error: (error: any) => {
@@ -414,10 +403,7 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   deleteDepartment(deptId: string) {
-    if (!confirm('本当にこの部署を削除してよろしいですか？')) {
-      return;
-    }
-
+    if (!confirm('本当にこの部署を削除してよろしいですか？')) return;
     this.loading.set(true);
     this.apiService.deleteDepartment(deptId).subscribe({
       next: () => {
@@ -438,22 +424,7 @@ export class AdminDashboardComponent implements OnInit {
     this.router.navigate(['/login']);
   }
 
-  dragStart(event: DragEvent, employee: any) {
-    this.draggedEmployee = employee;
-    if (event.dataTransfer) {
-      event.dataTransfer.effectAllowed = 'move';
-    }
-  }
-
-  dragOver(event: DragEvent) {
-    event.preventDefault();
-    if (event.dataTransfer) {
-      event.dataTransfer.dropEffect = 'move';
-    }
-  }
-
-  drop(event: CdkDragDrop<any[]>, targetIndex?: number) {
-    // 1. 画面上の配列（リスト）のアイテムを移動する
+  drop(event: CdkDragDrop<any[]>) {
     if (event.previousContainer === event.container) {
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
     } else {
@@ -465,27 +436,55 @@ export class AdminDashboardComponent implements OnInit {
       );
     }
 
-    // 2. 移動後の最新の this.simulationResults 全体をバックエンドに送って再計算
-    if (this.simulationResults) {
-      this.apiService.recalculate({ data: this.simulationResults }).subscribe({
+    const currentResults = this.simulationResults();
+    if (currentResults && Array.isArray(currentResults)) {
+      // オプティミスティックUI更新：移動した社員のコストを計算
+     const movedEmployee = event.container.data[event.currentIndex];
+console.log('🎯 移動した社員:', movedEmployee); // ← これを追加！
+const empCost = (Number(movedEmployee?.laborCost) || 0) * 1000000;
+
+      // シグナルの値を複製して更新
+      const updatedResults = currentResults.map((r: any) => ({ ...r }));
+
+      // 移動元部署を特定
+      const previousContainerIndex = currentResults.findIndex((r: any) => r.candidates === event.previousContainer.data);
+      // 移動先部署を特定
+      const currentContainerIndex = currentResults.findIndex((r: any) => r.candidates === event.container.data);
+
+      // コストと利益をリアルタイム更新
+      if (previousContainerIndex >= 0) {
+        updatedResults[previousContainerIndex].cost = (updatedResults[previousContainerIndex].cost || 0) - empCost;
+        updatedResults[previousContainerIndex].profit = (updatedResults[previousContainerIndex].profit || 0) + empCost;
+      }
+      if (currentContainerIndex >= 0 && previousContainerIndex !== currentContainerIndex) {
+        updatedResults[currentContainerIndex].cost = (updatedResults[currentContainerIndex].cost || 0) + empCost;
+        updatedResults[currentContainerIndex].profit = (updatedResults[currentContainerIndex].profit || 0) - empCost;
+      }
+
+      // シグナルを更新して画面に反映
+      this.simulationResults.set(updatedResults);
+
+      // APIで正確な値を取得
+      this.apiService.recalculate({ data: currentResults }).subscribe({
         next: (data: any) => {
           if (data && data.results) {
-            this.simulationResults = data.results.map((result: any) => ({
+            const finalResults = data.results.map((result: any) => ({
               ...result,
               cost: result.totalCost
             }));
+            this.simulationResults.set(finalResults);
 
             if (data.totalCompanyRevenue !== undefined) {
-              this.simulationSummary = {
+              this.simulationSummary.set({
                 totalCompanyRevenue: data.totalCompanyRevenue,
                 totalCompanyCost: data.totalCompanyCost,
                 totalCompanyProfit: data.totalCompanyProfit
-              };
+              });
             }
             this.updateDropListIds();
           }
         },
-        error: (err) => {
+        error: (err: any) => {
           console.error('再計算エラー:', err);
           this.error.set('再計算に失敗しました');
         }
@@ -494,8 +493,9 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   updateDropListIds() {
-    if (Array.isArray(this.simulationResults)) {
-      this.dropListIds = this.simulationResults.map((_, i) => `dropList_${i}`);
+    const results = this.simulationResults();
+    if (Array.isArray(results)) {
+      this.dropListIds = results.map((_, i) => `dropList_${i}`);
     }
   }
 
@@ -540,22 +540,23 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   private recalculateResults() {
-    if (!this.simulationResults || !Array.isArray(this.simulationResults)) return;
+    const currentResults = this.simulationResults();
+    if (!currentResults || !Array.isArray(currentResults)) return;
 
     this.loading.set(true);
-    this.apiService.recalculateSimulation({ results: this.simulationResults }).subscribe({
+    this.apiService.recalculateSimulation({ results: currentResults }).subscribe({
       next: (data: any) => {
         if (data && data.results && Array.isArray(data.results)) {
-          this.simulationResults = data.results.map((result: any) => ({
+          this.simulationResults.set(data.results.map((result: any) => ({
             ...result,
             cost: result.totalCost
-          }));
+          })));
           if (data.totalCompanyRevenue !== undefined) {
-            this.simulationSummary = {
+            this.simulationSummary.set({
               totalCompanyRevenue: data.totalCompanyRevenue,
               totalCompanyCost: data.totalCompanyCost,
               totalCompanyProfit: data.totalCompanyProfit
-            };
+            });
           }
           this.updateDropListIds();
         }
@@ -572,5 +573,40 @@ export class AdminDashboardComponent implements OnInit {
     this.adjustedAllocations.clear();
     this.newCandidates = [];
     this.loadDashboard();
+  }
+
+  isMatch(emp: any, filterText?: string): boolean {
+    if (!filterText) return true;
+    const lowerFilter = String(filterText).toLowerCase().trim();
+
+    if (lowerFilter === '幹部候補') return !!emp.isExecutiveCandidate;
+
+    const tags = Array.isArray(emp.tags) ? emp.tags : [];
+    if (tags.some((tag: string) => typeof tag === 'string' && tag.toLowerCase().includes(lowerFilter))) {
+      return true;
+    }
+
+    const empName = String(emp.employeeName || '');
+    return empName.toLowerCase().includes(lowerFilter);
+  }
+
+  updateFilter(deptId: string, value: string) {
+    this.filterInputs = { ...this.filterInputs, [deptId]: value };
+  }
+
+  applyFilter(deptId: string) {
+    const filterValue = this.filterInputs[deptId] || '';
+    this.activeFilters = { ...this.activeFilters, [deptId]: filterValue };
+  }
+
+  sortCandidates(candidates: any[], event: any) {
+    const sortKey = event.target.value;
+    if (!sortKey) return;
+
+    candidates.sort((a: any, b: any) => {
+      const aVal = a[sortKey] || 0;
+      const bVal = b[sortKey] || 0;
+      return bVal - aVal;
+    });
   }
 }
