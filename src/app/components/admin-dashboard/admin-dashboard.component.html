@@ -268,7 +268,7 @@
               }
             </div>
 
-            <div class="drag-drop-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px;">
+            <div class="drag-drop-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 20px; margin-bottom: 30px;">
               @if (Array.isArray(simulationResults)) {
                 @for (result of simulationResults; track result.departmentName) {
                   <div class="department-zone" style="border: 2px dashed #667eea; border-radius: 8px; padding: 20px; background-color: #f9f9f9; min-height: 300px;" cdkDropList [cdkDropListData]="result.candidates" (cdkDropListDropped)="drop($event)">

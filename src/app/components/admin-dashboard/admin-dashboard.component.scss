@@ -223,15 +223,14 @@ button {
 .btn-delete:hover { background-color: #b71c1c; }
 
 /* =========================================
-   ドラッグ&ドロップ関連スタイル
+   ドラッグ&ドロッ.dragプ関連スタイル
    ========================================= */
 .drag-drop-container {
-  margin: 30px 0;
+  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)) !important;
 }
 
 .department-zone {
-  transition: all 0.3s ease;
-  background-color: #ffffff;
+  min-width: 800px !important;
 }
 
 .department-zone:hover {
@@ -264,4 +263,15 @@ button {
 .new-candidate-card {
   background: linear-gradient(135deg, #fff8dc 0%, #fffacd 100%);
   border: 2px dashed #ffa500;
+}
+/* =========================================
+   データ貼り付けエリア（テキストエリア）を広げる
+   ========================================= */
+textarea,
+.paste-data-form textarea,
+textarea.input-field {
+  width: 100% !important;
+  min-width: 800px !important;
+  min-height: 200px !important;
+  resize: both !important; /* 右下をドラッグして自由にサイズ変更可能にする */
 }
