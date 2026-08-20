@@ -27,10 +27,9 @@
 
 .content {
   padding: 30px;
-  max-width: 1200px;
+  max-width: 95%; /* 1200pxから95%などに広げて画面を広く使う */
   margin: 0 auto;
 }
-
 /* ヘッダー（グラデーション適用！） */
 .admin-header {
   background: var(--primary-gradient);
@@ -230,7 +229,7 @@ button {
 }
 
 .department-zone {
-  min-width: 800px !important;
+  min-width: 250px;
 }
 
 .department-zone:hover {

@@ -30,6 +30,7 @@ export class AdminDashboardComponent implements OnInit {
   adjustedAllocations: Map<string, string> = new Map();
   newCandidates: any[] = [];
   draggedEmployee: any = null;
+  dropListIds: string[] = [];
 
   constructor(
     private apiService: ApiService,
@@ -114,6 +115,7 @@ export class AdminDashboardComponent implements OnInit {
           this.simulationResults = data;
           this.simulationSummary = null;
         }
+        this.updateDropListIds();
         this.loading.set(false);
       },
       error: (error: any) => {
@@ -139,6 +141,7 @@ export class AdminDashboardComponent implements OnInit {
         };
         this.simulationResults = mappedData;
         this.simulationSummary = null; // 単一部署シミュレーションでは全社合計なし
+        this.updateDropListIds();
         this.loading.set(false);
       },
       error: (error: any) => {
@@ -172,6 +175,7 @@ export class AdminDashboardComponent implements OnInit {
         } else {
           this.simulationResults = data;
         }
+        this.updateDropListIds();
         this.loading.set(false);
         this.pasteDataText = '';
       },
@@ -300,6 +304,7 @@ export class AdminDashboardComponent implements OnInit {
           this.simulationResults = data;
           this.simulationSummary = null;
         }
+        this.updateDropListIds();
         this.loading.set(false);
         this.pasteDataText = '';
       },
@@ -447,7 +452,7 @@ export class AdminDashboardComponent implements OnInit {
     }
   }
 
-  drop(event: CdkDragDrop<any[]>, targetId?: any) {
+  drop(event: CdkDragDrop<any[]>, targetIndex?: number) {
     // 1. 画面上の配列（リスト）のアイテムを移動する
     if (event.previousContainer === event.container) {
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
@@ -477,6 +482,7 @@ export class AdminDashboardComponent implements OnInit {
                 totalCompanyProfit: data.totalCompanyProfit
               };
             }
+            this.updateDropListIds();
           }
         },
         error: (err) => {
@@ -484,6 +490,12 @@ export class AdminDashboardComponent implements OnInit {
           this.error.set('再計算に失敗しました');
         }
       });
+    }
+  }
+
+  updateDropListIds() {
+    if (Array.isArray(this.simulationResults)) {
+      this.dropListIds = this.simulationResults.map((_, i) => `dropList_${i}`);
     }
   }
 
@@ -507,7 +519,7 @@ export class AdminDashboardComponent implements OnInit {
     this.recalculateResults();
   }
 
-  reassignCandidate(candidate: any, fromDept: string, toDept: string) {
+  reassignCandidate(candidate: any, toDept: string) {
     if (candidate.isNew) {
       candidate.departmentId = toDept;
       const deptName = this.departments().find((d: any) => d.id === toDept)?.name || '';
@@ -545,6 +557,7 @@ export class AdminDashboardComponent implements OnInit {
               totalCompanyProfit: data.totalCompanyProfit
             };
           }
+          this.updateDropListIds();
         }
         this.loading.set(false);
       },

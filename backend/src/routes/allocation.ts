@@ -137,10 +137,9 @@ const calculateDepartmentState = (
 
   // 【式7】コスト計算 = 配置された各社員の人件費の合計 × 3
   const totalCost = employeeContributions.reduce(
-    (sum, ec) => sum + ec.laborCost * 3,
+    (sum, ec) => sum + (ec.laborCost * 1000000),
     0
-  );
-
+);
   // 【式8】利益 = 最終売上 − コスト
   const profit = finalRevenue - totalCost;
 
