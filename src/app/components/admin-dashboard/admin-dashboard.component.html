@@ -309,33 +309,37 @@
                       @if (Array.isArray(result.candidates) && result.candidates.length > 0) {
                         @for (emp of result.candidates; track emp.employeeId) {
                           <div class="employee-card" cdkDrag [cdkDragData]="emp"
-                               [style.display]="isMatch(emp, activeFilters[result.departmentId]) ? 'flex' : 'none'"
-                               style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 6px; border-radius: 4px; cursor: move; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex-direction: column;">
-                            <p style="margin: 0; font-weight: bold; font-size: 0.95em; line-height: 1.4; white-space: normal; word-break: break-all;">
-                              {{ emp.employeeNumber ? emp.employeeNumber + ' ' : '' }}{{ emp.employeeName }}
-                              @if (emp.isExecutiveCandidate) { <span title="幹部候補" style="margin-left: 4px;">👑</span> }
-                            </p>
-                            @if (emp.tags && emp.tags.length > 0) {
-                              <div class="tags-container">
-                                @for (tag of emp.tags; track tag) {
-                                  <span class="tag">{{ tag }}</span>
-                                }
-                                @if (emp.desiredDept) {
-                                  <span class="tag" style="background-color: #ff9800; color: white; font-weight: bold;">希望: {{ emp.desiredDept }}</span>
-                                }
-                              </div>
-                            } @else if (emp.desiredDept) {
-                              <div class="tags-container">
-                                <span class="tag" style="background-color: #ff9800; color: white; font-weight: bold;">希望: {{ emp.desiredDept }}</span>
-                              </div>
-                            }
-                            <div class="ability-scores" style="font-size: 0.65em;">
-                              <span style="padding: 2px;">営:{{ emp.salesForce || 0 }}</span>
-                              <span style="padding: 2px;">管:{{ emp.managementForce || 0 }}</span>
-                              <span style="padding: 2px;">開:{{ emp.explorationForce || 0 }}</span>
-                              <span style="padding: 2px;">育:{{ emp.developmentForce || 0 }}</span>
-                            </div>
-                          </div>
+     [style.display]="isMatch(emp, activeFilters[result.departmentId]) ? 'flex' : 'none'"
+     style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 6px; border-radius: 4px; cursor: move; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex-direction: column;">
+  <p style="margin: 0; font-weight: bold; font-size: 0.95em; line-height: 1.4; white-space: normal; word-break: break-all;">
+    {{ emp.employeeNumber ? emp.employeeNumber + ' ' : '' }}{{ emp.employeeName }}
+    @if (emp.isExecutiveCandidate) { <span title="幹部候補" style="margin-left: 4px;">👑</span> }
+  </p>
+
+  <!-- タグと希望部署の表示エリア -->
+  @if ((emp.tags && emp.tags.length > 0) || emp.desiredDept) {
+    <div class="tags-container" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">
+      <!-- 希望部署がある場合は目立つオレンジのタグを表示 -->
+      @if (emp.desiredDept) {
+        <span class="tag" style="background-color: #f59e0b; color: white; font-size: 0.7em; padding: 3px 8px; border-radius: 12px; white-space: nowrap; font-weight: bold; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">希望: {{ emp.desiredDept }}</span>
+      }
+      
+      <!-- 既存のタグ -->
+      @if (emp.tags && emp.tags.length > 0) {
+        @for (tag of emp.tags; track tag) {
+          <span class="tag" style="background-color: rgba(255,255,255,0.3); font-size: 0.7em; padding: 3px 8px; border-radius: 12px; white-space: nowrap;">{{ tag }}</span>
+        }
+      }
+    </div>
+  }
+
+  <div class="ability-scores" style="font-size: 0.65em; margin-top: 4px;">
+    <span style="padding: 2px;">営:{{ emp.salesForce || 0 }}</span>
+    <span style="padding: 2px;">管:{{ emp.managementForce || 0 }}</span>
+    <span style="padding: 2px;">開:{{ emp.explorationForce || 0 }}</span>
+    <span style="padding: 2px;">育:{{ emp.developmentForce || 0 }}</span>
+  </div>
+</div>
                         }
                       } @else {
                         <p style="color: #999; text-align: center; margin-top: 80px;">人員をドラッグして配置してください</p>
@@ -480,7 +484,7 @@
               <tr>
                 <td>{{ emp.user?.name || emp.name || '-' }}</td>
                 <td>{{ emp.currentDept || '-' }}</td>
-                <td>{{ emp.desiredDept || '-' }}</td>
+                <td>{{ emp.desiredDept || emp.careerDesire || emp.careerGoals || '-' }}</td>
                 <td>{{ emp.status || '-' }}</td>
                 <td>
                   @if (emp.tags && emp.tags.length > 0) {

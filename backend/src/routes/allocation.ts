@@ -288,7 +288,7 @@ router.post('/simulate', authenticate, isAdmin, async (req: AuthRequest, res: Re
       candidates: selectedCandidates.map((c: any) => ({
   employeeId: c.employee.id,
   employeeNumber: c.employee.employeeNumber,
-  employeeName: c.employee.user?.name || c.employee.id,
+  employeeName: c.employee.employeeName || c.employee.name || c.employee.id,
   score: c.employee.score || 0,
   matchScore: c.matchScore,
   skills: c.employee.skills,
@@ -511,22 +511,22 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
         dbEmp = dbEmployees.find((e: any) => e.id === empId);
       }
 
-      // DB情報がある場合はマージ、なければフロントエンドのデータを使用
+      // フロントエンドのペイロードデータをそのまま使用
       const result = {
         ...emp,
-        id: dbEmp?.id || emp.id || emp.employeeId,
-        employeeNumber: dbEmp?.employeeNumber || emp.employeeNumber,
-        employeeName: dbEmp?.user?.name || (dbEmp as any)?.name || emp.name || emp.employeeName,
-        desiredDept: (dbEmp as any)?.desiredDept || emp.desiredDept,
-        tags: (dbEmp as any)?.tags || emp.tags || [],
-        salesForce: (dbEmp as any)?.salesForce ?? emp.salesForce ?? 0,
-        managementForce: (dbEmp as any)?.managementForce ?? emp.managementForce ?? 0,
-        explorationForce: (dbEmp as any)?.explorationForce ?? emp.explorationForce ?? 0,
-        developmentForce: (dbEmp as any)?.developmentForce ?? emp.developmentForce ?? 0,
-        laborCost: (dbEmp as any)?.laborCost ?? emp.laborCost ?? 0,
-        score: (dbEmp as any)?.score ?? emp.score ?? 0,
-        skills: (dbEmp as any)?.skills || emp.skills || [],
-        isExecutiveCandidate: (((dbEmp as any)?.managementForce || emp.managementForce || 0) >= 70 && ((dbEmp as any)?.developmentForce || emp.developmentForce || 0) >= 70)
+        id: emp.id || emp.employeeId,
+        employeeNumber: emp.employeeNumber,
+        employeeName: emp.name || emp.employeeName,
+        desiredDept: emp.desiredDept,
+        tags: emp.tags || [],
+        salesForce: emp.salesForce ?? 0,
+        managementForce: emp.managementForce ?? 0,
+        explorationForce: emp.explorationForce ?? 0,
+        developmentForce: emp.developmentForce ?? 0,
+        laborCost: emp.laborCost ?? 0,
+        score: emp.score ?? 0,
+        skills: emp.skills || [],
+        isExecutiveCandidate: ((emp.managementForce || 0) >= 70 && (emp.developmentForce || 0) >= 70)
       };
       return result;
     });
@@ -616,7 +616,7 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
 candidates: allocatedEmployees.map((emp: any) => ({
   employeeId: emp.id || emp.employeeId,
   employeeNumber: emp.employeeNumber,
-  employeeName: emp.user?.name || emp.id || emp.employeeId || 'Unknown',
+  employeeName: emp.employeeName || emp.name || emp.id || emp.employeeId || 'Unknown',
   score: emp.score || 0,
   skills: emp.skills,
   desiredDept: emp.desiredDept,
@@ -625,7 +625,7 @@ candidates: allocatedEmployees.map((emp: any) => ({
   managementForce: emp.managementForce,
   explorationForce: emp.explorationForce,
   developmentForce: emp.developmentForce,
-  tags: calculateTags(emp),
+  tags: emp.tags || calculateTags(emp),
   isExecutiveCandidate: isAdminUser ? ((emp.managementForce || 0) >= 70 && (emp.developmentForce || 0) >= 70) : false
 })).sort((a, b) => (Number(a.employeeId) || 0) - (Number(b.employeeId) || 0))
       };
@@ -703,19 +703,19 @@ router.post('/recalculate', authenticate, isAdmin, async (req: AuthRequest, res:
 
         const result = {
           ...c,
-          id: dbEmp?.id || c.id || c.employeeId,
-          employeeNumber: dbEmp?.employeeNumber || c.employeeNumber,
-          employeeName: dbEmp?.user?.name || c.employeeName || c.name || 'Unknown',
-          desiredDept: dbEmp?.desiredDept || c.desiredDept,
-          tags: dbEmp?.tags || c.tags || [],
-          salesForce: (dbEmp as any)?.salesForce ?? c.salesForce ?? 0,
-          managementForce: (dbEmp as any)?.managementForce ?? c.managementForce ?? 0,
-          explorationForce: (dbEmp as any)?.explorationForce ?? c.explorationForce ?? 0,
-          developmentForce: (dbEmp as any)?.developmentForce ?? c.developmentForce ?? 0,
-          laborCost: (dbEmp as any)?.laborCost ?? c.laborCost ?? 0,
-          score: (dbEmp as any)?.score ?? c.score ?? 0,
-          skills: (dbEmp as any)?.skills || c.skills || [],
-          isExecutiveCandidate: (((dbEmp as any)?.managementForce || c.managementForce || 0) >= 70 && ((dbEmp as any)?.developmentForce || c.developmentForce || 0) >= 70)
+          id: c.id || c.employeeId,
+          employeeNumber: c.employeeNumber,
+          employeeName: c.employeeName || c.name || 'Unknown',
+          desiredDept: c.desiredDept,
+          tags: c.tags || [],
+          salesForce: c.salesForce ?? 0,
+          managementForce: c.managementForce ?? 0,
+          explorationForce: c.explorationForce ?? 0,
+          developmentForce: c.developmentForce ?? 0,
+          laborCost: c.laborCost ?? 0,
+          score: c.score ?? 0,
+          skills: c.skills || [],
+          isExecutiveCandidate: ((c.managementForce || 0) >= 70 && (c.developmentForce || 0) >= 70)
         };
         return result;
       });
@@ -739,7 +739,7 @@ router.post('/recalculate', authenticate, isAdmin, async (req: AuthRequest, res:
         candidates: allocatedEmployees.map((emp: any) => ({
           employeeId: emp.id || emp.employeeId,
           employeeNumber: emp.employeeNumber,
-          employeeName: emp.user?.name || emp.name || emp.employeeName || emp.id || emp.employeeId || 'Unknown',
+          employeeName: emp.employeeName || emp.name || emp.id || emp.employeeId || 'Unknown',
           score: emp.score || 0,
           skills: emp.skills,
           desiredDept: emp.desiredDept,
@@ -748,7 +748,7 @@ router.post('/recalculate', authenticate, isAdmin, async (req: AuthRequest, res:
           explorationForce: emp.explorationForce,
           developmentForce: emp.developmentForce,
           laborCost: emp.laborCost,
-          tags: calculateTags(emp),
+          tags: emp.tags || calculateTags(emp),
           isExecutiveCandidate: isAdminUser ? ((emp.managementForce || 0) >= 70 && (emp.developmentForce || 0) >= 70) : false
         })).sort((a: any, b: any) => (Number(a.employeeId) || 0) - (Number(b.employeeId) || 0))
       };

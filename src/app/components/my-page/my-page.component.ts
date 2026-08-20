@@ -35,7 +35,14 @@ export class MyPageComponent implements OnInit {
   loadAssignmentDetails() {
     if (this.user?.id) {
       this.apiService.getAssignmentDetails(this.user.id).subscribe(
-        (data: any) => this.assignmentDetails = data,
+        (data: any) => {
+          this.assignmentDetails = data;
+          // ★ 追加：DBから取得したデータを画面の入力欄にセットする
+          if (data) {
+            this.desiredDept = data.desiredDept || data.careerDesire || data.careerGoals || '';
+            this.workLifeBalance = data.workLifeBalance || '';
+          }
+        },
         () => this.assignmentDetails = null
       );
     }

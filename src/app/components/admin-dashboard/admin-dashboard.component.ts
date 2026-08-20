@@ -651,9 +651,9 @@ const empCost = (Number(movedEmployee?.laborCost) || 0) * 1000000;
         if (match) {
           // 氏名はマイページ（DB）のものを優先して上書き
           cand.employeeName = match.user?.name || match.name || cand.employeeName;
-
-          // 希望部署やフラグを紐づけ（※タグの紐づけは行わない）
-          cand.desiredDept = match.desiredDept;
+          
+          // ★修正：どれかの名前でデータが入っていれば確実にキャッチする
+          cand.desiredDept = match.desiredDept || match.careerDesire || match.careerGoals;
           cand.isExecutiveCandidate = match.isExecutiveCandidate;
         }
       });
