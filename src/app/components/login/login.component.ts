@@ -65,7 +65,9 @@ export class LoginComponent {
           this.loading.set(false);
         },
         error: (error) => {
-          this.error.set(error.error?.error || 'Registration failed');
+          console.error('Registration Error Details:', error);
+          const errorMsg = error.error?.error || error.error?.message || error.message || 'Registration failed';
+          this.error.set(errorMsg);
           this.loading.set(false);
         }
       });

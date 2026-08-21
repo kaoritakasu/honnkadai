@@ -11,8 +11,9 @@ generator client {
 }
 
 enum Role {
-  ADMIN
   EMPLOYEE
+  HR
+  ADMIN
 }
 
 enum AllocationStatus {

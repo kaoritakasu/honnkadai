@@ -57,15 +57,12 @@
       }
 
       @if (!isLogin()) {
-        <div class="form-group">
-          <label for="role">権限</label>
-          <select
-            id="role"
-            [(ngModel)]="role"
-            name="role"
-          >
+        <div class="form-group" style="margin-bottom: 15px;">
+          <label for="role" style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">アカウント権限</label>
+          <select id="role" [(ngModel)]="role" name="role" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 14px;">
             <option value="EMPLOYEE">一般社員</option>
-            <option value="ADMIN">管理者（人事）</option>
+            <option value="HR">人事</option>
+            <option value="ADMIN">管理者</option>
           </select>
         </div>
       }

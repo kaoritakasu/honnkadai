@@ -33,6 +33,8 @@ export class AdminDashboardComponent implements OnInit {
   filterInputs: { [key: string]: string } = {};
   activeFilters: { [key: string]: string } = {};
   draggedEmployee: any = null;
+  // 実際のログインユーザーの権限を保持するプロパティ
+  currentUserRole: string = '';
 
   constructor(
     private apiService: ApiService,
@@ -41,6 +43,17 @@ export class AdminDashboardComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    // ログイン中のユーザー情報を取得して権限（role）をセット
+    const userStr = localStorage.getItem('currentUser');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        this.currentUserRole = user.role || 'EMPLOYEE';
+      } catch (e) {
+        this.currentUserRole = 'EMPLOYEE';
+      }
+    }
+
     this.loadDashboard();
     this.loadDepartments();
     this.loadEmployees();
@@ -591,21 +604,43 @@ export class AdminDashboardComponent implements OnInit {
     if (!filterText) return true;
     const lowerFilter = String(filterText).toLowerCase().trim();
 
-    if (lowerFilter === '幹部候補') return !!emp.isExecutiveCandidate;
+    // 幹部候補の絞り込み（管理者の場合のみ許可）
+    if ((lowerFilter === '幹部候補' || lowerFilter === '幹部') && this.currentUserRole === 'ADMIN') {
+      return !!emp.isExecutiveCandidate;
+    }
 
+    // 「wlb」と入力されたら、WLB希望を出している人を全員表示する
+    if (lowerFilter === 'wlb' && emp.workLifeBalance) return true;
+
+    // タグの絞り込み
     const tags = Array.isArray(emp.tags) ? emp.tags : [];
     if (tags.some((tag: string) => typeof tag === 'string' && tag.toLowerCase().includes(lowerFilter))) {
       return true;
     }
 
-    // 希望部署（desiredDept）での絞り込みを追加
+    // 希望部署での絞り込み
     const desiredDept = String(emp.desiredDept || '');
-    if (desiredDept.toLowerCase().includes(lowerFilter)) {
-      return true;
-    }
+    if (desiredDept.toLowerCase().includes(lowerFilter)) return true;
 
+    // WLBの「中身のテキスト（定時退社など）」での絞り込み
+    const wlb = String(emp.workLifeBalance || '');
+    if (wlb.toLowerCase().includes(lowerFilter)) return true;
+
+    // 名前（内部データ上の名前）での絞り込み
     const empName = String(emp.employeeName || '');
-    return empName.toLowerCase().includes(lowerFilter);
+    if (empName.toLowerCase().includes(lowerFilter)) return true;
+
+    // 画面に表示されている名前（getDisplayName）での確実な絞り込み
+    try {
+      const displayName = String(this.getDisplayName(emp) || '').toLowerCase();
+      if (displayName.includes(lowerFilter)) return true;
+    } catch (e) {}
+
+    // 社員番号での絞り込み
+    const empNum = String(emp.employeeNumber || '');
+    if (empNum.toLowerCase().includes(lowerFilter)) return true;
+
+    return false;
   }
 
   applyFilter(deptId: string) {
@@ -649,6 +684,26 @@ export class AdminDashboardComponent implements OnInit {
         };
       })
     }));
+  }
+
+  getDisplayName(emp: any): string {
+    const dbEmployees = this.employees();
+
+    // 社員番号（employeeNumber）をキーにして、DBの社員マスターと確実に照合
+    const match = dbEmployees.find((e: any) => e.employeeNumber && e.employeeNumber === String(emp.employeeNumber));
+
+    // DB側（マイページ）に名前があれば最優先で表示
+    if (match && (match.employeeName || match.name || match.user?.name)) {
+      return match.employeeName || match.name || match.user?.name;
+    }
+
+    // DBに名前がない場合は、パースしたデータ内の名前を表示
+    if (emp.employeeName && emp.employeeName !== '名前未設定') {
+      return emp.employeeName;
+    }
+
+    // どちらもない場合は社員番号を表示
+    return emp.employeeNumber || '名前未設定';
   }
 
 }
