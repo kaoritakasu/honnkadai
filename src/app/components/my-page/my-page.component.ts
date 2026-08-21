@@ -41,16 +41,24 @@ export class MyPageComponent implements OnInit {
       this.apiService.getAssignmentDetails(this.user.id).subscribe(
         (data: any) => {
           this.assignmentDetails = data;
-          if (data) {
-            this.desiredDept = data.desiredDept || data.careerDesire || data.careerGoals || '';
-            this.workLifeBalance = data.workLifeBalance || '';
-          }
-        this.cdr.detectChanges(); 
+          this.cdr.detectChanges();
         },
         () => {
           this.assignmentDetails = null;
-          this.cdr.detectChanges(); // エラー時も念のため追加
+          this.cdr.detectChanges();
         }
+      );
+
+      // DBから「希望部署」「WLB」のデータを取得して画面に復元する
+      this.apiService.getPreferences(this.user.id).subscribe(
+        (data: any) => {
+          if (data) {
+            this.desiredDept = data.desiredDept || data.careerDesire || data.careerGoals || '';
+            this.workLifeBalance = data.workLifeBalance || '';
+            this.cdr.detectChanges();
+          }
+        },
+        (err) => console.error('Error loading preferences:', err)
       );
     }
   }

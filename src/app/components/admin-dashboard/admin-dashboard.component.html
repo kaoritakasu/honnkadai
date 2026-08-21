@@ -318,10 +318,15 @@
                 </p>
 
                 <!-- タグ表示 -->
-                @if ((emp.tags && emp.tags.length > 0) || emp.desiredDept) {
+                @if ((emp.tags && emp.tags.length > 0) || emp.desiredDept || emp.workLifeBalance) {
                   <div class="tags-container" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">
                     @if (emp.desiredDept) {
                       <span class="tag" style="background-color: #f59e0b; color: white; font-size: 0.7em; padding: 3px 8px; border-radius: 12px; white-space: nowrap; font-weight: bold; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">希望: {{ emp.desiredDept }}</span>
+                    }
+
+                    <!-- ワークライフバランス（WLB）の表示 -->
+                    @if (emp.workLifeBalance) {
+                      <span class="tag" [title]="emp.workLifeBalance" style="background-color: #27ae60; color: white; font-size: 0.7em; padding: 3px 8px; border-radius: 12px; white-space: nowrap; font-weight: bold; box-shadow: 0 1px 2px rgba(0,0,0,0.1); cursor: help;">💬 WLB</span>
                     }
                     @if (emp.tags && emp.tags.length > 0) {
                       @for (tag of emp.tags; track tag) {

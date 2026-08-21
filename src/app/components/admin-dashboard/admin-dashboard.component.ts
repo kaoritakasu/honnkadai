@@ -114,7 +114,8 @@ export class AdminDashboardComponent implements OnInit {
             totalCompanyProfit: data.totalCompanyProfit
           });
         } else {
-          this.simulationResults.set(data);
+          const enrichedData = this.enrichWithMyPageData(data);
+          this.simulationResults.set(enrichedData);
           this.simulationSummary.set(null);
         }
         this.loading.set(false);
@@ -174,7 +175,8 @@ export class AdminDashboardComponent implements OnInit {
             cost: result.totalCost
           })));
         } else {
-          this.simulationResults.set(data);
+          const enrichedData = this.enrichWithMyPageData(data);
+          this.simulationResults.set(enrichedData);
         }
         this.loading.set(false);
         this.pasteDataText = '';
@@ -320,7 +322,8 @@ export class AdminDashboardComponent implements OnInit {
             totalCompanyProfit: data.totalCompanyProfit
           });
         } else {
-          this.simulationResults.set(data);
+          const enrichedData = this.enrichWithMyPageData(data);
+          this.simulationResults.set(enrichedData);
           this.simulationSummary.set(null);
         }
         this.loading.set(false);
@@ -478,7 +481,8 @@ export class AdminDashboardComponent implements OnInit {
       this.apiService.recalculate({ data: this.simulationResults() }).subscribe({
         next: (data: any) => {
           if (data && data.results) {
-            this.simulationResults.set(data.results.map((result: any) => ({
+            const enrichedResults = this.enrichWithMyPageData(data.results);
+            this.simulationResults.set(enrichedResults.map((result: any) => ({
               ...result,
               cost: result.totalCost
             })));
@@ -554,7 +558,8 @@ export class AdminDashboardComponent implements OnInit {
     this.apiService.recalculateSimulation({ results: this.simulationResults() }).subscribe({
       next: (data: any) => {
         if (data && data.results && Array.isArray(data.results)) {
-          this.simulationResults.set(data.results.map((result: any) => ({
+          const enrichedResults = this.enrichWithMyPageData(data.results);
+          this.simulationResults.set(enrichedResults.map((result: any) => ({
             ...result,
             cost: result.totalCost
           })));
@@ -625,34 +630,25 @@ export class AdminDashboardComponent implements OnInit {
 
   private enrichWithMyPageData(results: any): any {
     const dbEmployees = this.employees(); // 取得済みの全社員データ
+    if (!Array.isArray(results)) return results;
 
-    const enrich = (candidates: any[]) => {
-      if (!candidates) return;
-      candidates.forEach(cand => {
-        // データ側の社員番号をキーにしてマイページのデータを検索
-        const match = dbEmployees.find(e => e.employeeNumber && e.employeeNumber === cand.employeeNumber);
-
-        if (match) {
-          // 氏名はマイページ（DB）のものを優先して上書き
-          cand.employeeName = match.user?.name || match.name || cand.employeeName;
-
-          // ★修正：どれかの名前でデータが入っていれば確実にキャッチする
-          cand.desiredDept = match.desiredDept || match.careerDesire || match.careerGoals;
-          cand.isExecutiveCandidate = match.isExecutiveCandidate;
-        }
-
-        if (cand.isOldData === undefined) {
-          cand.isOldData = Math.random() < 0.2;
-        }
-      });
-    };
-
-    if (Array.isArray(results)) {
-      results.forEach(r => enrich(r.candidates));
-    } else if (results && results.candidates) {
-      enrich(results.candidates);
-    }
-    return results;
+    return results.map((result: any) => ({
+      ...result,
+      candidates: (result.candidates || []).map((cand: any) => {
+        const dbEmp = dbEmployees.find((e: any) =>
+          (cand.employeeId && e.employeeId === cand.employeeId) ||
+          (cand.employeeNumber && e.employeeNumber === cand.employeeNumber)
+        );
+        return {
+          ...cand,
+          // DBの社員データから名前を復元（パースデータに名前がない場合の救済）
+          employeeName: cand.employeeName || dbEmp?.employeeName || dbEmp?.name || dbEmp?.user?.name || cand.employeeNumber || '名前未設定',
+          desiredDept: dbEmp?.desiredDept || cand.desiredDept || '',
+          workLifeBalance: dbEmp?.workLifeBalance || cand.workLifeBalance || '',
+          tags: dbEmp?.tags || cand.tags || []
+        };
+      })
+    }));
   }
 
 }

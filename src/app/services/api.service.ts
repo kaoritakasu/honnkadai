@@ -113,6 +113,10 @@ export class ApiService {
     return this.http.post(`${this.apiUrl}/employees/${userId}/preferences`, data, { headers: this.getHeaders() });
   }
 
+  getPreferences(userId: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/employees/${userId}/preferences`, { headers: this.getHeaders() });
+  }
+
   getMyAllocations(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/allocations/me`, { headers: this.getHeaders() });
   }

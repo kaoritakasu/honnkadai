@@ -48,6 +48,7 @@ model Employee {
 
   skills          String   @default("")
   careerGoals     String?
+  workLifeBalance String?
 
   allocations     Allocation[]
   feedback        Feedback[]

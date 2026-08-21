@@ -87,9 +87,17 @@ router.get('/:id/assignment', authenticate, async (req: AuthRequest, res: Respon
 router.get('/:id/preferences', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const employeeId = req.params.id;
-    // TODO: 実際のDBモデルに合わせて取得処理を実装してください
-    
-    res.json(null);
+
+    const employee = await prisma.employee.findFirst({
+      where: {
+        OR: [
+          { id: employeeId },
+          { userId: employeeId }
+        ]
+      }
+    });
+
+    res.json(employee);
   } catch (error) {
     console.error('Error fetching preferences:', error);
     res.status(500).json({ message: 'Internal server error' });
@@ -122,11 +130,7 @@ router.post('/:id/preferences', authenticate, async (req: AuthRequest, res: Resp
         where: { id: existingEmployee.id },
         data: {
           desiredDept: desiredDept,
-          // ※ workLifeBalance, careerDesire もDBに保存したい場合は、
-          // 1. backend/prisma/schema.prisma の Employee に `workLifeBalance String?` などを追加
-          // 2. npx prisma generate を実行
-          // 3. 以下のコメントアウトを外してください。
-          // workLifeBalance: workLifeBalance,
+          workLifeBalance: workLifeBalance,
           // careerDesire: careerDesire,
         }
       });
@@ -135,7 +139,7 @@ router.post('/:id/preferences', authenticate, async (req: AuthRequest, res: Resp
       updatedData = await prisma.employee.create({
         data: {
           desiredDept: desiredDept,
-          // workLifeBalance: workLifeBalance,
+          workLifeBalance: workLifeBalance,
           // careerDesire: careerDesire,
           user: {
             connect: { id: employeeId }
