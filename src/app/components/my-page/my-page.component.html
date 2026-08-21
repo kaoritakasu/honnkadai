@@ -8,6 +8,25 @@
   </div>
 
   <div class="content">
+    <!-- 配置結果通知カード -->
+    @if (allocations()?.length > 0) {
+      <section class="allocation-notification-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 8px 16px rgba(0,0,0,0.15); border: 2px solid rgba(255,255,255,0.2);">
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+          <span style="font-size: 2em;">📢</span>
+          <h2 style="margin: 0; font-size: 1.8em; font-weight: bold;">新しい配置が決定しました</h2>
+        </div>
+
+        <div style="background: rgba(255,255,255,0.15); padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #ffd700;">
+          <p style="margin: 0 0 10px 0; font-size: 0.9em; opacity: 0.9;">配置先部署</p>
+          <p style="margin: 0; font-size: 2.2em; font-weight: bold;">{{ allocations()[0].department?.name || '部署名未設定' }}</p>
+        </div>
+      </section>
+    } @else {
+      <section class="allocation-notification-card" style="background: #f5f5f5; color: #666; padding: 20px; border-radius: 12px; margin-bottom: 30px; border: 1px solid #ddd; text-align: center;">
+        <p style="margin: 0; font-size: 0.95em;">※現在、あなたへの新しい配置通知はありません。</p>
+      </section>
+    }
+
     <!-- キャリア希望・働き方セクション -->
     <section class="card">
       <div class="section-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">

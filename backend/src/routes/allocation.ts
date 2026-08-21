@@ -133,11 +133,12 @@ const calculateDepartmentState = (
   const finalRevenue =
     baseRevenue * shortagePenaltyFactor * overallocationPenaltyFactor;
 
-  // 【式7】コスト計算 = 配置された各社員の人件費の合計 × 3
+  // 【式7】コスト計算 = 配置された各社員の人件費の合計 × 3 (※単位が100万のため × 3000000)
   const totalCost = employeeContributions.reduce(
-    (sum, ec) => sum + (ec.laborCost * 1000000),
+    (sum, ec) => sum + (ec.laborCost * 3000000),
     0
-);
+  );
+
   // 【式8】利益 = 最終売上 − コスト
   const profit = finalRevenue - totalCost;
 
@@ -219,7 +220,7 @@ const validateSimulateBatchPayload = (data: any): boolean => {
 };
 
 // =========================================
-// ここから下をすべて上書きコピー＆ペーストしてください
+// Routes
 // =========================================
 
 router.post('/simulate', authenticate, isAdmin, async (req: AuthRequest, res: Response) => {
@@ -286,21 +287,21 @@ router.post('/simulate', authenticate, isAdmin, async (req: AuthRequest, res: Re
       totalCost: Math.round(state.totalCost),
       profit: Math.round(state.profit),
       candidates: selectedCandidates.map((c: any) => ({
-  employeeId: c.employee.id,
-  employeeNumber: c.employee.employeeNumber,
-  employeeName: c.employee.employeeName || c.employee.name || c.employee.id,
-  score: c.employee.score || 0,
-  matchScore: c.matchScore,
-  skills: c.employee.skills,
-  desiredDept: c.employee.desiredDept,
-  laborCost: c.employee.laborCost,
-  salesForce: c.employee.salesForce,
-  managementForce: c.employee.managementForce,
-  explorationForce: c.employee.explorationForce,
-  developmentForce: c.employee.developmentForce,
-  tags: calculateTags(c.employee),
-  isExecutiveCandidate: isAdminUser ? ((c.employee.managementForce || 0) >= 70 && (c.employee.developmentForce || 0) >= 70) : false
-})).sort((a: any, b: any) => (a.employeeId || 0) - (b.employeeId || 0))
+        employeeId: c.employee.id,
+        employeeNumber: c.employee.employeeNumber,
+        employeeName: c.employee.employeeName || c.employee.name || c.employee.id,
+        score: c.employee.score || 0,
+        matchScore: c.matchScore,
+        skills: c.employee.skills,
+        desiredDept: c.employee.desiredDept,
+        laborCost: c.employee.laborCost,
+        salesForce: c.employee.salesForce,
+        managementForce: c.employee.managementForce,
+        explorationForce: c.employee.explorationForce,
+        developmentForce: c.employee.developmentForce,
+        tags: calculateTags(c.employee),
+        isExecutiveCandidate: isAdminUser ? ((c.employee.managementForce || 0) >= 70 && (c.employee.developmentForce || 0) >= 70) : false
+      })).sort((a: any, b: any) => (a.employeeId || 0) - (b.employeeId || 0))
     });
   } catch (error) {
     res.status(400).json({ error: (error as Error).message });
@@ -428,22 +429,22 @@ router.post('/simulate-multi', authenticate, isAdmin, async (req: AuthRequest, r
           const scoreData = employeesWithScores.find(e => e.employee.id === emp.id);
           const matchScoreForDept = scoreData?.scores.find((s: any) => s.departmentId === department.id)?.matchScore || 0;
           return {
-    employeeId: emp.id,
-    employeeNumber: emp.employeeNumber,
-    employeeName: emp.user?.name || emp.id,
-    score: emp.score || 0,
-    matchScore: matchScoreForDept,
-    skills: emp.skills,
-    desiredDept: emp.desiredDept,
-    laborCost: emp.laborCost,
-    salesForce: emp.salesForce,
-    managementForce: emp.managementForce,
-    explorationForce: emp.explorationForce,
-    developmentForce: emp.developmentForce,
-    tags: calculateTags(emp),
-    isExecutiveCandidate: isAdminUser ? ((emp.managementForce || 0) >= 70 && (emp.developmentForce || 0) >= 70) : false
-  };
-}).sort((a, b) => (a.employeeId || 0) - (b.employeeId || 0))
+            employeeId: emp.id,
+            employeeNumber: emp.employeeNumber,
+            employeeName: emp.user?.name || emp.id,
+            score: emp.score || 0,
+            matchScore: matchScoreForDept,
+            skills: emp.skills,
+            desiredDept: emp.desiredDept,
+            laborCost: emp.laborCost,
+            salesForce: emp.salesForce,
+            managementForce: emp.managementForce,
+            explorationForce: emp.explorationForce,
+            developmentForce: emp.developmentForce,
+            tags: calculateTags(emp),
+            isExecutiveCandidate: isAdminUser ? ((emp.managementForce || 0) >= 70 && (emp.developmentForce || 0) >= 70) : false
+          };
+        }).sort((a, b) => (a.employeeId || 0) - (b.employeeId || 0))
       };
       results.push(resultObj);
       totalCompanyRevenue += Math.round(resultObj.finalRevenue);
@@ -495,23 +496,18 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
       return res.status(404).json({ error: 'No departments found' });
     }
 
-    // employeeNumber を使用して DB から社員情報を検索・マージ
     const dbEmployees = await prisma.employee.findMany({ include: { user: true } });
     const enrichedEmployees = employees.map((emp: any) => {
       let dbEmp: any = null;
 
-      // employeeNumber がある場合は優先的に検索
       if (emp.employeeNumber) {
         dbEmp = dbEmployees.find((e: any) => e.employeeNumber === emp.employeeNumber);
       }
-
-      // employeeNumber で見つからない、またはないの場合は employeeId で検索
       if (!dbEmp) {
         const empId = emp.id || emp.employeeId;
         dbEmp = dbEmployees.find((e: any) => e.id === empId);
       }
 
-      // フロントエンドのペイロードデータをそのまま使用
       const result = {
         ...emp,
         id: emp.id || emp.employeeId,
@@ -612,22 +608,22 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
         overallocationPenaltyFactor: state.overallocationPenaltyFactor,
         finalRevenue: Math.round(state.finalRevenue),
         totalCost: Math.round(state.totalCost),
-       profit: Math.round(state.profit),
-candidates: allocatedEmployees.map((emp: any) => ({
-  employeeId: emp.id || emp.employeeId,
-  employeeNumber: emp.employeeNumber,
-  employeeName: emp.employeeName || emp.name || emp.id || emp.employeeId || 'Unknown',
-  score: emp.score || 0,
-  skills: emp.skills,
-  desiredDept: emp.desiredDept,
-  laborCost: emp.laborCost,
-  salesForce: emp.salesForce,
-  managementForce: emp.managementForce,
-  explorationForce: emp.explorationForce,
-  developmentForce: emp.developmentForce,
-  tags: emp.tags || calculateTags(emp),
-  isExecutiveCandidate: isAdminUser ? ((emp.managementForce || 0) >= 70 && (emp.developmentForce || 0) >= 70) : false
-})).sort((a, b) => (Number(a.employeeId) || 0) - (Number(b.employeeId) || 0))
+        profit: Math.round(state.profit),
+        candidates: allocatedEmployees.map((emp: any) => ({
+          employeeId: emp.id || emp.employeeId,
+          employeeNumber: emp.employeeNumber,
+          employeeName: emp.employeeName || emp.name || emp.id || emp.employeeId || 'Unknown',
+          score: emp.score || 0,
+          skills: emp.skills,
+          desiredDept: emp.desiredDept,
+          laborCost: emp.laborCost,
+          salesForce: emp.salesForce,
+          managementForce: emp.managementForce,
+          explorationForce: emp.explorationForce,
+          developmentForce: emp.developmentForce,
+          tags: emp.tags || calculateTags(emp),
+          isExecutiveCandidate: isAdminUser ? ((emp.managementForce || 0) >= 70 && (emp.developmentForce || 0) >= 70) : false
+        })).sort((a, b) => (Number(a.employeeId) || 0) - (Number(b.employeeId) || 0))
       };
     });
 
@@ -649,7 +645,6 @@ router.post('/recalculate', authenticate, isAdmin, async (req: AuthRequest, res:
     const isAdminUser = req.user?.role === 'ADMIN';
     let requestedData = req.body.results || req.body.departments || req.body;
 
-    // ▼フロントエンドのドラッグ＆ドロップデータ形式に対応
     if (req.body.adjustedAllocations) {
       requestedData = Object.entries(req.body.adjustedAllocations).map(([deptId, emps]) => ({
         departmentId: deptId,
@@ -660,7 +655,6 @@ router.post('/recalculate', authenticate, isAdmin, async (req: AuthRequest, res:
     }
 
     if (!Array.isArray(requestedData)) {
-      console.error('エラー: 送られてきたデータが配列ではありません', req.body);
       return res.status(400).json({ error: 'Invalid data format: Expected an array' });
     }
 
@@ -686,16 +680,12 @@ router.post('/recalculate', authenticate, isAdmin, async (req: AuthRequest, res:
 
       const candidates = reqDept.candidates || reqDept.employees || [];
 
-      // DBに社員がいなければ、画面から送られてきたデータをそのまま計算に使う
       const allocatedEmployees = candidates.map((c: any) => {
         let dbEmp: any = null;
 
-        // employeeNumber がある場合は優先的に検索
         if (c.employeeNumber) {
           dbEmp = allEmployeesDB.find((e: any) => e.employeeNumber === c.employeeNumber);
         }
-
-        // employeeNumber で見つからない、またはない場合は employeeId で検索
         if (!dbEmp) {
           const empId = c.employeeId || c.id;
           dbEmp = allEmployeesDB.find((e: any) => e.id === empId);
@@ -767,6 +757,104 @@ router.post('/recalculate', authenticate, isAdmin, async (req: AuthRequest, res:
     });
   } catch (error) {
     console.error('--- RECALCULATE ERROR ---', error);
+    res.status(400).json({ error: (error as Error).message });
+  }
+});
+
+router.post('/save', authenticate, isAdmin, async (req: AuthRequest, res: Response) => {
+  try {
+    const { results, totalCompanyRevenue, totalCompanyProfit } = req.body;
+    const executedBy = req.user?.email || 'Unknown';
+
+    // 1. 会社全体のシミュレーション履歴を保存
+    const simResult = await prisma.simulationResult.create({
+      data: {
+        totalRevenue: totalCompanyRevenue || 0,
+        totalProfit: totalCompanyProfit || 0,
+        executedBy: executedBy,
+        details: results,
+      }
+    });
+
+    // 2. req.body.results をループし、各 candidates について以下を実行
+    for (const dept of results) {
+      for (const cand of dept.candidates) {
+        // 3. employeeNumber または id で Employee を検索
+        let dbEmp = null;
+
+        if (cand.employeeNumber) {
+          dbEmp = await prisma.employee.findUnique({
+            where: { employeeNumber: cand.employeeNumber }
+          });
+        }
+
+        if (!dbEmp && cand.employeeId) {
+          dbEmp = await prisma.employee.findUnique({
+            where: { id: String(cand.employeeId) }
+          });
+        }
+
+        // 見つかった場合、配置を処理
+        if (dbEmp) {
+          // 4. 見つかった場合、その社員の status: 'PENDING' の Allocation を削除
+          await prisma.allocation.deleteMany({
+            where: {
+              employeeId: dbEmp.id,
+              status: 'PENDING'
+            }
+          });
+
+          // 5. prisma.allocation.create で新規作成
+          const topSkill = cand.tags?.[0] || '総合的な能力';
+          const reason = `${dept.departmentName}の求める要件に対し、あなたの「${topSkill}」が高く評価されました（適性マッチ度: ${cand.matchScore || 0}点）。事業部の利益への高い貢献が期待されています。`;
+
+          await prisma.allocation.create({
+            data: {
+              employeeId: dbEmp.id,
+              departmentId: dept.departmentId,
+              status: 'ASSIGNED',
+              reason: reason,
+            }
+          });
+
+          // 社員の現在の所属テキストも更新しておく
+          await prisma.employee.update({
+            where: { id: dbEmp.id },
+            data: { currentDept: dept.departmentName }
+          });
+        }
+      }
+    }
+
+    res.json({ success: true, message: 'Simulation saved successfully', id: simResult.id });
+  } catch (error) {
+    console.error('--- SAVE ERROR ---', error);
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const employee = await prisma.employee.findUnique({
+      where: { userId: req.user.id }
+    });
+
+    if (!employee) {
+      return res.status(404).json({ error: 'Employee not found' });
+    }
+
+    const allocations = await prisma.allocation.findMany({
+      where: { employeeId: employee.id },
+      include: { department: true },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    res.json(allocations);
+  } catch (error) {
     res.status(400).json({ error: (error as Error).message });
   }
 });

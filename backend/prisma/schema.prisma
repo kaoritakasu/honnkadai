@@ -138,3 +138,14 @@ model Consultation {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
+
+
+model SimulationResult {
+  id                 String   @id @default(cuid())
+  totalRevenue       Float    @default(0)
+  totalProfit        Float    @default(0)
+  overallFulfillment Float    @default(0)
+  executedBy         String?
+  details            Json?
+  createdAt          DateTime @default(now())
+}

@@ -93,6 +93,10 @@ export class ApiService {
     return this.http.post<any>(`${this.apiUrl}/allocations/simulate-batch`, data, { headers: this.getHeaders() });
   }
 
+  saveSimulation(payload: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/allocations/save`, payload, { headers: this.getHeaders() });
+  }
+
   recalculateSimulation(adjustments: any): Observable<any> {
     return this.http.post(`${this.apiUrl}/allocations/recalculate`, adjustments, { headers: this.getHeaders() });
   }

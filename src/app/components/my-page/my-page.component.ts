@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -22,6 +22,7 @@ export class MyPageComponent implements OnInit {
   departments: any[] = [];
   isEditing: boolean = false;
   isSaving: boolean = false;
+  allocations = signal<any[]>([]);
 
   constructor(
     private authService: AuthService,
@@ -34,6 +35,7 @@ export class MyPageComponent implements OnInit {
     this.authService.currentUser$.subscribe(u => this.user = u);
     this.loadAssignmentDetails();
     this.loadDepartments();
+    this.loadMyAllocations();
   }
 
   loadAssignmentDetails() {
@@ -107,6 +109,19 @@ export class MyPageComponent implements OnInit {
         this.inquiry = '';
       });
     }
+  }
+
+  loadMyAllocations() {
+    this.apiService.getMyAllocations().subscribe({
+      next: (data: any[]) => {
+        this.allocations.set(data);
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error loading allocations:', err);
+        this.allocations.set([]);
+      }
+    });
   }
 
   logout() {

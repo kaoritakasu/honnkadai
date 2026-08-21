@@ -25,6 +25,11 @@ router.get('/dashboard', authenticate, isAdmin, async (req: AuthRequest, res: Re
 
     const departments = await prisma.department.findMany();
 
+    const simulationHistory = await prisma.simulationResult.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 10
+    });
+
     res.json({
       totalEmployees,
       totalAllocations: allocations.length,
@@ -34,6 +39,7 @@ router.get('/dashboard', authenticate, isAdmin, async (req: AuthRequest, res: Re
         ...d,
         allocatedCount: allocations.filter((a) => a.departmentId === d.id).length,
       })),
+      simulationHistory
     });
   } catch (error) {
     res.status(400).json({ error: (error as Error).message });
