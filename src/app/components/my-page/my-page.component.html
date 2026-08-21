@@ -10,29 +10,65 @@
   <div class="content">
     <!-- キャリア希望・働き方セクション -->
     <section class="card">
-      <h2>キャリア希望・働き方について</h2>
-      <div class="form-group">
-        <label for="careerDesire">希望部署</label>
-        <select
-          id="careerDesire"
-          [(ngModel)]="desiredDept"
-          class="select-field">
-          <option value="">部署を選択してください</option>
-          <option *ngFor="let dept of departments" [value]="dept.name">
-            {{ dept.name }}
-          </option>
-        </select>
+      <div class="section-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+        <h2 style="margin: 0;">キャリア希望・働き方について</h2>
+       @if (!isEditing) {
+          <button (click)="toggleEdit()" style="padding: 8px 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            編集する
+          </button>
+        }
       </div>
-      <div class="form-group">
-        <label for="workLifeBalance">ワークライフバランス</label>
-        <textarea
-          id="workLifeBalance"
-          [(ngModel)]="workLifeBalance"
-          placeholder="希望する働き方についてお聞かせください"
-          class="textarea">
-        </textarea>
-      </div>
-      <button (click)="savePreferences()" class="btn btn-primary">保存</button>
+
+      @if (isEditing) {
+        <div class="form-group">
+          <label for="careerDesire">希望部署</label>
+          <select
+            id="careerDesire"
+            [(ngModel)]="desiredDept"
+            class="select-field">
+            <option value="">部署を選択してください</option>
+            <option *ngFor="let dept of departments" [value]="dept.name">
+              {{ dept.name }}
+            </option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="workLifeBalance">ワークライフバランス</label>
+          <textarea
+            id="workLifeBalance"
+            [(ngModel)]="workLifeBalance"
+            placeholder="希望する働き方についてお聞かせください"
+            class="textarea">
+          </textarea>
+        </div>
+        <div class="button-group">
+          <button
+            (click)="savePreferences()"
+            class="btn btn-primary"
+            [disabled]="isSaving">
+            {{ isSaving ? '保存中...' : '保存する' }}
+          </button>
+          <button
+            (click)="toggleEdit()"
+            class="btn btn-secondary"
+            [disabled]="isSaving">
+            キャンセル
+          </button>
+        </div>
+      } @else {
+        <div class="info-block" *ngIf="desiredDept">
+          <p class="label">希望部署</p>
+          <p class="value">{{ desiredDept }}</p>
+        </div>
+        <div class="info-block" *ngIf="workLifeBalance">
+          <p class="label">ワークライフバランス</p>
+          <p class="value">{{ workLifeBalance }}</p>
+        </div>
+        <div class="info-block" *ngIf="!desiredDept && !workLifeBalance">
+          <p class="label">未設定</p>
+          <p class="value">編集ボタンをクリックして希望条件を入力してください</p>
+        </div>
+      }
     </section>
 
     <!-- 配置・内示情報セクション -->

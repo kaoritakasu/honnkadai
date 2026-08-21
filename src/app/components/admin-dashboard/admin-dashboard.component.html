@@ -248,72 +248,7 @@
           </button>
         </div>
 
-        <div class="placement-simulation-form" style="margin-top: 30px; padding: 20px; background-color: #f9f9f9; border-radius: 8px;">
-          <h3>人材配置の直接シミュレーション</h3>
-
-          <!-- ステップ1: 部署プルダウン -->
-          <div class="form-group" style="margin-bottom: 15px;">
-            <label style="display: block; font-weight: bold; margin-bottom: 8px;">対象の部署を選択</label>
-            <select [(ngModel)]="selectedDepartment" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 1em;">
-              <option value="">-- 部署を選択 --</option>
-              @for (dept of departments(); track dept.id) {
-                <option [value]="dept.id">{{ dept.name }}</option>
-              }
-            </select>
-          </div>
-
-          <!-- ステップ2: データペースト用テキストエリア -->
-          <div class="form-group" style="margin-bottom: 15px;">
-            <label style="display: block; font-weight: bold; margin-bottom: 8px;">社員データを貼り付け</label>
-            <p class="hint" style="color: #666; margin-bottom: 8px;">カラム: 社員番号, 営業力, 管理力, 開拓力, 育成力, 人件費（タブ区切りまたはカンマ区切り）</p>
-            <textarea [(ngModel)]="pastedExcelData" placeholder="E001&#9;75&#9;46&#9;63&#9;40&#9;6.7&#10;E002&#9;85&#9;67&#9;59&#9;42&#9;9.9" style="width: 100%; height: 120px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 0.9em;"></textarea>
-            <button (click)="parseExcelData()" style="margin-top: 10px; padding: 8px 16px; background-color: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer;">
-              データをパース
-            </button>
-          </div>
-
-          <!-- ステップ3: 算出結果の一覧表 -->
-          @if (placementSimulationResults && placementSimulationResults.length > 0) {
-            <div class="form-group" style="margin-bottom: 15px;">
-              <h4 style="margin: 0 0 10px 0;">パース結果</h4>
-              <table class="simulation-results-table" style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
-                <thead>
-                  <tr style="background-color: #f0f0f0; border-bottom: 2px solid #ddd;">
-                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">社員番号</th>
-                    <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">営業力</th>
-                    <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">管理力</th>
-                    <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">開拓力</th>
-                    <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">育成力</th>
-                    <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">人件費</th>
-                    <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">マッチ度</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (result of placementSimulationResults; track $index) {
-                    <tr style="border-bottom: 1px solid #eee;">
-                      <td style="border: 1px solid #ddd; padding: 8px;">{{ result.employeeNumber }}</td>
-                      <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">{{ result.salesForce }}</td>
-                      <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">{{ result.managementForce }}</td>
-                      <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">{{ result.explorationForce }}</td>
-                      <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">{{ result.developmentForce }}</td>
-                      <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">{{ result.laborCost }}</td>
-                      <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">{{ result.matchScore | number: '1.0-0' }}%</td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-
-            <!-- ステップ4: 確定ボタン -->
-            <div class="form-group">
-              <button (click)="confirmPlacement()" [disabled]="!selectedDepartment || loading()" style="width: 100%; padding: 12px; background-color: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 1em;">
-                {{ loading() ? '配置を確定中...' : '選択した部署に配置を確定' }}
-              </button>
-            </div>
-          }
-        </div>
-
-        @if (simulationResults()) {
+@if (simulationResults()) {
           <div class="simulation-results">
             <h3>シミュレーション結果</h3>
 
@@ -337,6 +272,110 @@
               </div>
             }
 
+<p style="font-size: 0.8em; color: #7f8c8d; margin-bottom: 10px; text-align: right;">※本数値はシミュレーションによる予測値であり、実際の業績を保証するものではありません</p>
+
+<div class="adjustment-controls" style="margin-bottom: 20px; padding: 15px; background-color: #f0f4ff; border-radius: 8px; border-left: 4px solid #667eea;">
+  <h4 style="margin: 0 0 10px 0;">人員配置の微調整</h4>
+  <p style="margin: 0 0 15px 0; color: #666;">ドラッグ&ドロップで人員を異動させるか、下のボタンで新しい人材を追加できます</p>
+  <button (click)="addNewCandidate()" style="margin-right: 10px; padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer;">＋ 新しい人材を追加</button>
+  @if (adjustedAllocations.size > 0 || newCandidates.length > 0) {
+    <button (click)="resetAdjustments()" style="padding: 10px 20px; background: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer;">調整をリセット</button>
+  }
+</div>
+
+<div class="drag-drop-container" cdkDropListGroup style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; margin-bottom: 30px; align-items: stretch; width: 100%; box-sizing: border-box;" [attr.id]="'dropListGroup'">
+  @if (Array.isArray(simulationResults())) {
+    @for (result of simulationResults(); track $index; let i = $index) {
+      <div class="department-zone" style="display: flex; flex-direction: column; box-sizing: border-box; border: 2px dashed #667eea; border-radius: 8px; padding: 10px; background-color: #f9f9f9; min-width: 0; overflow-x: hidden;" cdkDropList [cdkDropListData]="result.candidates" (cdkDropListDropped)="drop($event)">
+        <h4 style="margin: 0 0 8px 0; color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 6px; font-size: 0.85em;">{{ result.departmentName || result.department?.name || '-' }}</h4>
+
+        <!-- 絞り込みと並び替え -->
+        <div class="dept-controls" style="margin-bottom: 8px; display: flex; flex-direction: column; gap: 4px; flex-wrap: wrap;">
+          <div style="display: flex; gap: 4px; margin-bottom: 8px;">
+            <input type="text" placeholder="名前/タグ..." [(ngModel)]="filterInputs[result.departmentId]" style="flex: 1; font-size: 0.7em; padding: 4px; box-sizing: border-box;">
+            <button (click)="applyFilter(result.departmentId)" style="font-size: 0.7em; padding: 4px 8px; background-color: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer;">絞り込む</button>
+          </div>
+          <select (change)="sortCandidates(result.candidates, $event)" style="font-size: 0.7em; padding: 2px; border: 1px solid #ddd; border-radius: 3px;">
+            <option value="">並び替え...</option>
+            <option value="salesForce">営業力順</option>
+            <option value="managementForce">管理力順</option>
+            <option value="explorationForce">開拓力順</option>
+            <option value="developmentForce">育成力順</option>
+          </select>
+        </div>
+
+        <p style="margin: 0 0 5px 0; font-size: 0.9em; color: #666;"><strong>充足率:</strong> {{ result.fulfillmentRate || '-' }}%</p>
+        <p style="margin: 0 0 15px 0; font-size: 0.9em; color: #666;"><strong>利益:</strong> ¥{{ (result.profit || (result.finalRevenue - result.cost) || 0) | number }}</p>
+
+        <div style="flex: 1 1 auto; min-width: 0; min-height: 0; overflow-x: hidden; background-color: white; border-radius: 4px; padding: 5px; border: 1px dashed #ddd; display: flex; flex-direction: column; gap: 4px;">
+          @if (Array.isArray(result.candidates) && result.candidates.length > 0) {
+            @for (emp of result.candidates; track emp.employeeId) {
+              <div class="employee-card" cdkDrag [cdkDragData]="emp" [style.display]="isMatch(emp, activeFilters[result.departmentId]) ? 'flex' : 'none'" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 6px; border-radius: 4px; cursor: move; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex-direction: column;">
+                <p style="margin: 0; font-weight: bold; font-size: 0.95em; line-height: 1.4; white-space: normal; word-break: break-all;">
+                  {{ emp.employeeNumber ? emp.employeeNumber + ' ' : '' }}{{ emp.employeeName }}
+                  @if (emp.isExecutiveCandidate) { <span title="幹部候補" style="margin-left: 4px;">👑</span> }
+                  @if (emp.isOldData) { <span style="color: #e74c3c; font-size: 0.75em; margin-left: 4px; border: 1px solid #e74c3c; padding: 1px 4px; border-radius: 4px;">⚠️古いデータ</span> }
+                </p>
+
+                <!-- タグ表示 -->
+                @if ((emp.tags && emp.tags.length > 0) || emp.desiredDept) {
+                  <div class="tags-container" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">
+                    @if (emp.desiredDept) {
+                      <span class="tag" style="background-color: #f59e0b; color: white; font-size: 0.7em; padding: 3px 8px; border-radius: 12px; white-space: nowrap; font-weight: bold; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">希望: {{ emp.desiredDept }}</span>
+                    }
+                    @if (emp.tags && emp.tags.length > 0) {
+                      @for (tag of emp.tags; track tag) {
+                        <span class="tag" style="background-color: rgba(255,255,255,0.3); font-size: 0.7em; padding: 3px 8px; border-radius: 12px; white-space: nowrap;">{{ tag }}</span>
+                      }
+                    }
+                  </div>
+                }
+
+                <div class="ability-scores" style="font-size: 0.65em; margin-top: 4px;">
+                  <span style="padding: 2px;">営:{{ emp.salesForce || 0 }}</span>
+                  <span style="padding: 2px;">管:{{ emp.managementForce || 0 }}</span>
+                  <span style="padding: 2px;">開:{{ emp.explorationForce || 0 }}</span>
+                  <span style="padding: 2px;">育:{{ emp.developmentForce || 0 }}</span>
+                </div>
+              </div>
+            }
+          } @else {
+            <p style="color: #999; text-align: center; margin-top: 80px;">人員をドラッグして配置してください</p>
+          }
+        </div>
+      </div>
+    }
+  }
+</div>
+
+@if (newCandidates.length > 0) {
+  <div style="margin-bottom: 30px; padding: 20px; background-color: #fffbf0; border: 2px dashed #ffa500; border-radius: 8px;">
+    <h4 style="margin: 0 0 15px 0; color: #ff6b00;">新しい人材候補</h4>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px;">
+      @for (cand of newCandidates; track cand.employeeId; let i = $index) {
+        <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #ffa500;">
+          <input type="text" [(ngModel)]="cand.employeeName" placeholder="人材名" style="width: 100%; padding: 5px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px;" />
+          <label style="display: block; margin-bottom: 10px;">スコア: <input type="number" [(ngModel)]="cand.score" style="width: 60px; padding: 5px; border: 1px solid #ddd; border-radius: 4px;" /></label>
+          <label style="display: block; margin-bottom: 10px;">
+            配置先:
+            <select [(ngModel)]="cand.departmentId" (change)="updateCandidateDepartment(cand, cand.departmentId)" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px;">
+              <option value="">選択してください</option>
+              @for (dept of departments(); track dept.id) {
+                <option [value]="dept.id">{{ dept.name }}</option>
+              }
+            </select>
+          </label>
+          <button (click)="removeCandidate(i)" style="width: 100%; padding: 8px; background-color: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer;">削除</button>
+        </div>
+      }
+    </div>
+
+    @if (hasUnassignedCandidates()) {
+      <p style="color: #e74c3c; margin-top: 15px; font-weight: bold;">※未配置の社員がいるため確定できません</p>
+    }
+    <button (click)="resetAdjustments()" [disabled]="hasUnassignedCandidates()" style="margin-top: 15px; padding: 10px 20px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer;" [style.opacity]="hasUnassignedCandidates() ? '0.5' : '1'" [style.cursor]="hasUnassignedCandidates() ? 'not-allowed' : 'pointer'">選択した部署に配置を確定</button>
+  </div>
+}
 
             <div class="results-table-container">
               <table class="results-table">
@@ -393,6 +432,7 @@
                     <th>名前</th>
                     <th>マッチ度</th>
                     <th>本人の希望部署</th>
+                    <th>希望部署</th>
                     <th>タグ</th>
                     <th>操作</th>
                   </tr>
@@ -403,6 +443,7 @@
                       <td>{{ cand.employeeName }}</td>
                       <td>{{ cand.matchScore }}</td>
                       <td>{{ cand.desiredDept || '-' }}</td>
+                      <td style="padding: 8px;">{{ cand.desiredDept || '-' }}</td>
                       <td>
                         @if (cand.tags && cand.tags.length > 0) {
                           <div class="tags-container">

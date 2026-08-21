@@ -20,6 +20,8 @@ export class MyPageComponent implements OnInit {
   inquiry = '';
   assignmentDetails: any = null;
   departments: any[] = [];
+  isEditing: boolean = false;
+  isSaving: boolean = false;
 
   constructor(
     private authService: AuthService,
@@ -60,16 +62,33 @@ export class MyPageComponent implements OnInit {
     });
   }
 
+  toggleEdit() {
+    this.isEditing = !this.isEditing;
+  }
+
   savePreferences() {
-    if (this.user?.id) {
-      this.apiService.saveEmployeePreferences(this.user.id, {
-        careerDesire: this.desiredDept,
-        desiredDept: this.desiredDept,
-        workLifeBalance: this.workLifeBalance
-      }).subscribe(() => {
-        alert('キャリア希望と働き方を保存しました');
-      });
-    }
+    if (!this.user?.id) return;
+    this.isSaving = true;
+
+    const payload = {
+      desiredDept: this.desiredDept,
+      workLifeBalance: this.workLifeBalance
+    };
+
+    this.apiService.updatePreferences(this.user.id, payload).subscribe({
+      next: (res) => {
+        alert('希望条件を更新しました');
+        this.isEditing = false;
+        this.isSaving = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error(err);
+        alert('更新に失敗しました');
+        this.isSaving = false;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   submitConsultation() {

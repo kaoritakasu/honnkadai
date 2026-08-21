@@ -4,11 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
+import { CdkDragDrop, moveItemInArray, transferArrayItem, DragDropModule } from '@angular/cdk/drag-drop';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, DragDropModule],
   templateUrl: './admin-dashboard.component.html',
   styleUrl: './admin-dashboard.component.scss'
 })
@@ -26,9 +27,12 @@ export class AdminDashboardComponent implements OnInit {
   error = signal('');
   newDepartmentName: string = '';
   editingDeptId: string | null = null;
-  placementSimulationResults: any[] = [];
-  selectedDepartment: string = '';
-  pastedExcelData: string = '';
+  adjustedAllocations: Map<string, string> = new Map();
+  newCandidates: any[] = [];
+  dropListIds: string[] = [];
+  filterInputs: { [key: string]: string } = {};
+  activeFilters: { [key: string]: string } = {};
+  draggedEmployee: any = null;
 
   constructor(
     private apiService: ApiService,
@@ -444,6 +448,180 @@ export class AdminDashboardComponent implements OnInit {
     this.router.navigate(['/login']);
   }
 
+  dragStart(event: DragEvent, employee: any) {
+    this.draggedEmployee = employee;
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+    }
+  }
+
+  dragOver(event: DragEvent) {
+    event.preventDefault();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'move';
+    }
+  }
+
+  drop(event: CdkDragDrop<any[]>, targetIndex?: number) {
+    if (event.previousContainer === event.container) {
+      moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+    } else {
+      transferArrayItem(
+        event.previousContainer.data,
+        event.container.data,
+        event.previousIndex,
+        event.currentIndex
+      );
+    }
+
+    if (this.simulationResults()) {
+      this.apiService.recalculate({ data: this.simulationResults() }).subscribe({
+        next: (data: any) => {
+          if (data && data.results) {
+            this.simulationResults.set(data.results.map((result: any) => ({
+              ...result,
+              cost: result.totalCost
+            })));
+
+            if (data.totalCompanyRevenue !== undefined) {
+              this.simulationSummary.set({
+                totalCompanyRevenue: data.totalCompanyRevenue,
+                totalCompanyCost: data.totalCompanyCost,
+                totalCompanyProfit: data.totalCompanyProfit
+              });
+            }
+            this.updateDropListIds();
+          }
+        },
+        error: (err) => {
+          this.error.set('再計算に失敗しました');
+        }
+      });
+    }
+  }
+
+  updateDropListIds() {
+    if (Array.isArray(this.simulationResults())) {
+      this.dropListIds = this.simulationResults().map((_: any, i: number) => `dropList_${i}`);
+    }
+  }
+
+  addNewCandidate() {
+    const newEmployee = {
+      employeeId: 'NEW_' + Date.now(),
+      employeeName: '新規人材',
+      score: 50,
+      matchScore: 0,
+      departmentId: '',
+      departmentName: '',
+      isNew: true,
+      skills: [],
+      desiredDept: '',
+      isOldData: false
+    };
+    this.newCandidates.push(newEmployee);
+  }
+
+  removeCandidate(index: number) {
+    this.newCandidates.splice(index, 1);
+    this.recalculateResults();
+  }
+
+  reassignCandidate(candidate: any, toDept: string) {
+    if (candidate.isNew) {
+      candidate.departmentId = toDept;
+      const deptName = this.departments().find((d: any) => d.id === toDept)?.name || '';
+      candidate.departmentName = deptName;
+    } else {
+      this.adjustedAllocations.set(candidate.employeeId, toDept);
+      candidate.departmentId = toDept;
+      const deptName = this.departments().find((d: any) => d.id === toDept)?.name || '';
+      candidate.departmentName = deptName;
+    }
+    this.recalculateResults();
+  }
+
+  updateCandidateDepartment(candidate: any, deptId: string) {
+    candidate.departmentId = deptId;
+    const deptName = this.departments().find((d: any) => d.id === deptId)?.name || '';
+    candidate.departmentName = deptName;
+  }
+
+  private recalculateResults() {
+    if (!this.simulationResults() || !Array.isArray(this.simulationResults())) return;
+
+    this.loading.set(true);
+    this.apiService.recalculateSimulation({ results: this.simulationResults() }).subscribe({
+      next: (data: any) => {
+        if (data && data.results && Array.isArray(data.results)) {
+          this.simulationResults.set(data.results.map((result: any) => ({
+            ...result,
+            cost: result.totalCost
+          })));
+          if (data.totalCompanyRevenue !== undefined) {
+            this.simulationSummary.set({
+              totalCompanyRevenue: data.totalCompanyRevenue,
+              totalCompanyCost: data.totalCompanyCost,
+              totalCompanyProfit: data.totalCompanyProfit
+            });
+          }
+          this.updateDropListIds();
+        }
+        this.loading.set(false);
+      },
+      error: (error: any) => {
+        this.error.set(error.error?.error || 'Failed to recalculate results');
+        this.loading.set(false);
+      }
+    });
+  }
+
+  resetAdjustments() {
+    this.adjustedAllocations.clear();
+    this.newCandidates = [];
+    this.loadDashboard();
+  }
+
+  isMatch(emp: any, filterText?: string): boolean {
+    if (!filterText) return true;
+    const lowerFilter = String(filterText).toLowerCase().trim();
+
+    if (lowerFilter === '幹部候補') return !!emp.isExecutiveCandidate;
+
+    const tags = Array.isArray(emp.tags) ? emp.tags : [];
+    if (tags.some((tag: string) => typeof tag === 'string' && tag.toLowerCase().includes(lowerFilter))) {
+      return true;
+    }
+
+    // 希望部署（desiredDept）での絞り込みを追加
+    const desiredDept = String(emp.desiredDept || '');
+    if (desiredDept.toLowerCase().includes(lowerFilter)) {
+      return true;
+    }
+
+    const empName = String(emp.employeeName || '');
+    return empName.toLowerCase().includes(lowerFilter);
+  }
+
+  applyFilter(deptId: string) {
+    const filterValue = this.filterInputs[deptId] || '';
+    this.activeFilters = { ...this.activeFilters, [deptId]: filterValue };
+  }
+
+  sortCandidates(candidates: any[], event: any) {
+    const sortKey = event.target.value;
+    if (!sortKey) return;
+
+    candidates.sort((a: any, b: any) => {
+      const aVal = a[sortKey] || 0;
+      const bVal = b[sortKey] || 0;
+      return bVal - aVal;
+    });
+  }
+
+  hasUnassignedCandidates(): boolean {
+    return this.newCandidates.some((cand: any) => !cand.departmentId || cand.departmentId.trim() === '');
+  }
 
   private enrichWithMyPageData(results: any): any {
     const dbEmployees = this.employees(); // 取得済みの全社員データ
@@ -457,10 +635,14 @@ export class AdminDashboardComponent implements OnInit {
         if (match) {
           // 氏名はマイページ（DB）のものを優先して上書き
           cand.employeeName = match.user?.name || match.name || cand.employeeName;
-          
+
           // ★修正：どれかの名前でデータが入っていれば確実にキャッチする
           cand.desiredDept = match.desiredDept || match.careerDesire || match.careerGoals;
           cand.isExecutiveCandidate = match.isExecutiveCandidate;
+        }
+
+        if (cand.isOldData === undefined) {
+          cand.isOldData = Math.random() < 0.2;
         }
       });
     };
@@ -473,92 +655,4 @@ export class AdminDashboardComponent implements OnInit {
     return results;
   }
 
-  parseExcelData() {
-    if (!this.pastedExcelData.trim()) {
-      this.error.set('データを貼り付けてください');
-      return;
-    }
-
-    const lines = this.pastedExcelData.trim().split(/\r?\n/).filter(line => line.trim());
-    if (lines.length < 2) {
-      this.error.set('最低でもヘッダー行とデータ行が必要です');
-      return;
-    }
-
-    const headers = lines[0].split(/[,\t]+/).map(h => h.toLowerCase().trim());
-    const employeeNumberIdx = headers.findIndex(h => h.includes('社員番号') || h.includes('employee'));
-    const salesForceIdx = headers.findIndex(h => h.includes('営業力') || h.includes('sales'));
-    const managementForceIdx = headers.findIndex(h => h.includes('管理力') || h.includes('management'));
-    const explorationForceIdx = headers.findIndex(h => h.includes('開拓力') || h.includes('exploration'));
-    const developmentForceIdx = headers.findIndex(h => h.includes('育成力') || h.includes('development'));
-    const laborCostIdx = headers.findIndex(h => h.includes('人件費') || h.includes('cost'));
-
-    const results: any[] = [];
-    for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(/[,\t]+/).map(v => v.trim());
-
-      const employeeNumber = employeeNumberIdx >= 0 ? values[employeeNumberIdx] : '';
-      const salesForce = Number(values[salesForceIdx] || 0);
-      const managementForce = Number(values[managementForceIdx] || 0);
-      const explorationForce = Number(values[explorationForceIdx] || 0);
-      const developmentForce = Number(values[developmentForceIdx] || 0);
-      const laborCost = Number(values[laborCostIdx] || 0);
-
-      const matchScore = (salesForce + managementForce + explorationForce + developmentForce) / 4;
-
-      results.push({
-        employeeNumber,
-        salesForce,
-        managementForce,
-        explorationForce,
-        developmentForce,
-        laborCost,
-        matchScore
-      });
-    }
-
-    this.placementSimulationResults = results;
-    this.error.set('');
-  }
-
-  confirmPlacement() {
-    if (!this.selectedDepartment) {
-      this.error.set('部署を選択してください');
-      return;
-    }
-
-    if (!this.placementSimulationResults || this.placementSimulationResults.length === 0) {
-      this.error.set('配置データが存在しません');
-      return;
-    }
-
-    this.loading.set(true);
-    const placementData = {
-      departmentId: this.selectedDepartment,
-      employees: this.placementSimulationResults.map(r => ({
-        employeeNumber: r.employeeNumber,
-        salesForce: r.salesForce,
-        managementForce: r.managementForce,
-        explorationForce: r.explorationForce,
-        developmentForce: r.developmentForce,
-        laborCost: r.laborCost
-      }))
-    };
-
-    this.apiService.confirmPlacement(placementData).subscribe({
-      next: () => {
-        alert('配置を確定しました');
-        this.placementSimulationResults = [];
-        this.selectedDepartment = '';
-        this.pastedExcelData = '';
-        this.error.set('');
-        this.loading.set(false);
-        this.loadDashboard();
-      },
-      error: (error: any) => {
-        this.error.set(error.error?.error || '配置の確定に失敗しました');
-        this.loading.set(false);
-      }
-    });
-  }
 }
