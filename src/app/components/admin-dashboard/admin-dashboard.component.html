@@ -511,6 +511,31 @@
     @if (activeTab() === 'employees') {
       <div class="employees-section">
         <h2>社員データ一覧</h2>
+
+        <!-- 検索・並び替えコントロール -->
+        <div class="employees-controls" style="margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+          <div style="flex: 1; min-width: 200px;">
+            <input
+              type="text"
+              [(ngModel)]="employeeSearchText"
+              placeholder="名前・社員番号・部署で検索..."
+              style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;"
+            />
+          </div>
+          <div>
+            <select
+              [(ngModel)]="employeeSortKey"
+              style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; background-color: white; cursor: pointer;"
+            >
+              <option value="id">ID順</option>
+              <option value="name">名前順</option>
+              <option value="currentDept">現在の部署順</option>
+              <option value="desiredDept">希望部署順</option>
+              <option value="status">ステータス順</option>
+            </select>
+          </div>
+        </div>
+
         <table class="employees-table">
           <thead>
             <tr>
@@ -518,28 +543,16 @@
               <th>現在の部署</th>
               <th>希望部署</th>
               <th>ステータス</th>
-              <th>タグ</th>
               <th>最終更新日時</th>
             </tr>
           </thead>
           <tbody>
-            @for (emp of employees(); track emp.id) {
+            @for (emp of getFilteredAndSortedEmployees(); track emp.id) {
               <tr>
                 <td>{{ emp.user?.name || emp.name || '-' }}</td>
                 <td>{{ emp.currentDept || '-' }}</td>
                 <td>{{ emp.desiredDept || emp.careerDesire || emp.careerGoals || '-' }}</td>
                 <td>{{ emp.status || '-' }}</td>
-                <td>
-                  @if (emp.tags && emp.tags.length > 0) {
-                    <div class="tags-container">
-                      @for (tag of emp.tags; track tag) {
-                        <span class="tag">{{ tag }}</span>
-                      }
-                    </div>
-                  } @else {
-                    <span style="color: #999;">-</span>
-                  }
-                </td>
                 <td>{{ emp.lastUpdated | date: 'short' }}</td>
               </tr>
             }

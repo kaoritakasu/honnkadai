@@ -45,13 +45,25 @@ router.post('/register', async (req: Request, res: Response) => {
 
 router.post('/login', async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body;
+    // メールアドレスの前後の空白を削除
+    const email = (req.body.email || '').trim();
+    const password = req.body.password;
+
+    console.log(`[LOGIN ATTEMPT] Email: '${email}'`);
 
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) return res.status(401).json({ error: 'Invalid credentials' });
+    if (!user) {
+      console.log(`[LOGIN FAILED] ユーザーが見つかりません: '${email}'`);
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
 
     const isValid = await bcrypt.compare(password, user.password);
-    if (!isValid) return res.status(401).json({ error: 'Invalid credentials' });
+    if (!isValid) {
+      console.log(`[LOGIN FAILED] パスワードが一致しません: '${email}'`);
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    console.log(`[LOGIN SUCCESS] ログイン成功: '${email}'`);
 
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },

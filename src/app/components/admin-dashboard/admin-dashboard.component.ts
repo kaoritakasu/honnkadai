@@ -34,6 +34,8 @@ export class AdminDashboardComponent implements OnInit {
   activeFilters: { [key: string]: string } = {};
   draggedEmployee: any = null;
   currentUserRole: string = '';
+  employeeSearchText: string = '';
+  employeeSortKey: string = 'id';
 
   // --- ポップアップ用ステート ---
   selectedEmployeeForModal: any = null;
@@ -772,6 +774,47 @@ export class AdminDashboardComponent implements OnInit {
     } catch (e) {
       alert('履歴データの読み込みに失敗しました');
     }
+  }
+
+  getFilteredAndSortedEmployees(): any[] {
+    const allEmployees = this.employees();
+    const searchText = this.employeeSearchText.toLowerCase().trim();
+
+    // フィルタリング
+    let filtered = allEmployees.filter((emp: any) => {
+      if (!searchText) return true;
+
+      const name = String(emp.user?.name || emp.name || emp.employeeName || '').toLowerCase();
+      if (name.includes(searchText)) return true;
+
+      const empNumber = String(emp.employeeNumber || '').toLowerCase();
+      if (empNumber.includes(searchText)) return true;
+
+      const desiredDept = String(emp.desiredDept || emp.careerDesire || emp.careerGoals || '').toLowerCase();
+      if (desiredDept.includes(searchText)) return true;
+
+      const currentDept = String(emp.currentDept || '').toLowerCase();
+      if (currentDept.includes(searchText)) return true;
+
+      const status = String(emp.status || '').toLowerCase();
+      if (status.includes(searchText)) return true;
+
+      return false;
+    });
+
+    // ソート
+    if (this.employeeSortKey && this.employeeSortKey !== 'id') {
+      filtered.sort((a: any, b: any) => {
+        const aVal = a[this.employeeSortKey] || '';
+        const bVal = b[this.employeeSortKey] || '';
+        if (typeof aVal === 'number' && typeof bVal === 'number') {
+          return bVal - aVal;
+        }
+        return String(bVal).localeCompare(String(aVal));
+      });
+    }
+
+    return filtered;
   }
 
 }

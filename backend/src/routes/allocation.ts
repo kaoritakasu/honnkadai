@@ -796,17 +796,16 @@ router.post('/save', authenticate, isAdmin, async (req: AuthRequest, res: Respon
 
         // 見つかった場合、配置を処理
         if (dbEmp) {
-          // 4. 見つかった場合、その社員の status: 'PENDING' の Allocation を削除
+          // 4. 重複エラー（P2002）を防ぐため、その社員の過去の Allocation をすべて削除してリセット
           await prisma.allocation.deleteMany({
             where: {
-              employeeId: dbEmp.id,
-              status: 'PENDING'
+              employeeId: dbEmp.id
             }
           });
 
           // 5. prisma.allocation.create で新規作成
           const topSkill = cand.tags?.[0] || '総合的な能力';
-          const reason = `${dept.departmentName}の求める要件に対し、あなたの「${topSkill}」が高く評価されました（適性マッチ度: ${cand.matchScore || 0}点）。事業部の利益への高い貢献が期待されています。`;
+          const reason = `${dept.departmentName}の求める要件に対し、あなたの「${topSkill}」が高く評価されました。事業部の利益への高い貢献が期待されています。`;
 
           await prisma.allocation.create({
             data: {
