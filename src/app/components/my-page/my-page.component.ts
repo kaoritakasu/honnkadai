@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
+import { ChangeDetectorRef } from '@angular/core';
 
 @Component({
   selector: 'app-my-page',
@@ -23,6 +24,7 @@ export class MyPageComponent implements OnInit {
   constructor(
     private authService: AuthService,
     private apiService: ApiService,
+    private cdr: ChangeDetectorRef,
     private router: Router
   ) {}
 
@@ -37,13 +39,16 @@ export class MyPageComponent implements OnInit {
       this.apiService.getAssignmentDetails(this.user.id).subscribe(
         (data: any) => {
           this.assignmentDetails = data;
-          // ★ 追加：DBから取得したデータを画面の入力欄にセットする
           if (data) {
             this.desiredDept = data.desiredDept || data.careerDesire || data.careerGoals || '';
             this.workLifeBalance = data.workLifeBalance || '';
           }
+        this.cdr.detectChanges(); 
         },
-        () => this.assignmentDetails = null
+        () => {
+          this.assignmentDetails = null;
+          this.cdr.detectChanges(); // エラー時も念のため追加
+        }
       );
     }
   }

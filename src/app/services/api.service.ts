@@ -105,6 +105,10 @@ export class ApiService {
     return this.http.post(`${this.apiUrl}/allocations`, { employeeId, departmentId, reason, recommendedLearning }, { headers: this.getHeaders() });
   }
 
+  confirmPlacement(payload: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/allocations/confirm`, payload, { headers: this.getHeaders() });
+  }
+
   getMyAllocations(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/allocations/me`, { headers: this.getHeaders() });
   }

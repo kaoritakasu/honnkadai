@@ -70,4 +70,87 @@ router.get('/:id', authenticate, isAdmin, async (req: AuthRequest, res: Response
   }
 });
 
+router.get('/:id/assignment', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const employeeId = req.params.id;
+    // TODO: 実際のDBモデル（例: AssignmentやEmployee）に合わせて取得処理を実装してください
+    // const assignment = await prisma.assignment.findUnique({ where: { employeeId } });
+    
+    // 仮のモックデータを返すか、データがない場合はnullを返す
+    res.json(null); 
+  } catch (error) {
+    console.error('Error fetching assignment:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+router.get('/:id/preferences', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const employeeId = req.params.id;
+    // TODO: 実際のDBモデルに合わせて取得処理を実装してください
+    
+    res.json(null);
+  } catch (error) {
+    console.error('Error fetching preferences:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// 既存の router 定義部分に以下を追加します
+
+router.post('/:id/preferences', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const employeeId = req.params.id;
+    // フロントから送られてきたデータを受け取る
+   // 1. フロントから複数データが来るが、現在のDBに存在しないカラムは除外して取り出す
+    const { desiredDept, workLifeBalance, careerDesire } = req.body;
+
+    // 2. IDの不一致（UserのIDかEmployeeのIDか）による P2014/P2025 エラーを防ぐため、まずはレコードを探す
+    const existingEmployee = await prisma.employee.findFirst({
+      where: {
+        OR: [
+          { id: employeeId },
+          { userId: employeeId }
+        ]
+      }
+    });
+
+    let updatedData;
+    if (existingEmployee) {
+      // 既存レコードがあれば更新
+      updatedData = await prisma.employee.update({
+        where: { id: existingEmployee.id },
+        data: {
+          desiredDept: desiredDept,
+          // ※ workLifeBalance, careerDesire もDBに保存したい場合は、
+          // 1. backend/prisma/schema.prisma の Employee に `workLifeBalance String?` などを追加
+          // 2. npx prisma generate を実行
+          // 3. 以下のコメントアウトを外してください。
+          // workLifeBalance: workLifeBalance,
+          // careerDesire: careerDesire,
+        }
+      });
+    } else {
+      // レコードがなければ新規作成（Userと紐づけ）
+      updatedData = await prisma.employee.create({
+        data: {
+          desiredDept: desiredDept,
+          // workLifeBalance: workLifeBalance,
+          // careerDesire: careerDesire,
+          user: {
+            connect: { id: employeeId }
+          }
+        }
+      });
+    }
+    res.status(200).json({ 
+      message: 'Preferences updated successfully',
+      data: updatedData 
+    });
+  } catch (error) {
+    console.error('Error updating preferences:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 export default router;
