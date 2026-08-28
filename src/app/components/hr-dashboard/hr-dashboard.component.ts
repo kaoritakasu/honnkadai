@@ -35,6 +35,9 @@ export class HrDashboardComponent implements OnInit {
   isSavingRule = signal(false);
   ruleError = signal('');
 
+  // Calendar visibility toggle
+  showReservationCalendar = signal(true);
+
   // --- 予約詳細モーダル用ステート ---
   selectedReservationDetail: any = null;
   showReservationDetailModal = false;
@@ -191,6 +194,10 @@ export class HrDashboardComponent implements OnInit {
       this.newRule = { dayOfWeek: 1, startTime: '10:00', endTime: '12:00' };
       this.ruleError.set('');
     }
+  }
+
+  toggleReservationCalendar() {
+    this.showReservationCalendar.set(!this.showReservationCalendar());
   }
 
   saveAvailabilityRule() {
