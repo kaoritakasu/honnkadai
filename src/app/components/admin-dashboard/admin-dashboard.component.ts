@@ -75,6 +75,16 @@ export class AdminDashboardComponent implements OnInit {
   isSavingRule = signal(false);
   ruleError = signal('');
 
+  // --- 例外設定用 ---
+  showExceptionModal = false;
+  selectedExceptionDate: Date | null = null;
+  availabilityExceptions = signal<any[]>([]);
+  exceptionType: string = 'none';
+  exceptionStartTime: string = '10:00';
+  exceptionEndTime: string = '18:00';
+  isSavingException = signal(false);
+  exceptionError = signal('');
+
   // --- ポップアップ用ステート ---
   selectedEmployeeForModal: any = null;
   showEmployeeModal = false;
@@ -106,6 +116,7 @@ export class AdminDashboardComponent implements OnInit {
       this.loadAllReservations();
       this.generateCalendarDays();
       this.loadAvailabilityRules();
+      this.loadAvailabilityExceptions();
       this.loadConsultations();
     }
   }
@@ -1098,5 +1109,131 @@ export class AdminDashboardComponent implements OnInit {
       'replied': '返信済み'
     };
     return statusMap[status?.toLowerCase()] || status || '不明';
+  }
+
+  // --- 例外設定関連メソッド ---
+  loadAvailabilityExceptions() {
+    this.apiService.getAvailabilityExceptions().subscribe({
+      next: (data: any[]) => this.availabilityExceptions.set(data),
+      error: (err: any) => {
+        console.error('Error loading availability exceptions:', err);
+        this.availabilityExceptions.set([]);
+      }
+    });
+  }
+
+  getExceptionForDate(date: Date | null): any {
+    if (!date) return null;
+    const dateStr = this.toLocalDateString(date);
+    return this.availabilityExceptions().find(exc => this.toLocalDateString(new Date(exc.date)) === dateStr);
+  }
+
+  isDateUnavailable(date: Date | null): boolean {
+    if (!date) return false;
+    const exception = this.getExceptionForDate(date);
+    return exception && exception.type === 'UNAVAILABLE';
+  }
+
+  openExceptionModal(date: Date) {
+    this.selectedExceptionDate = new Date(date);
+    this.selectedExceptionDate.setHours(0, 0, 0, 0);
+    const exception = this.getExceptionForDate(this.selectedExceptionDate);
+
+    if (exception) {
+      if (exception.type === 'UNAVAILABLE') {
+        this.exceptionType = 'unavailable';
+      } else if (exception.type === 'CUSTOM') {
+        this.exceptionType = 'custom';
+        this.exceptionStartTime = exception.startTime || '10:00';
+        this.exceptionEndTime = exception.endTime || '18:00';
+      }
+    } else {
+      this.exceptionType = 'none';
+      this.exceptionStartTime = '10:00';
+      this.exceptionEndTime = '18:00';
+    }
+
+    this.exceptionError.set('');
+    this.showExceptionModal = true;
+  }
+
+  closeExceptionModal() {
+    this.showExceptionModal = false;
+    this.selectedExceptionDate = null;
+    this.exceptionType = 'none';
+    this.exceptionError.set('');
+  }
+
+  onExceptionTypeChange() {
+    this.exceptionError.set('');
+  }
+
+  saveException() {
+    if (!this.selectedExceptionDate) return;
+
+    if (this.exceptionType === 'none') {
+      // 既存の例外を削除
+      const exception = this.getExceptionForDate(this.selectedExceptionDate);
+      if (exception) {
+        this.deleteException();
+      } else {
+        this.closeExceptionModal();
+      }
+      return;
+    }
+
+    if (this.exceptionType === 'custom') {
+      if (!this.exceptionStartTime || !this.exceptionEndTime) {
+        this.exceptionError.set('時短対応の場合、開始時間と終了時間を指定してください');
+        return;
+      }
+    }
+
+    this.isSavingException.set(true);
+    const payload = {
+      date: this.selectedExceptionDate.toISOString(),
+      type: this.exceptionType === 'unavailable' ? 'UNAVAILABLE' : 'CUSTOM',
+      startTime: this.exceptionType === 'custom' ? this.exceptionStartTime : null,
+      endTime: this.exceptionType === 'custom' ? this.exceptionEndTime : null
+    };
+
+    this.apiService.createAvailabilityException(payload).subscribe({
+      next: () => {
+        this.loadAvailabilityExceptions();
+        this.closeExceptionModal();
+        this.isSavingException.set(false);
+      },
+      error: (err: any) => {
+        this.exceptionError.set(err.error?.error || '保存に失敗しました');
+        this.isSavingException.set(false);
+      }
+    });
+  }
+
+  deleteException() {
+    const exception = this.getExceptionForDate(this.selectedExceptionDate);
+    if (!exception) {
+      this.closeExceptionModal();
+      return;
+    }
+
+    if (!confirm('この例外設定を削除してもよろしいですか？')) return;
+
+    this.isSavingException.set(true);
+    this.apiService.deleteAvailabilityException(exception.id).subscribe({
+      next: () => {
+        this.loadAvailabilityExceptions();
+        this.closeExceptionModal();
+        this.isSavingException.set(false);
+      },
+      error: (err: any) => {
+        this.exceptionError.set(err.error?.error || '削除に失敗しました');
+        this.isSavingException.set(false);
+      }
+    });
+  }
+
+  formatExceptionDate(date: Date): string {
+    return date.toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
   }
 }

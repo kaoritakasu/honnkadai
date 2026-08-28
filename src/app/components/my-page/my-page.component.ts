@@ -56,6 +56,7 @@ export class MyPageComponent implements OnInit {
   currentCalendarDate = signal(new Date());
   calendarWeeks = signal<(any | null)[][]>([]);
   availabilityRules = signal<any[]>([]);
+  availabilityExceptions = signal<any[]>([]);
 
   // Consultation history
   myConsultations = signal<any[]>([]);
@@ -79,6 +80,7 @@ export class MyPageComponent implements OnInit {
     this.loadMyAllocations();
     this.loadMyReservations();
     this.loadAvailabilityRules();
+    this.loadAvailabilityExceptions();
     this.loadMyConsultations();
     this.generateCalendarDays();
   }
@@ -423,6 +425,10 @@ export class MyPageComponent implements OnInit {
     const today = this.toLocalDateString(new Date());
     if (dateStr < today) return true;
 
+    // Check for unavailable exception
+    const exception = this.getExceptionForDate(date);
+    if (exception && exception.type === 'UNAVAILABLE') return true;
+
     // Check if the day of week has availability rules
     const dayOfWeek = date.getDay();
     const hasRule = this.availabilityRules().some(r => r.dayOfWeek === dayOfWeek);
@@ -550,5 +556,24 @@ export class MyPageComponent implements OnInit {
 
   toggleReservation() {
     this.showReservation = !this.showReservation;
+  }
+
+  loadAvailabilityExceptions() {
+    this.apiService.getAvailabilityExceptions().subscribe({
+      next: (data: any[]) => {
+        this.availabilityExceptions.set(data);
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error loading availability exceptions:', err);
+        this.availabilityExceptions.set([]);
+      }
+    });
+  }
+
+  getExceptionForDate(date: Date | null): any {
+    if (!date) return null;
+    const dateStr = this.toLocalDateString(date);
+    return this.availabilityExceptions().find(exc => this.toLocalDateString(new Date(exc.date)) === dateStr);
   }
 }

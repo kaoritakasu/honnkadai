@@ -208,4 +208,17 @@ export class ApiService {
   deleteAvailabilityRule(id: string): Observable<any> {
     return this.http.delete(`${this.apiUrl}/interview/availability-rules/${id}`, { headers: this.getHeaders() });
   }
+
+  // Interview Availability Exceptions
+  getAvailabilityExceptions(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/interview/availability-exceptions`, { headers: this.getHeaders() });
+  }
+
+  createAvailabilityException(data: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/interview/availability-exceptions`, data, { headers: this.getHeaders() });
+  }
+
+  deleteAvailabilityException(id: string): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/interview/availability-exceptions/${id}`, { headers: this.getHeaders() });
+  }
 }

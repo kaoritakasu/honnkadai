@@ -109,6 +109,16 @@ router.get('/available-slots', authenticate, async (req: AuthRequest, res: Respo
     nextDay.setDate(nextDay.getDate() + 1);
     const dayOfWeek = targetDate.getDay();
 
+    // Check for availability exceptions on this date
+    const exception = await prisma.availabilityException.findUnique({
+      where: { date: targetDate },
+    });
+
+    // If the date is marked as UNAVAILABLE, return empty slots
+    if (exception && exception.type === 'UNAVAILABLE') {
+      return res.json([]);
+    }
+
     // Get availability rules for this day of week
     const rules = await prisma.interviewAvailabilityRule.findMany({
       where: { dayOfWeek, isActive: true },
@@ -116,7 +126,16 @@ router.get('/available-slots', authenticate, async (req: AuthRequest, res: Respo
 
     let slots: Array<{ timeSlot: string; startTime: Date }> = [];
 
-    if (rules.length > 0) {
+    if (exception && exception.type === 'CUSTOM' && exception.startTime && exception.endTime) {
+      // Use custom time range for this date
+      const timeSlots = generateTimeSlots(exception.startTime, exception.endTime);
+      timeSlots.forEach(timeSlot => {
+        const [startHourStr, startMinStr] = timeSlot.split('-')[0].split(':').map(Number);
+        const slotTime = new Date(targetDate);
+        slotTime.setHours(startHourStr, startMinStr);
+        slots.push({ timeSlot, startTime: slotTime });
+      });
+    } else if (rules.length > 0) {
       // Generate slots based on rules
       rules.forEach(rule => {
         const timeSlots = generateTimeSlots(rule.startTime, rule.endTime);
@@ -297,6 +316,64 @@ router.put('/admin/reservation/:id', authenticate, isAdmin, async (req: AuthRequ
     });
 
     res.json(updated);
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+});
+
+// Admin: Create availability exception
+router.post('/availability-exceptions', authenticate, isAdmin, async (req: AuthRequest, res: Response) => {
+  try {
+    const { date, type, startTime, endTime } = req.body;
+
+    if (!date || !type) {
+      return res.status(400).json({ error: 'date and type are required' });
+    }
+
+    if (type !== 'UNAVAILABLE' && type !== 'CUSTOM') {
+      return res.status(400).json({ error: 'type must be either UNAVAILABLE or CUSTOM' });
+    }
+
+    if (type === 'CUSTOM' && (!startTime || !endTime)) {
+      return res.status(400).json({ error: 'startTime and endTime are required for CUSTOM type' });
+    }
+
+    const targetDate = new Date(date);
+    targetDate.setHours(0, 0, 0, 0);
+
+    const exception = await prisma.availabilityException.upsert({
+      where: { date: targetDate },
+      update: { type, startTime: startTime || null, endTime: endTime || null },
+      create: { date: targetDate, type, startTime: startTime || null, endTime: endTime || null },
+    });
+
+    res.json(exception);
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+});
+
+// Get availability exceptions (for admin and employees to see unavailable dates)
+router.get('/availability-exceptions', authenticate, async (_req: AuthRequest, res: Response) => {
+  try {
+    const exceptions = await prisma.availabilityException.findMany({
+      orderBy: { date: 'asc' },
+    });
+
+    res.json(exceptions);
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+});
+
+// Admin: Delete availability exception
+router.delete('/availability-exceptions/:id', authenticate, isAdmin, async (req: AuthRequest, res: Response) => {
+  try {
+    const exception = await prisma.availabilityException.delete({
+      where: { id: req.params.id },
+    });
+
+    res.json(exception);
   } catch (error) {
     res.status(400).json({ error: (error as Error).message });
   }

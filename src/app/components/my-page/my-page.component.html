@@ -237,7 +237,11 @@
                 <div [style.background]="dayCell && dayCell.dayOfMonth && !isDateDisabledForSelection(dayCell.date) ? '#ffffff' : dayCell && isDateDisabledForSelection(dayCell.date) ? '#fafafa' : '#f9f9f9'" [style.cursor]="dayCell && dayCell.dayOfMonth && !isDateDisabledForSelection(dayCell.date) ? 'pointer' : 'default'" (click)="dayCell && dayCell.dayOfMonth && !isDateDisabledForSelection(dayCell.date) && openReservationModal(dayCell.date)" style="padding: 10px; border: 1px solid #eee; min-height: 90px; overflow-y: auto; transition: background-color 0.2s;" [ngClass]="{'hover-cell': dayCell && dayCell.dayOfMonth && !isDateDisabledForSelection(dayCell.date)}">
                   @if (dayCell) {
                     <div style="font-weight: bold; color: #667eea; margin-bottom: 8px;">{{ dayCell.dayOfMonth }}</div>
-                    @if (getReservationsForDate(dayCell.date).length > 0) {
+                    @if (getExceptionForDate(dayCell.date)) {
+                      <div style="padding: 6px; margin: 4px 0; border-left: 3px solid #e74c3c; border-radius: 4px; background: #fadbd8; font-size: 0.75em; color: #c0392b; font-weight: bold; text-align: center;">
+                        {{ getExceptionForDate(dayCell.date).type === 'UNAVAILABLE' ? '予約不可' : 'カスタム時間' }}
+                      </div>
+                    } @else if (getReservationsForDate(dayCell.date).length > 0) {
                       @for (res of getReservationsForDate(dayCell.date); track res.id) {
                         <div style="padding: 4px; margin: 4px 0; border-left: 3px solid #667eea; border-radius: 2px; background: #e7f3ff; font-size: 0.7em; line-height: 1.3; color: #2c3e50;">
                           <p style="margin: 0; font-weight: bold;">{{ res.timeSlot }}</p>
