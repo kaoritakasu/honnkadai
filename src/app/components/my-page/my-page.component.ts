@@ -61,6 +61,10 @@ export class MyPageComponent implements OnInit {
   myConsultations = signal<any[]>([]);
   consultationFilterStatus: string = 'all';
 
+  // Section toggle states
+  showSkillGap: boolean = false;
+  showReservation: boolean = false;
+
   constructor(
     private authService: AuthService,
     private apiService: ApiService,
@@ -538,5 +542,13 @@ export class MyPageComponent implements OnInit {
       'replied': '返信済み'
     };
     return statusMap[status?.toLowerCase()] || status || '不明';
+  }
+
+  toggleSkillGap() {
+    this.showSkillGap = !this.showSkillGap;
+  }
+
+  toggleReservation() {
+    this.showReservation = !this.showReservation;
   }
 }
