@@ -33,6 +33,15 @@ export class EmployeeMyPageComponent implements OnInit {
   consultationTitle = signal('');
   consultationDescription = signal('');
   showConsultationForm = signal(false);
+  // カレンダー・面談予約用
+  availabilityRules = signal<any[]>([]);
+  myReservations = signal<any[]>([]);
+  calendarDays = signal<any[]>([]);
+  currentMonth = signal(new Date());
+  selectedDate = signal<Date | null>(null);
+  reservationTimeSlot = signal('');
+  reservationReason = signal('');
+  showReservationModal = signal(false);
 
   constructor(
     private apiService: ApiService,

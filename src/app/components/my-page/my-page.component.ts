@@ -24,6 +24,27 @@ export class MyPageComponent implements OnInit {
   isSaving: boolean = false;
   allocations = signal<any[]>([]);
 
+  // Interview reservation fields
+  selectedDate: string = '';
+  selectedTimeSlot: string = '';
+  interviewReason: string = '';
+  availableSlots: any[] = [];
+  myReservations: any[] = [];
+  isLoadingSlots: boolean = false;
+  isBookingReservation: boolean = false;
+  showReservationForm: boolean = false;
+  showReservationModal: boolean = false;
+  modalDate: string = '';
+  modalTimeSlot: string = '';
+  modalReason: string = '';
+  modalAvailableSlots: any[] = [];
+  isLoadingModalSlots: boolean = false;
+
+  // Calendar logic
+  currentCalendarDate = signal(new Date());
+  calendarWeeks = signal<(any | null)[][]>([]);
+  availabilityRules = signal<any[]>([]);
+
   constructor(
     private authService: AuthService,
     private apiService: ApiService,
@@ -36,6 +57,9 @@ export class MyPageComponent implements OnInit {
     this.loadAssignmentDetails();
     this.loadDepartments();
     this.loadMyAllocations();
+    this.loadMyReservations();
+    this.loadAvailabilityRules();
+    this.generateCalendarDays();
   }
 
   loadAssignmentDetails() {
@@ -127,5 +151,259 @@ export class MyPageComponent implements OnInit {
   logout() {
     this.authService.logout();
     this.router.navigate(['/login']);
+  }
+
+  loadAvailableSlots() {
+    if (!this.selectedDate) return;
+    this.isLoadingSlots = true;
+    this.apiService.getAvailableSlots(this.selectedDate).subscribe({
+      next: (data: any[]) => {
+        this.availableSlots = data;
+        this.selectedTimeSlot = '';
+        this.isLoadingSlots = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error loading available slots:', err);
+        this.availableSlots = [];
+        this.isLoadingSlots = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  bookReservation() {
+    if (!this.selectedDate || !this.selectedTimeSlot) {
+      alert('日付と時間枠を選択してください');
+      return;
+    }
+    this.isBookingReservation = true;
+    const payload = {
+      date: this.selectedDate,
+      timeSlot: this.selectedTimeSlot,
+      reason: this.interviewReason || null
+    };
+    this.apiService.createReservation(payload).subscribe({
+      next: (data: any) => {
+        alert('面談を予約しました');
+        this.resetReservationForm();
+        this.loadMyReservations();
+        this.isBookingReservation = false;
+        this.showReservationForm = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error booking reservation:', err);
+        alert(err.error?.error || '予約に失敗しました');
+        this.isBookingReservation = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  loadMyReservations() {
+    this.apiService.getMyReservations().subscribe({
+      next: (data: any[]) => {
+        this.myReservations = data;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error loading reservations:', err);
+        this.myReservations = [];
+      }
+    });
+  }
+
+  cancelReservation(reservationId: string) {
+    if (confirm('この予約をキャンセルしてもよろしいですか？')) {
+      this.apiService.cancelReservation(reservationId).subscribe({
+        next: () => {
+          alert('予約をキャンセルしました');
+          this.loadMyReservations();
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('Error canceling reservation:', err);
+          alert('キャンセルに失敗しました');
+        }
+      });
+    }
+  }
+
+  resetReservationForm() {
+    this.selectedDate = '';
+    this.selectedTimeSlot = '';
+    this.interviewReason = '';
+    this.availableSlots = [];
+  }
+
+  getMinDate(): string {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().split('T')[0];
+  }
+
+  formatDate(dateStr: string): string {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' });
+  }
+
+  generateCalendarDays() {
+    const year = this.currentCalendarDate().getFullYear();
+    const month = this.currentCalendarDate().getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - firstDay.getDay());
+
+    const weeks: (any | null)[][] = [];
+    let currentDate = new Date(startDate);
+
+    for (let week = 0; week < 6; week++) {
+      const weekDays: (any | null)[] = [];
+      for (let day = 0; day < 7; day++) {
+        if (currentDate.getMonth() === month) {
+          weekDays.push({ date: new Date(currentDate), dayOfMonth: currentDate.getDate() });
+        } else {
+          weekDays.push(null);
+        }
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+      weeks.push(weekDays);
+    }
+
+    this.calendarWeeks.set(weeks);
+  }
+
+  previousMonth() {
+    const date = new Date(this.currentCalendarDate());
+    date.setMonth(date.getMonth() - 1);
+    this.currentCalendarDate.set(date);
+    this.generateCalendarDays();
+  }
+
+  nextMonth() {
+    const date = new Date(this.currentCalendarDate());
+    date.setMonth(date.getMonth() + 1);
+    this.currentCalendarDate.set(date);
+    this.generateCalendarDays();
+  }
+
+  getMonthYearDisplay(): string {
+    const date = this.currentCalendarDate();
+    return date.toLocaleDateString('ja-JP', { year: 'numeric', month: 'long' });
+  }
+
+  hasReservationOnDate(date: Date): boolean {
+    const dateStr = date.toISOString().split('T')[0];
+    return this.myReservations.some(r => r.date.split('T')[0] === dateStr && r.status !== 'CANCELLED');
+  }
+
+  getReservationsForDate(date: Date): any[] {
+    const dateStr = date.toISOString().split('T')[0];
+    return this.myReservations.filter(r => r.date.split('T')[0] === dateStr && r.status !== 'CANCELLED');
+  }
+
+  selectDateFromCalendar(date: Date) {
+    this.selectedDate = date.toISOString().split('T')[0];
+    this.loadAvailableSlots();
+    this.showReservationForm = true;
+  }
+
+  isDateDisabledForSelection(date: Date): boolean {
+    const dateStr = date.toISOString().split('T')[0];
+    const today = new Date().toISOString().split('T')[0];
+    if (dateStr < today) return true;
+
+    // Check if the day of week has availability rules
+    const dayOfWeek = date.getDay();
+    const hasRule = this.availabilityRules().some(r => r.dayOfWeek === dayOfWeek);
+    return !hasRule;
+  }
+
+  loadAvailabilityRules() {
+    this.apiService.getAvailabilityRules().subscribe({
+      next: (data: any[]) => {
+        this.availabilityRules.set(data);
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error loading availability rules:', err);
+        this.availabilityRules.set([]);
+      }
+    });
+  }
+
+  openReservationModal(date: Date) {
+    const dateStr = date.toISOString().split('T')[0];
+    const today = new Date().toISOString().split('T')[0];
+
+    if (dateStr < today) {
+      return;
+    }
+
+    this.modalDate = dateStr;
+    this.modalTimeSlot = '';
+    this.modalReason = '';
+    this.modalAvailableSlots = [];
+    this.showReservationModal = true;
+    this.loadModalAvailableSlots();
+  }
+
+  loadModalAvailableSlots() {
+    if (!this.modalDate) return;
+    this.isLoadingModalSlots = true;
+    this.apiService.getAvailableSlots(this.modalDate).subscribe({
+      next: (data: any[]) => {
+        this.modalAvailableSlots = data;
+        this.isLoadingModalSlots = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error loading available slots:', err);
+        this.modalAvailableSlots = [];
+        this.isLoadingModalSlots = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  submitReservation() {
+    if (!this.modalDate || !this.modalTimeSlot) {
+      alert('日付と時間枠を選択してください');
+      return;
+    }
+
+    this.isBookingReservation = true;
+    const payload = {
+      date: this.modalDate,
+      timeSlot: this.modalTimeSlot,
+      reason: this.modalReason || null
+    };
+
+    this.apiService.createReservation(payload).subscribe({
+      next: () => {
+        alert('面談を予約しました');
+        this.closeReservationModal();
+        this.loadMyReservations();
+        this.generateCalendarDays();
+        this.isBookingReservation = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error booking reservation:', err);
+        alert(err.error?.error || '予約に失敗しました');
+        this.isBookingReservation = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  closeReservationModal() {
+    this.showReservationModal = false;
+    this.modalDate = '';
+    this.modalTimeSlot = '';
+    this.modalReason = '';
+    this.modalAvailableSlots = [];
   }
 }

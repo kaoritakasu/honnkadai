@@ -35,7 +35,23 @@ export class AdminDashboardComponent implements OnInit {
   draggedEmployee: any = null;
   currentUserRole: string = '';
   employeeSearchText: string = '';
-  employeeSortKey: string = 'id';
+  employeeSortKey: string = 'employeeNumber';
+  simulationSortKey: string = 'employeeNumber';
+
+  // Interview reservations
+  allReservations = signal<any[]>([]);
+  filterReservationStatus: string = 'all';
+
+  // Calendar logic
+  currentDate = signal(new Date());
+  calendarWeeks = signal<(any | null)[][]>([]);
+
+  // Interview availability rules
+  availabilityRules = signal<any[]>([]);
+  showAvailabilityForm = signal(false);
+  newRule = { dayOfWeek: 1, startTime: '10:00', endTime: '12:00' };
+  isSavingRule = signal(false);
+  ruleError = signal('');
 
   // --- ポップアップ用ステート ---
   selectedEmployeeForModal: any = null;
@@ -61,6 +77,9 @@ export class AdminDashboardComponent implements OnInit {
     this.loadDashboard();
     this.loadDepartments();
     this.loadEmployees();
+    this.loadAllReservations();
+    this.generateCalendarDays();
+    this.loadAvailabilityRules();
   }
 
   loadDashboard() {
@@ -95,6 +114,12 @@ export class AdminDashboardComponent implements OnInit {
         } else if (data && typeof data === 'object' && data.data && Array.isArray(data.data)) {
           employeesArray = data.data;
         }
+        employeesArray = employeesArray.map((emp: any) => {
+          if (emp.employeeNumber && emp.employeeNumber.includes('Z')) {
+            return { ...emp, currentDept: '人事部' };
+          }
+          return emp;
+        });
         this.employees.set(employeesArray);
       },
       error: (error: any) => this.error.set(error.error?.error || 'Failed to load employees')
@@ -121,10 +146,11 @@ export class AdminDashboardComponent implements OnInit {
       next: (data: any) => {
         if (data && data.results && Array.isArray(data.results)) {
           const enrichedResults = this.enrichWithMyPageData(data.results);
-          this.simulationResults.set(enrichedResults.map((result: any) => ({
+          const sortedResults = this.sortResultsByEmployeeNumber(enrichedResults.map((result: any) => ({
             ...result,
             cost: result.totalCost
           })));
+          this.simulationResults.set(sortedResults);
           this.simulationSummary.set({
             totalCompanyRevenue: data.totalCompanyRevenue,
             totalCompanyCost: data.totalCompanyCost,
@@ -132,7 +158,8 @@ export class AdminDashboardComponent implements OnInit {
           });
         } else {
           const enrichedData = this.enrichWithMyPageData(data);
-          this.simulationResults.set(enrichedData);
+          const sortedData = this.sortResultsByEmployeeNumber(enrichedData);
+          this.simulationResults.set(sortedData);
           this.simulationSummary.set(null);
         }
         this.loading.set(false);
@@ -159,7 +186,8 @@ export class AdminDashboardComponent implements OnInit {
           allocatedCount: enrichedData.candidates ? enrichedData.candidates.length : 0,
           cost: enrichedData.totalCost || 0
         };
-        this.simulationResults.set(mappedData);
+        const sortedData = this.sortResultsByEmployeeNumber(mappedData);
+        this.simulationResults.set(sortedData);
         this.simulationSummary.set(null);
         this.loading.set(false);
       },
@@ -187,13 +215,15 @@ export class AdminDashboardComponent implements OnInit {
       next: (data: any) => {
         if (data && data.results && Array.isArray(data.results)) {
           const enrichedResults = this.enrichWithMyPageData(data.results);
-          this.simulationResults.set(enrichedResults.map((result: any) => ({
+          const sortedResults = this.sortResultsByEmployeeNumber(enrichedResults.map((result: any) => ({
             ...result,
             cost: result.totalCost
           })));
+          this.simulationResults.set(sortedResults);
         } else {
           const enrichedData = this.enrichWithMyPageData(data);
-          this.simulationResults.set(enrichedData);
+          const sortedData = this.sortResultsByEmployeeNumber(enrichedData);
+          this.simulationResults.set(sortedData);
         }
         this.loading.set(false);
         this.pasteDataText = '';
@@ -329,10 +359,11 @@ export class AdminDashboardComponent implements OnInit {
       next: (data: any) => {
         if (data && data.results && Array.isArray(data.results)) {
           const enrichedResults = this.enrichWithMyPageData(data.results);
-          this.simulationResults.set(enrichedResults.map((result: any) => ({
+          const sortedResults = this.sortResultsByEmployeeNumber(enrichedResults.map((result: any) => ({
             ...result,
             cost: result.totalCost
           })));
+          this.simulationResults.set(sortedResults);
           this.simulationSummary.set({
             totalCompanyRevenue: data.totalCompanyRevenue,
             totalCompanyCost: data.totalCompanyCost,
@@ -340,7 +371,8 @@ export class AdminDashboardComponent implements OnInit {
           });
         } else {
           const enrichedData = this.enrichWithMyPageData(data);
-          this.simulationResults.set(enrichedData);
+          const sortedData = this.sortResultsByEmployeeNumber(enrichedData);
+          this.simulationResults.set(sortedData);
           this.simulationSummary.set(null);
         }
         this.loading.set(false);
@@ -649,9 +681,16 @@ export class AdminDashboardComponent implements OnInit {
     if (!sortKey) return;
 
     candidates.sort((a: any, b: any) => {
-      const aVal = a[sortKey] || 0;
-      const bVal = b[sortKey] || 0;
-      return bVal - aVal;
+      const aVal = a[sortKey];
+      const bVal = b[sortKey];
+
+      if (sortKey === 'employeeNumber') {
+        return String(aVal || '').localeCompare(String(bVal || ''));
+      }
+
+      const aNum = Number(aVal) || 0;
+      const bNum = Number(bVal) || 0;
+      return bNum - aNum;
     });
   }
 
@@ -715,6 +754,21 @@ export class AdminDashboardComponent implements OnInit {
     return isArray ? enrichedResults : enrichedResults[0];
   }
 
+  private sortResultsByEmployeeNumber(results: any): any {
+    const isArray = Array.isArray(results);
+    const resultsArray = isArray ? results : [results];
+
+    resultsArray.forEach((result: any) => {
+      if (Array.isArray(result.candidates)) {
+        result.candidates.sort((a: any, b: any) => {
+          return String(a.employeeNumber || '').localeCompare(String(b.employeeNumber || ''));
+        });
+      }
+    });
+
+    return isArray ? resultsArray : resultsArray[0];
+  }
+
   getDisplayName(emp: any): string {
     const dbEmployees = this.employees();
     const match = dbEmployees.find((e: any) => e.employeeNumber && e.employeeNumber === String(emp.employeeNumber));
@@ -746,9 +800,14 @@ export class AdminDashboardComponent implements OnInit {
     if (!confirm('現在の配置案を確定し、社員のマイページに通知します。よろしいですか？')) return;
 
     const summary = this.simulationSummary();
+    const totalCompanyCost = Array.isArray(this.simulationResults())
+      ? this.simulationResults().reduce((sum: number, result: any) => sum + (result.cost || 0), 0)
+      : (this.simulationResults().cost || 0);
+
     const payload = {
       results: this.simulationResults(),
       totalCompanyRevenue: summary ? summary.totalCompanyRevenue : 0,
+      totalCompanyCost: totalCompanyCost,
       totalCompanyProfit: summary ? summary.totalCompanyProfit : 0
     };
 
@@ -803,18 +862,172 @@ export class AdminDashboardComponent implements OnInit {
     });
 
     // ソート
-    if (this.employeeSortKey && this.employeeSortKey !== 'id') {
+    if (this.employeeSortKey) {
       filtered.sort((a: any, b: any) => {
         const aVal = a[this.employeeSortKey] || '';
         const bVal = b[this.employeeSortKey] || '';
         if (typeof aVal === 'number' && typeof bVal === 'number') {
-          return bVal - aVal;
+          return aVal - bVal;
         }
-        return String(bVal).localeCompare(String(aVal));
+        return String(aVal).localeCompare(String(bVal));
       });
     }
 
     return filtered;
+  }
+
+  loadAllReservations() {
+    this.apiService.getAllReservations().subscribe({
+      next: (data: any[]) => {
+        this.allReservations.set(data);
+      },
+      error: (err) => {
+        console.error('Error loading reservations:', err);
+        this.allReservations.set([]);
+      }
+    });
+  }
+
+  getFilteredReservations(): any[] {
+    let filtered = this.allReservations();
+    if (this.filterReservationStatus !== 'all') {
+      filtered = filtered.filter(r => r.status === this.filterReservationStatus);
+    }
+    return filtered.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }
+
+  updateReservationStatus(reservationId: string, status: string) {
+    this.apiService.updateReservationStatus(reservationId, status).subscribe({
+      next: () => {
+        alert('ステータスを更新しました');
+        this.loadAllReservations();
+      },
+      error: (err) => {
+        console.error('Error updating reservation:', err);
+        alert('更新に失敗しました');
+      }
+    });
+  }
+
+  formatReservationDate(dateStr: string): string {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' });
+  }
+
+  generateCalendarDays() {
+    const year = this.currentDate().getFullYear();
+    const month = this.currentDate().getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - firstDay.getDay());
+
+    const weeks: (any | null)[][] = [];
+    let currentDate = new Date(startDate);
+
+    for (let week = 0; week < 6; week++) {
+      const weekDays: (any | null)[] = [];
+      for (let day = 0; day < 7; day++) {
+        if (currentDate.getMonth() === month) {
+          weekDays.push({ date: new Date(currentDate), dayOfMonth: currentDate.getDate() });
+        } else {
+          weekDays.push(null);
+        }
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+      weeks.push(weekDays);
+    }
+
+    this.calendarWeeks.set(weeks);
+  }
+
+  previousMonth() {
+    const date = new Date(this.currentDate());
+    date.setMonth(date.getMonth() - 1);
+    this.currentDate.set(date);
+    this.generateCalendarDays();
+  }
+
+  nextMonth() {
+    const date = new Date(this.currentDate());
+    date.setMonth(date.getMonth() + 1);
+    this.currentDate.set(date);
+    this.generateCalendarDays();
+  }
+
+  getReservationsForDate(date: Date): any[] {
+    const dateStr = date.toISOString().split('T')[0];
+    return this.allReservations().filter(r => r.date.split('T')[0] === dateStr);
+  }
+
+  getMonthYearDisplay(): string {
+    const date = this.currentDate();
+    return date.toLocaleDateString('ja-JP', { year: 'numeric', month: 'long' });
+  }
+
+  loadAvailabilityRules() {
+    this.apiService.getAvailabilityRules().subscribe({
+      next: (data: any[]) => {
+        this.availabilityRules.set(data);
+      },
+      error: (err) => {
+        console.error('Error loading availability rules:', err);
+        this.availabilityRules.set([]);
+      }
+    });
+  }
+
+  toggleAvailabilityForm() {
+    this.showAvailabilityForm.set(!this.showAvailabilityForm());
+    if (!this.showAvailabilityForm()) {
+      this.newRule = { dayOfWeek: 1, startTime: '10:00', endTime: '12:00' };
+      this.ruleError.set('');
+    }
+  }
+
+  saveAvailabilityRule() {
+    if (this.newRule.dayOfWeek === undefined || !this.newRule.startTime || !this.newRule.endTime) {
+      this.ruleError.set('すべてのフィールドを入力してください');
+      return;
+    }
+
+    if (this.newRule.dayOfWeek < 0 || this.newRule.dayOfWeek > 6) {
+      this.ruleError.set('曜日は0〜6の値を入力してください');
+      return;
+    }
+
+    this.isSavingRule.set(true);
+    this.apiService.saveAvailabilityRule(this.newRule).subscribe({
+      next: () => {
+        this.ruleError.set('');
+        this.newRule = { dayOfWeek: 1, startTime: '10:00', endTime: '12:00' };
+        this.showAvailabilityForm.set(false);
+        this.loadAvailabilityRules();
+        this.isSavingRule.set(false);
+      },
+      error: (err) => {
+        this.ruleError.set(err.error?.error || 'ルールの保存に失敗しました');
+        this.isSavingRule.set(false);
+      }
+    });
+  }
+
+  deleteAvailabilityRule(id: string) {
+    if (!confirm('このルールを削除してもよろしいですか？')) return;
+
+    this.apiService.deleteAvailabilityRule(id).subscribe({
+      next: () => {
+        this.loadAvailabilityRules();
+      },
+      error: (err) => {
+        alert('削除に失敗しました');
+      }
+    });
+  }
+
+  getDayOfWeekLabel(dayOfWeek: number): string {
+    const days = ['日', '月', '火', '水', '木', '金', '土'];
+    return days[dayOfWeek] || '不明';
   }
 
 }

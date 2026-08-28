@@ -24,6 +24,7 @@ import adminRoutes from './routes/admin';
 import departmentRoutes from './routes/department';
 import allocationRoutes from './routes/allocation';
 import consultationRoutes from './routes/consultation';
+import interviewRoutes from './routes/interview';
 
 // Register routes
 app.use('/api/auth', authRoutes);
@@ -32,6 +33,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/departments', departmentRoutes);
 app.use('/api/allocations', allocationRoutes);
 app.use('/api/consultations', consultationRoutes);
+app.use('/api/interview', interviewRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

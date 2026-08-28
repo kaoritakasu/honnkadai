@@ -763,13 +763,14 @@ router.post('/recalculate', authenticate, isAdmin, async (req: AuthRequest, res:
 
 router.post('/save', authenticate, isAdmin, async (req: AuthRequest, res: Response) => {
   try {
-    const { results, totalCompanyRevenue, totalCompanyProfit } = req.body;
+    const { results, totalCompanyRevenue, totalCompanyCost, totalCompanyProfit } = req.body;
     const executedBy = req.user?.email || 'Unknown';
 
     // 1. 会社全体のシミュレーション履歴を保存
     const simResult = await prisma.simulationResult.create({
       data: {
         totalRevenue: totalCompanyRevenue || 0,
+        totalCost: totalCompanyCost || 0,
         totalProfit: totalCompanyProfit || 0,
         executedBy: executedBy,
         details: results,

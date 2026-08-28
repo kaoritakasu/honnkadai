@@ -22,6 +22,13 @@ enum AllocationStatus {
   REJECTED
 }
 
+enum ReservationStatus {
+  AVAILABLE
+  RESERVED
+  COMPLETED
+  CANCELLED
+}
+
 model User {
   id        String     @id @default(cuid())
   email     String     @unique
@@ -54,6 +61,7 @@ model Employee {
   allocations     Allocation[]
   feedback        Feedback[]
   consultations   Consultation[]
+  interviewReservations InterviewReservation[]
 
   createdAt       DateTime @default(now())
 }
@@ -143,9 +151,37 @@ model Consultation {
 model SimulationResult {
   id                 String   @id @default(cuid())
   totalRevenue       Float    @default(0)
+  totalCost          Float    @default(0)
   totalProfit        Float    @default(0)
   overallFulfillment Float    @default(0)
   executedBy         String?
   details            Json?
   createdAt          DateTime @default(now())
+}
+
+model InterviewReservation {
+  id              String     @id @default(cuid())
+  employeeId      String
+  employee        Employee   @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  date            DateTime
+  timeSlot        String
+  status          ReservationStatus @default(AVAILABLE)
+  reason          String?
+
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+}
+
+model InterviewAvailabilityRule {
+  id              String     @id @default(cuid())
+  dayOfWeek       Int        // 0: 日曜日, 1: 月曜日, ..., 6: 土曜日
+  startTime       String     // "10:00" format
+  endTime         String     // "12:00" format
+  isActive        Boolean    @default(true)
+
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@unique([dayOfWeek, startTime, endTime])
 }

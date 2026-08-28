@@ -26,6 +26,15 @@ router.get('/dashboard', authenticate, isAdmin, async (req: AuthRequest, res: Re
     const departments = await prisma.department.findMany();
 
     const simulationHistory = await prisma.simulationResult.findMany({
+      select: {
+        id: true,
+        totalRevenue: true,
+        totalCost: true,
+        totalProfit: true,
+        executedBy: true,
+        details: true,
+        createdAt: true,
+      },
       orderBy: { createdAt: 'desc' },
       take: 10
     });

@@ -158,4 +158,42 @@ export class ApiService {
   submitConsultation(userId: string | number, inquiry: string) {
     return this.http.post(`${this.apiUrl}/employees/${userId}/consultation`, { inquiry }, { headers: this.getHeaders() });
   }
+
+  // Interview Reservations
+  getAvailableSlots(date: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/interview/available-slots?date=${date}`, { headers: this.getHeaders() });
+  }
+
+  createReservation(data: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/interview/reservation`, data, { headers: this.getHeaders() });
+  }
+
+  getMyReservations(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/interview/my-reservations`, { headers: this.getHeaders() });
+  }
+
+  getAllReservations(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/interview/all-reservations`, { headers: this.getHeaders() });
+  }
+
+  cancelReservation(reservationId: string): Observable<any> {
+    return this.http.put(`${this.apiUrl}/interview/reservation/${reservationId}`, {}, { headers: this.getHeaders() });
+  }
+
+  updateReservationStatus(reservationId: string, status: string): Observable<any> {
+    return this.http.put(`${this.apiUrl}/interview/admin/reservation/${reservationId}`, { status }, { headers: this.getHeaders() });
+  }
+
+  // Interview Availability Rules
+  getAvailabilityRules(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/interview/availability-rules`, { headers: this.getHeaders() });
+  }
+
+  saveAvailabilityRule(data: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/interview/availability-rules`, data, { headers: this.getHeaders() });
+  }
+
+  deleteAvailabilityRule(id: string): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/interview/availability-rules/${id}`, { headers: this.getHeaders() });
+  }
 }

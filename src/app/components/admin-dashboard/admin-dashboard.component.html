@@ -20,9 +20,10 @@
   }
 
   <div class="tabs">
-    <button (click)="activeTab.set('dashboard')" [class.active]="activeTab() === 'dashboard'">サマリー</button>
+    <button (click)="activeTab.set('dashboard')" [class.active]="activeTab() === 'dashboard'">ホーム</button>
     <button (click)="activeTab.set('simulation')" [class.active]="activeTab() === 'simulation'">配置シミュレーション</button>
     <button (click)="activeTab.set('employees')" [class.active]="activeTab() === 'employees'">社員一覧</button>
+    <button (click)="activeTab.set('interviews')" [class.active]="activeTab() === 'interviews'">面談予約管理</button>
   </div>
 
   <div class="content">
@@ -328,8 +329,8 @@
                       <input type="text" placeholder="名前/タグ..." [(ngModel)]="filterInputs[result.departmentId]" style="flex: 1; font-size: 0.7em; padding: 4px; box-sizing: border-box;">
                       <button (click)="applyFilter(result.departmentId)" style="font-size: 0.7em; padding: 4px 8px; background-color: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer;">絞り込む</button>
                     </div>
-                    <select (change)="sortCandidates(result.candidates, $event)" style="font-size: 0.7em; padding: 2px; border: 1px solid #ddd; border-radius: 3px;">
-                      <option value="">並び替え...</option>
+                    <select [(ngModel)]="simulationSortKey" (change)="sortCandidates(result.candidates, $event)" style="font-size: 0.7em; padding: 2px; border: 1px solid #ddd; border-radius: 3px;">
+                      <option value="employeeNumber">社員番号順</option>
                       <option value="salesForce">営業力順</option>
                       <option value="managementForce">管理力順</option>
                       <option value="explorationForce">開拓力順</option>
@@ -527,6 +528,7 @@
               [(ngModel)]="employeeSortKey"
               style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; background-color: white; cursor: pointer;"
             >
+              <option value="employeeNumber">社員番号順</option>
               <option value="id">ID順</option>
               <option value="name">名前順</option>
               <option value="currentDept">現在の部署順</option>
@@ -539,6 +541,7 @@
         <table class="employees-table">
           <thead>
             <tr>
+              <th>社員番号</th>
               <th>名前</th>
               <th>現在の部署</th>
               <th>希望部署</th>
@@ -549,6 +552,7 @@
           <tbody>
             @for (emp of getFilteredAndSortedEmployees(); track emp.id) {
               <tr>
+                <td>{{ emp.employeeNumber || '-' }}</td>
                 <td>{{ emp.user?.name || emp.name || '-' }}</td>
                 <td>{{ emp.currentDept || '-' }}</td>
                 <td>{{ emp.desiredDept || emp.careerDesire || emp.careerGoals || '-' }}</td>
@@ -558,6 +562,232 @@
             }
           </tbody>
         </table>
+      </div>
+    }
+
+    @if (activeTab() === 'interviews') {
+      <div style="padding: 20px; background: #f8f9fa; border-radius: 8px;">
+        <h2>面談予約管理</h2>
+
+        <!-- 面談受付設定セクション -->
+        <div style="margin-bottom: 30px; background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 style="margin: 0; color: #667eea;">面談受付設定</h3>
+            <button
+              (click)="toggleAvailabilityForm()"
+              style="padding: 8px 16px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+              {{ showAvailabilityForm() ? '× 閉じる' : '+ 新規追加' }}
+            </button>
+          </div>
+
+          @if (showAvailabilityForm()) {
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 4px; margin-bottom: 15px;">
+              @if (ruleError()) {
+                <div style="padding: 10px; background: #ffebee; color: #c62828; border-radius: 4px; margin-bottom: 15px;">
+                  {{ ruleError() }}
+                </div>
+              }
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                <div>
+                  <label style="display: block; margin-bottom: 8px; font-weight: bold;">曜日</label>
+                  <select
+                    [(ngModel)]="newRule.dayOfWeek"
+                    style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+                    <option [value]="0">日曜日</option>
+                    <option [value]="1">月曜日</option>
+                    <option [value]="2">火曜日</option>
+                    <option [value]="3">水曜日</option>
+                    <option [value]="4">木曜日</option>
+                    <option [value]="5">金曜日</option>
+                    <option [value]="6">土曜日</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style="display: block; margin-bottom: 8px; font-weight: bold;">開始時間</label>
+                  <input
+                    type="time"
+                    [(ngModel)]="newRule.startTime"
+                    style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+                </div>
+
+                <div>
+                  <label style="display: block; margin-bottom: 8px; font-weight: bold;">終了時間</label>
+                  <input
+                    type="time"
+                    [(ngModel)]="newRule.endTime"
+                    style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+                </div>
+              </div>
+
+              <button
+                (click)="saveAvailabilityRule()"
+                [disabled]="isSavingRule()"
+                style="padding: 10px 20px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                {{ isSavingRule() ? '保存中...' : '保存する' }}
+              </button>
+            </div>
+          }
+
+          @if (availabilityRules().length > 0) {
+            <div style="overflow-x: auto;">
+              <table style="width: 100%; border-collapse: collapse; background: white;">
+                <thead>
+                  <tr style="background: #f0f0f0; border-bottom: 2px solid #ddd;">
+                    <th style="padding: 12px; text-align: left; font-weight: bold; border-right: 1px solid #eee;">曜日</th>
+                    <th style="padding: 12px; text-align: left; font-weight: bold; border-right: 1px solid #eee;">開始時間</th>
+                    <th style="padding: 12px; text-align: left; font-weight: bold; border-right: 1px solid #eee;">終了時間</th>
+                    <th style="padding: 12px; text-align: center; font-weight: bold;">操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (rule of availabilityRules(); track rule.id) {
+                    <tr style="border-bottom: 1px solid #eee;">
+                      <td style="padding: 12px; border-right: 1px solid #eee; font-weight: bold; color: #667eea;">{{ getDayOfWeekLabel(rule.dayOfWeek) }}曜日</td>
+                      <td style="padding: 12px; border-right: 1px solid #eee;">{{ rule.startTime }}</td>
+                      <td style="padding: 12px; border-right: 1px solid #eee;">{{ rule.endTime }}</td>
+                      <td style="padding: 12px; text-align: center;">
+                        <button
+                          (click)="deleteAvailabilityRule(rule.id)"
+                          style="padding: 6px 12px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em;">
+                          削除
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else if (!showAvailabilityForm()) {
+            <div style="text-align: center; padding: 20px; color: #999;">
+              <p>まだ面談受付設定がありません</p>
+            </div>
+          }
+        </div>
+
+        <!-- カレンダービュー -->
+        <div style="margin-bottom: 30px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <button (click)="previousMonth()" style="padding: 8px 12px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">← 前月</button>
+            <h3 style="margin: 0; font-size: 1.3em; color: #2c3e50;">{{ getMonthYearDisplay() }}</h3>
+            <button (click)="nextMonth()" style="padding: 8px 12px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">次月 →</button>
+          </div>
+
+          <!-- 曜日ヘッダー -->
+          <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #ddd; margin-bottom: 1px;">
+            @for (day of ['日', '月', '火', '水', '木', '金', '土']; track day) {
+              <div style="background: #667eea; color: white; padding: 12px; text-align: center; font-weight: bold;">{{ day }}</div>
+            }
+          </div>
+
+          <!-- カレンダーセル -->
+          <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #ddd; min-height: 500px;">
+            @for (week of calendarWeeks(); track $index) {
+              @for (dayCell of week; track $index) {
+                <div [style.background]="dayCell && dayCell.dayOfMonth ? '#fff' : '#f5f5f5'" style="padding: 10px; border: 1px solid #eee; min-height: 100px; overflow-y: auto;">
+                  @if (dayCell) {
+                    <div style="font-weight: bold; color: #667eea; margin-bottom: 8px;">{{ dayCell.dayOfMonth }}</div>
+                    @if (getReservationsForDate(dayCell.date).length > 0) {
+                      @for (res of getReservationsForDate(dayCell.date); track res.id) {
+                        <div [style.background]="res.status === 'RESERVED' ? '#fff3e0' : res.status === 'AVAILABLE' ? '#e8f5e9' : '#f0f0f0'" style="padding: 4px; margin: 4px 0; border-left: 3px solid #667eea; border-radius: 2px; font-size: 0.75em; line-height: 1.3;">
+                          <p style="margin: 0; font-weight: bold;">{{ res.timeSlot }}</p>
+                          @if (res.employee) {
+                            <p style="margin: 0; color: #555;">{{ res.employee?.user?.name || res.employee?.employeeNumber || '-' }}</p>
+                          }
+                          <p style="margin: 0; color: #999;">
+                            @switch (res.status) {
+                              @case ('RESERVED') { <span style="color: #ff9800;">予約済み</span> }
+                              @case ('AVAILABLE') { <span style="color: #4caf50;">空き</span> }
+                              @case ('COMPLETED') { <span style="color: #2e7d32;">完了</span> }
+                              @case ('CANCELLED') { <span style="color: #c62828;">キャンセル</span> }
+                            }
+                          </p>
+                        </div>
+                      }
+                    } @else {
+                      <p style="margin: 0; color: #ccc; font-size: 0.8em;">予定なし</p>
+                    }
+                  }
+                </div>
+              }
+            }
+          </div>
+        </div>
+
+        <!-- リストビュー -->
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #ddd;">
+          <h3 style="margin-top: 0;">詳細リスト</h3>
+
+          <div style="margin-bottom: 20px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <label for="statusFilter" style="font-weight: bold;">ステータスフィルター:</label>
+            <select
+              id="statusFilter"
+              [(ngModel)]="filterReservationStatus"
+              style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; background: white;">
+              <option value="all">すべて</option>
+              <option value="AVAILABLE">空き枠</option>
+              <option value="RESERVED">予約済み</option>
+              <option value="COMPLETED">完了</option>
+              <option value="CANCELLED">キャンセル</option>
+            </select>
+          </div>
+
+          @if (getFilteredReservations().length > 0) {
+            <div style="overflow-x: auto;">
+              <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 4px;">
+                <thead style="background: #f0f0f0;">
+                  <tr style="border-bottom: 2px solid #ddd;">
+                    <th style="padding: 12px; text-align: left; font-weight: bold; border-right: 1px solid #eee;">日付</th>
+                    <th style="padding: 12px; text-align: left; font-weight: bold; border-right: 1px solid #eee;">時間枠</th>
+                    <th style="padding: 12px; text-align: left; font-weight: bold; border-right: 1px solid #eee;">社員名</th>
+                    <th style="padding: 12px; text-align: left; font-weight: bold; border-right: 1px solid #eee;">社員番号</th>
+                    <th style="padding: 12px; text-align: left; font-weight: bold; border-right: 1px solid #eee;">相談内容</th>
+                    <th style="padding: 12px; text-align: left; font-weight: bold; border-right: 1px solid #eee;">ステータス</th>
+                    <th style="padding: 12px; text-align: center; font-weight: bold;">アクション</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (reservation of getFilteredReservations(); track reservation.id) {
+                    <tr style="border-bottom: 1px solid #eee;">
+                      <td style="padding: 12px; border-right: 1px solid #eee;">{{ formatReservationDate(reservation.date) }}</td>
+                      <td style="padding: 12px; border-right: 1px solid #eee;">{{ reservation.timeSlot }}</td>
+                      <td style="padding: 12px; border-right: 1px solid #eee;">{{ reservation.employee?.user?.name || '-' }}</td>
+                      <td style="padding: 12px; border-right: 1px solid #eee;">{{ reservation.employee?.employeeNumber || '-' }}</td>
+                      <td style="padding: 12px; border-right: 1px solid #eee; max-width: 200px; word-break: break-word;">{{ reservation.reason || '未記入' }}</td>
+                      <td style="padding: 12px; border-right: 1px solid #eee;">
+                        @switch (reservation.status) {
+                          @case ('AVAILABLE') { <span style="background: #e8f5e9; padding: 4px 8px; border-radius: 4px; color: #2e7d32;">空き枠</span> }
+                          @case ('RESERVED') { <span style="background: #fff3e0; padding: 4px 8px; border-radius: 4px; color: #e65100;">予約済み</span> }
+                          @case ('COMPLETED') { <span style="background: #e8f5e9; padding: 4px 8px; border-radius: 4px; color: #2e7d32;">完了</span> }
+                          @case ('CANCELLED') { <span style="background: #ffebee; padding: 4px 8px; border-radius: 4px; color: #c62828;">キャンセル</span> }
+                        }
+                      </td>
+                      <td style="padding: 12px; text-align: center;">
+                        @if (reservation.status === 'RESERVED') {
+                          <button
+                            (click)="updateReservationStatus(reservation.id, 'COMPLETED')"
+                            style="padding: 6px 12px; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em; margin-right: 5px;">
+                            完了
+                          </button>
+                          <button
+                            (click)="updateReservationStatus(reservation.id, 'CANCELLED')"
+                            style="padding: 6px 12px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em;">
+                            キャンセル
+                          </button>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <div style="text-align: center; padding: 40px; background: white; border-radius: 4px; color: #999;">
+              <p>該当する面談予約がありません</p>
+            </div>
+          }
+        </div>
       </div>
     }
   </div>
