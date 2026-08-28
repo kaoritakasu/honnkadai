@@ -72,11 +72,11 @@ export class AdminDashboardComponent implements OnInit {
     const role = user.role?.toUpperCase() || '';
     const department = user.department || '';
 
-    if (role === 'ADMIN' || role === 'HR') {
+    if (role === 'HR') {
       return true;
     }
 
-    if (department.includes('人事') || department.includes('人事部') || department.includes('人事課')) {
+    if (department.includes('人事部') || department.includes('人事課')) {
       return true;
     }
 
