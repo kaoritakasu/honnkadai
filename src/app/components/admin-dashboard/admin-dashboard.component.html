@@ -382,7 +382,71 @@
             </div>
           </div>
 
-          <button (click)="runMultiDepartmentSimulation()" [disabled]="loading() || selectedDepartments().length === 0" style="margin-top: 10px;">
+          <!-- 🎯 経営戦略（シミュレーションモード）セクション -->
+          <div class="form-group" style="margin-top: 20px; padding: 20px; background-color: #fff8f0; border-radius: 8px; border-left: 4px solid #f39c12;">
+            <label style="display: block; font-weight: bold; margin-bottom: 3px; color: #333; font-size: 1.05em;">🎯 経営戦略（シミュレーションモード）</label>
+            <p style="margin: 0 0 15px 0; font-size: 0.9em; color: #666;">シミュレーションに適用する経営戦略を選択してください。選択した戦略に応じてアルゴリズムの重み付けが動的に変わります。</p>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+              <!-- ⚖️ 全社バランス重視 -->
+              <button
+                (click)="simulationStrategy = 'balanced'"
+                [style.background]="simulationStrategy === 'balanced' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : '#ffffff'"
+                [style.color]="simulationStrategy === 'balanced' ? 'white' : '#333'"
+                [style.border]="simulationStrategy === 'balanced' ? '2px solid #667eea' : '2px solid #ddd'"
+                style="padding: 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: left; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"
+                onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.1)'"
+                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.05)'"
+              >
+                <p style="margin: 0 0 4px 0; font-weight: bold; font-size: 1em;">⚖️ 全社バランス重視</p>
+                <p style="margin: 0; font-size: 0.85em; opacity: 0.8;">すべてのスキルを均等に評価</p>
+              </button>
+
+              <!-- 🚀 営業・開拓特化 -->
+              <button
+                (click)="simulationStrategy = 'sales_focus'"
+                [style.background]="simulationStrategy === 'sales_focus' ? 'linear-gradient(135deg, #f39c12 0%, #e67e22 100%)' : '#ffffff'"
+                [style.color]="simulationStrategy === 'sales_focus' ? 'white' : '#333'"
+                [style.border]="simulationStrategy === 'sales_focus' ? '2px solid #f39c12' : '2px solid #ddd'"
+                style="padding: 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: left; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"
+                onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.1)'"
+                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.05)'"
+              >
+                <p style="margin: 0 0 4px 0; font-weight: bold; font-size: 1em;">🚀 営業・開拓特化</p>
+                <p style="margin: 0; font-size: 0.85em; opacity: 0.8;">短期売上拡大を最優先</p>
+              </button>
+
+              <!-- 🎓 育成・技術投資 -->
+              <button
+                (click)="simulationStrategy = 'tech_focus'"
+                [style.background]="simulationStrategy === 'tech_focus' ? 'linear-gradient(135deg, #27ae60 0%, #16a085 100%)' : '#ffffff'"
+                [style.color]="simulationStrategy === 'tech_focus' ? 'white' : '#333'"
+                [style.border]="simulationStrategy === 'tech_focus' ? '2px solid #27ae60' : '2px solid #ddd'"
+                style="padding: 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: left; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"
+                onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.1)'"
+                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.05)'"
+              >
+                <p style="margin: 0 0 4px 0; font-weight: bold; font-size: 1em;">🎓 育成・技術投資</p>
+                <p style="margin: 0; font-size: 0.85em; opacity: 0.8;">中長期成長基盤を構築</p>
+              </button>
+
+              <!-- 👔 管理体制強化 -->
+              <button
+                (click)="simulationStrategy = 'management_focus'"
+                [style.background]="simulationStrategy === 'management_focus' ? 'linear-gradient(135deg, #3498db 0%, #2980b9 100%)' : '#ffffff'"
+                [style.color]="simulationStrategy === 'management_focus' ? 'white' : '#333'"
+                [style.border]="simulationStrategy === 'management_focus' ? '2px solid #3498db' : '2px solid #ddd'"
+                style="padding: 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: left; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"
+                onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.1)'"
+                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.05)'"
+              >
+                <p style="margin: 0 0 4px 0; font-weight: bold; font-size: 1em;">👔 管理体制強化</p>
+                <p style="margin: 0; font-size: 0.85em; opacity: 0.8;">組織安定・リスク管理を重視</p>
+              </button>
+            </div>
+          </div>
+
+          <button (click)="runMultiDepartmentSimulation()" [disabled]="loading() || selectedDepartments().length === 0" style="margin-top: 15px;">
             {{ loading() ? 'シミュレーション実行中...' : 'シミュレーションを実行' }}
           </button>
         </div>

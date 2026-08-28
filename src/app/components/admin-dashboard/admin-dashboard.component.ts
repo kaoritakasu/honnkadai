@@ -45,6 +45,7 @@ export class AdminDashboardComponent implements OnInit {
   employeeSearchText: string = '';
   employeeSortKey: string = 'employeeNumber';
   simulationSortKey: string = 'employeeNumber';
+  simulationStrategy: 'balanced' | 'sales_focus' | 'tech_focus' | 'management_focus' = 'balanced';
   
   // 人事権限判定
   isHRUser: boolean = false;
@@ -383,7 +384,7 @@ export class AdminDashboardComponent implements OnInit {
     }
 
     this.loading.set(true);
-    this.apiService.simulateMultiDepartment(this.selectedDepartments(), this.lastYearTotalRevenue).subscribe({
+    this.apiService.simulateMultiDepartment(this.selectedDepartments(), this.lastYearTotalRevenue, this.simulationStrategy).subscribe({
       next: (data: any) => {
         if (data && data.results && Array.isArray(data.results)) {
           const enrichedResults = this.enrichWithMyPageData(data.results);
@@ -573,7 +574,7 @@ export class AdminDashboardComponent implements OnInit {
     });
 
     this.loading.set(true);
-    this.apiService.simulateBatchAllocation(convertedData, this.lastYearTotalRevenue).subscribe({
+    this.apiService.simulateBatchAllocation(convertedData, this.lastYearTotalRevenue, this.simulationStrategy).subscribe({
       next: (data: any) => {
         if (data && data.results && Array.isArray(data.results)) {
           const enrichedResults = this.enrichWithMyPageData(data.results);

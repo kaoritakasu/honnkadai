@@ -85,21 +85,31 @@ export class ApiService {
     return this.http.post(`${this.apiUrl}/allocations/simulate`, { departmentId, numPositions }, { headers: this.getHeaders() });
   }
 
-  simulateMultiDepartment(departmentIds: string[], lastYearTotalRevenue?: number): Observable<any> {
+  simulateMultiDepartment(departmentIds: string[], lastYearTotalRevenue?: number, strategy?: string): Observable<any> {
     const payload: any = { departmentIds };
     if (lastYearTotalRevenue && lastYearTotalRevenue > 0) {
       payload.lastYearTotalRevenue = lastYearTotalRevenue;
     }
+    if (strategy) {
+      payload.strategy = strategy;
+    }
     return this.http.post(`${this.apiUrl}/allocations/simulate-multi`, payload, { headers: this.getHeaders() });
   }
 
-  simulateBatchAllocation(data: any[], lastYearTotalRevenue?: number): Observable<any> {
+  simulateBatchAllocation(data: any[], lastYearTotalRevenue?: number, strategy?: string): Observable<any> {
     let payload: any = Array.isArray(data) ? data : { employees: data };
     if (lastYearTotalRevenue && lastYearTotalRevenue > 0) {
       if (Array.isArray(payload)) {
         payload = { employees: payload, lastYearTotalRevenue };
       } else {
         payload.lastYearTotalRevenue = lastYearTotalRevenue;
+      }
+    }
+    if (strategy) {
+      if (Array.isArray(payload)) {
+        payload.strategy = strategy;
+      } else {
+        payload.strategy = strategy;
       }
     }
     return this.http.post<any>(`${this.apiUrl}/allocations/simulate-batch`, payload, { headers: this.getHeaders() });
