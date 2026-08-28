@@ -46,7 +46,22 @@ router.put('/me', authenticate, async (req: AuthRequest, res: Response) => {
 router.get('/', authenticate, isAdmin, async (req: AuthRequest, res: Response) => {
   try {
     const employees = await prisma.employee.findMany({
-      include: { user: true, allocations: { include: { department: true } } },
+      select: {
+        id: true,
+        employeeNumber: true,
+        userId: true,
+        score: true,
+        desiredDept: true,
+        currentDept: true,
+        status: true,
+        lastUpdated: true,
+        skills: true,
+        careerGoals: true,
+        workLifeBalance: true,
+        createdAt: true,
+        user: true,
+        allocations: { include: { department: true } },
+      },
     });
     // Ensure response is always an array
     res.json(Array.isArray(employees) ? employees : []);
@@ -147,13 +162,54 @@ router.post('/:id/preferences', authenticate, async (req: AuthRequest, res: Resp
         }
       });
     }
-    res.status(200).json({ 
+    res.status(200).json({
       message: 'Preferences updated successfully',
-      data: updatedData 
+      data: updatedData
     });
   } catch (error) {
     console.error('Error updating preferences:', error);
     res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Submit consultation
+router.post('/:id/consultation', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const employeeId = req.params.id;
+    const { inquiry } = req.body;
+
+    if (!inquiry || inquiry.trim() === '') {
+      return res.status(400).json({ error: 'Inquiry cannot be empty' });
+    }
+
+    // Find employee by ID or userId
+    const employee = await prisma.employee.findFirst({
+      where: {
+        OR: [
+          { id: employeeId },
+          { userId: employeeId }
+        ]
+      }
+    });
+
+    if (!employee) {
+      return res.status(404).json({ error: 'Employee not found' });
+    }
+
+    // Create consultation
+    const consultation = await prisma.consultation.create({
+      data: {
+        employeeId: employee.id,
+        title: '人事相談',
+        description: inquiry,
+        status: 'pending'
+      }
+    });
+
+    res.status(201).json(consultation);
+  } catch (error) {
+    console.error('Error submitting consultation:', error);
+    res.status(500).json({ error: (error as Error).message });
   }
 });
 

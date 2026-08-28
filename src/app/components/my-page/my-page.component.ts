@@ -14,6 +14,13 @@ import { ChangeDetectorRef } from '@angular/core';
   styleUrl: './my-page.component.scss'
 })
 export class MyPageComponent implements OnInit {
+  private toLocalDateString(date: Date): string {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
   user: any = null;
   desiredDept = '';
   workLifeBalance = '';
@@ -22,6 +29,7 @@ export class MyPageComponent implements OnInit {
   departments: any[] = [];
   isEditing: boolean = false;
   isSaving: boolean = false;
+  isSubmittingConsultation: boolean = false;
   allocations = signal<any[]>([]);
 
   // Interview reservation fields
@@ -126,13 +134,31 @@ export class MyPageComponent implements OnInit {
   }
 
   submitConsultation() {
-    if (!this.inquiry.trim()) return;
-    if (this.user?.id) {
-      this.apiService.submitConsultation(this.user.id, this.inquiry).subscribe(() => {
+    if (!this.inquiry.trim()) {
+      alert('相談内容を入力してください');
+      return;
+    }
+
+    if (!this.user?.id) {
+      alert('ユーザー情報が見つかりません。もう一度ログインしてください');
+      return;
+    }
+
+    this.isSubmittingConsultation = true;
+    this.apiService.submitConsultation(this.user.id, this.inquiry).subscribe({
+      next: () => {
         alert('人事へ相談を送信しました');
         this.inquiry = '';
-      });
-    }
+        this.isSubmittingConsultation = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error submitting consultation:', err);
+        alert(err.error?.error || '相談の送信に失敗しました');
+        this.isSubmittingConsultation = false;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   loadMyAllocations() {
@@ -240,7 +266,7 @@ export class MyPageComponent implements OnInit {
   getMinDate(): string {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    return tomorrow.toISOString().split('T')[0];
+    return this.toLocalDateString(tomorrow);
   }
 
   formatDate(dateStr: string): string {
@@ -260,6 +286,9 @@ export class MyPageComponent implements OnInit {
     let currentDate = new Date(startDate);
 
     for (let week = 0; week < 6; week++) {
+      if (week > 0 && currentDate.getMonth() !== month) {
+        break;
+      }
       const weekDays: (any | null)[] = [];
       for (let day = 0; day < 7; day++) {
         if (currentDate.getMonth() === month) {
@@ -295,24 +324,24 @@ export class MyPageComponent implements OnInit {
   }
 
   hasReservationOnDate(date: Date): boolean {
-    const dateStr = date.toISOString().split('T')[0];
-    return this.myReservations.some(r => r.date.split('T')[0] === dateStr && r.status !== 'CANCELLED');
+    const dateStr = this.toLocalDateString(date);
+    return this.myReservations.some(r => this.toLocalDateString(new Date(r.date)) === dateStr && r.status !== 'CANCELLED');
   }
 
   getReservationsForDate(date: Date): any[] {
-    const dateStr = date.toISOString().split('T')[0];
-    return this.myReservations.filter(r => r.date.split('T')[0] === dateStr && r.status !== 'CANCELLED');
+    const dateStr = this.toLocalDateString(date);
+    return this.myReservations.filter(r => this.toLocalDateString(new Date(r.date)) === dateStr && r.status !== 'CANCELLED');
   }
 
   selectDateFromCalendar(date: Date) {
-    this.selectedDate = date.toISOString().split('T')[0];
+    this.selectedDate = this.toLocalDateString(date);
     this.loadAvailableSlots();
     this.showReservationForm = true;
   }
 
   isDateDisabledForSelection(date: Date): boolean {
-    const dateStr = date.toISOString().split('T')[0];
-    const today = new Date().toISOString().split('T')[0];
+    const dateStr = this.toLocalDateString(date);
+    const today = this.toLocalDateString(new Date());
     if (dateStr < today) return true;
 
     // Check if the day of week has availability rules
@@ -335,8 +364,8 @@ export class MyPageComponent implements OnInit {
   }
 
   openReservationModal(date: Date) {
-    const dateStr = date.toISOString().split('T')[0];
-    const today = new Date().toISOString().split('T')[0];
+    const dateStr = this.toLocalDateString(date);
+    const today = this.toLocalDateString(new Date());
 
     if (dateStr < today) {
       return;

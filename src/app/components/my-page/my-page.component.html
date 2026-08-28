@@ -133,17 +133,17 @@
         </div>
 
         <!-- 曜日ヘッダー -->
-        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #ddd; margin-bottom: 1px;">
+        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #eaeaea; margin-bottom: 1px;">
           @for (day of ['日', '月', '火', '水', '木', '金', '土']; track day) {
             <div style="background: #667eea; color: white; padding: 12px; text-align: center; font-weight: bold;">{{ day }}</div>
           }
         </div>
 
         <!-- カレンダーセル -->
-        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #ddd; min-height: 450px;">
+        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #eaeaea;">
           @for (week of calendarWeeks(); track $index) {
             @for (dayCell of week; track $index) {
-              <div [style.background]="dayCell && dayCell.dayOfMonth ? '#fff' : '#f5f5f5'" [style.cursor]="dayCell && dayCell.dayOfMonth && !isDateDisabledForSelection(dayCell.date) ? 'pointer' : 'default'" (click)="dayCell && dayCell.dayOfMonth && !isDateDisabledForSelection(dayCell.date) && openReservationModal(dayCell.date)" [style.opacity]="dayCell && isDateDisabledForSelection(dayCell.date) ? '0.5' : '1'" style="padding: 10px; border: 1px solid #eee; min-height: 90px; overflow-y: auto; transition: background-color 0.2s; cursor: pointer;" [style.backgroundColor]="dayCell && dayCell.dayOfMonth && !isDateDisabledForSelection(dayCell.date) ? 'rgba(102, 126, 234, 0.08)' : ''" [ngClass]="{'hover-cell': dayCell && dayCell.dayOfMonth && !isDateDisabledForSelection(dayCell.date)}">
+              <div [style.background]="dayCell && dayCell.dayOfMonth && !isDateDisabledForSelection(dayCell.date) ? '#ffffff' : dayCell && isDateDisabledForSelection(dayCell.date) ? '#fafafa' : '#f9f9f9'" [style.cursor]="dayCell && dayCell.dayOfMonth && !isDateDisabledForSelection(dayCell.date) ? 'pointer' : 'default'" (click)="dayCell && dayCell.dayOfMonth && !isDateDisabledForSelection(dayCell.date) && openReservationModal(dayCell.date)" style="padding: 10px; border: 1px solid #eee; min-height: 90px; overflow-y: auto; transition: background-color 0.2s;" [ngClass]="{'hover-cell': dayCell && dayCell.dayOfMonth && !isDateDisabledForSelection(dayCell.date)}">
                 @if (dayCell) {
                   <div style="font-weight: bold; color: #667eea; margin-bottom: 8px;">{{ dayCell.dayOfMonth }}</div>
                   @if (getReservationsForDate(dayCell.date).length > 0) {
@@ -154,9 +154,7 @@
                       </div>
                     }
                   } @else if (!isDateDisabledForSelection(dayCell.date)) {
-                    <p style="margin: 0; color: #667eea; font-size: 0.75em; cursor: pointer; padding: 4px; background: rgba(102, 126, 234, 0.15); border-radius: 2px; text-align: center; line-height: 1.8; font-weight: bold;">+ 予約</p>
-                  } @else if (isDateDisabledForSelection(dayCell.date) && dayCell.dayOfMonth) {
-                    <p style="margin: 0; color: #ccc; font-size: 0.7em; padding: 4px; text-align: center; line-height: 1.6;">受付なし</p>
+                    <p style="margin: 0; color: #ffffff; font-size: 0.75em; cursor: pointer; padding: 6px 8px; background: #667eea; border-radius: 4px; text-align: center; line-height: 1.6; font-weight: bold;">+ 予約</p>
                   }
                 }
               </div>
@@ -282,10 +280,16 @@
           id="inquiry"
           [(ngModel)]="inquiry"
           placeholder="配置や働き方について相談があれば入力してください"
-          class="textarea">
+          class="textarea"
+          [disabled]="isSubmittingConsultation">
         </textarea>
       </div>
-      <button (click)="submitConsultation()" class="btn btn-primary">送信</button>
+      <button
+        (click)="submitConsultation()"
+        class="btn btn-primary"
+        [disabled]="isSubmittingConsultation || !inquiry.trim()">
+        {{ isSubmittingConsultation ? '送信中...' : '送信' }}
+      </button>
     </section>
   </div>
 </div>
