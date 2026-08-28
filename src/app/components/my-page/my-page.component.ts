@@ -53,6 +53,10 @@ export class MyPageComponent implements OnInit {
   calendarWeeks = signal<(any | null)[][]>([]);
   availabilityRules = signal<any[]>([]);
 
+  // Consultation history
+  myConsultations = signal<any[]>([]);
+  consultationFilterStatus: string = 'all';
+
   constructor(
     private authService: AuthService,
     private apiService: ApiService,
@@ -67,6 +71,7 @@ export class MyPageComponent implements OnInit {
     this.loadMyAllocations();
     this.loadMyReservations();
     this.loadAvailabilityRules();
+    this.loadMyConsultations();
     this.generateCalendarDays();
   }
 
@@ -434,5 +439,34 @@ export class MyPageComponent implements OnInit {
     this.modalTimeSlot = '';
     this.modalReason = '';
     this.modalAvailableSlots = [];
+  }
+
+  loadMyConsultations() {
+    this.apiService.getMyConsultations().subscribe({
+      next: (data: any[]) => {
+        this.myConsultations.set(data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error loading consultations:', err);
+        this.myConsultations.set([]);
+      }
+    });
+  }
+
+  getFilteredConsultations(): any[] {
+    const consultations = this.myConsultations();
+    if (this.consultationFilterStatus === 'all') {
+      return consultations;
+    }
+    return consultations.filter(c => c.status === this.consultationFilterStatus);
+  }
+
+  formatConsultationStatus(status: string): string {
+    const statusMap: { [key: string]: string } = {
+      'pending': '未返信',
+      'replied': '返信済み'
+    };
+    return statusMap[status?.toLowerCase()] || status || '不明';
   }
 }

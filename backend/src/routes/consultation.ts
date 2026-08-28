@@ -1,6 +1,7 @@
 import express, { Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticate, AuthRequest, isAdmin } from '../middleware/auth';
+import { sendConsultationReplyEmail } from '../utils/emailService';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -78,6 +79,16 @@ router.put('/:id', authenticate, isAdmin, async (req: AuthRequest, res: Response
       },
       include: { employee: { include: { user: true } } },
     });
+
+    // Send email notification when responding to consultation
+    if (response && consultation.employee?.user) {
+      await sendConsultationReplyEmail(
+        consultation.employee.user.email,
+        consultation.employee.user.name,
+        consultation.title,
+        response
+      );
+    }
 
     res.json(consultation);
   } catch (error) {

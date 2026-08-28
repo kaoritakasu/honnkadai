@@ -56,7 +56,12 @@ export class AdminDashboardComponent implements OnInit {
   calendarWeeks = signal<(any | null)[][]>([]);
 
   // --- 人事相談一覧用 ---
+  showConsultations: boolean = false;
   allConsultations = signal<any[]>([]);
+  expandedConsultationId: string | null = null;
+  consultationReplyText: { [key: string]: string } = {};
+  consultationStatus: { [key: string]: string } = {};
+  isReplyingConsultation: { [key: string]: boolean } = {};
 
   // --- 予約詳細モーダル用 ---
   selectedReservationDetail: any = null;
@@ -116,6 +121,10 @@ export class AdminDashboardComponent implements OnInit {
   // --- カレンダー・面談予約関連のメソッド ---
   toggleReservationCalendar() {
     this.showReservationCalendar = !this.showReservationCalendar;
+  }
+
+  toggleConsultations() {
+    this.showConsultations = !this.showConsultations;
   }
 
   loadAllReservations() {
@@ -1051,5 +1060,44 @@ export class AdminDashboardComponent implements OnInit {
     }
 
     return filtered;
+  }
+
+  // --- 人事相談返信関連メソッド ---
+  toggleConsultationDetail(consultationId: string) {
+    this.expandedConsultationId = this.expandedConsultationId === consultationId ? null : consultationId;
+  }
+
+  submitConsultationReply(consultationId: string) {
+    const replyText = this.consultationReplyText[consultationId] || '';
+    const status = this.consultationStatus[consultationId] || 'replied';
+
+    if (!replyText.trim()) {
+      alert('返信内容を入力してください');
+      return;
+    }
+
+    this.isReplyingConsultation[consultationId] = true;
+    this.apiService.respondToConsultation(consultationId, replyText, status).subscribe({
+      next: () => {
+        alert('返信を送信しました。社員にメール通知が届きます。');
+        this.consultationReplyText[consultationId] = '';
+        this.expandedConsultationId = null;
+        this.isReplyingConsultation[consultationId] = false;
+        this.loadConsultations();
+      },
+      error: (err: any) => {
+        console.error('Error submitting reply:', err);
+        alert('返信の送信に失敗しました');
+        this.isReplyingConsultation[consultationId] = false;
+      }
+    });
+  }
+
+  getConsultationStatusLabel(status: string): string {
+    const statusMap: { [key: string]: string } = {
+      'pending': '未返信',
+      'replied': '返信済み'
+    };
+    return statusMap[status?.toLowerCase()] || status || '不明';
   }
 }

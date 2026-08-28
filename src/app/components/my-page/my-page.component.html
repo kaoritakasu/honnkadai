@@ -291,6 +291,89 @@
         {{ isSubmittingConsultation ? '送信中...' : '送信' }}
       </button>
     </section>
+
+    <!-- 相談履歴・返信確認セクション -->
+    <section class="card">
+      <h2>相談履歴・返信確認</h2>
+
+      @if (myConsultations().length === 0) {
+        <div style="padding: 30px; text-align: center; color: #999; background: #f8f9fa; border-radius: 4px; border: 1px dashed #ddd;">
+          <p style="margin: 0;">相談履歴はまだありません</p>
+        </div>
+      } @else {
+        <!-- フィルタタブ -->
+        <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ddd; padding-bottom: 10px;">
+          <button
+            (click)="consultationFilterStatus = 'all'"
+            [style.color]="consultationFilterStatus === 'all' ? '#667eea' : '#999'"
+            [style.fontWeight]="consultationFilterStatus === 'all' ? 'bold' : 'normal'"
+            [style.borderBottom]="consultationFilterStatus === 'all' ? '3px solid #667eea' : 'none'"
+            style="padding: 8px 16px; background: none; border: none; cursor: pointer; font-size: 0.95em; transition: all 0.2s;">
+            全て ({{ myConsultations().length }})
+          </button>
+          <button
+            (click)="consultationFilterStatus = 'pending'"
+            [style.color]="consultationFilterStatus === 'pending' ? '#667eea' : '#999'"
+            [style.fontWeight]="consultationFilterStatus === 'pending' ? 'bold' : 'normal'"
+            [style.borderBottom]="consultationFilterStatus === 'pending' ? '3px solid #667eea' : 'none'"
+            style="padding: 8px 16px; background: none; border: none; cursor: pointer; font-size: 0.95em; transition: all 0.2s;">
+            未返信 ({{ myConsultations().filter(c => c.status === 'pending').length }})
+          </button>
+          <button
+            (click)="consultationFilterStatus = 'replied'"
+            [style.color]="consultationFilterStatus === 'replied' ? '#667eea' : '#999'"
+            [style.fontWeight]="consultationFilterStatus === 'replied' ? 'bold' : 'normal'"
+            [style.borderBottom]="consultationFilterStatus === 'replied' ? '3px solid #667eea' : 'none'"
+            style="padding: 8px 16px; background: none; border: none; cursor: pointer; font-size: 0.95em; transition: all 0.2s;">
+            返信済み ({{ myConsultations().filter(c => c.status === 'replied').length }})
+          </button>
+        </div>
+
+        <!-- 相談リスト -->
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          @for (consultation of getFilteredConsultations(); track consultation.id) {
+            <div style="background: white; padding: 16px; border-radius: 8px; border: 1px solid #e0e0e0; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+              <!-- 相談ヘッダー -->
+              <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                <div style="flex: 1;">
+                  <h4 style="margin: 0 0 6px 0; color: #2c3e50; font-size: 0.95em;">{{ consultation.title }}</h4>
+                  <p style="margin: 0; font-size: 0.85em; color: #666;">送信日時: {{ consultation.createdAt | date:'short' }}</p>
+                </div>
+                <!-- ステータスバッジ -->
+                @switch (consultation.status) {
+                  @case ('pending') {
+                    <span style="display: inline-block; background: #fff3cd; color: #856404; padding: 4px 12px; border-radius: 12px; font-size: 0.8em; font-weight: bold; white-space: nowrap;">未返信</span>
+                  }
+                  @case ('replied') {
+                    <span style="display: inline-block; background: #d4edda; color: #155724; padding: 4px 12px; border-radius: 12px; font-size: 0.8em; font-weight: bold; white-space: nowrap;">✓ 返信済み</span>
+                  }
+                  @default {
+                    <span style="display: inline-block; background: #e2e3e5; color: #383d41; padding: 4px 12px; border-radius: 12px; font-size: 0.8em; font-weight: bold; white-space: nowrap;">{{ formatConsultationStatus(consultation.status) }}</span>
+                  }
+                }
+              </div>
+
+              <!-- 相談内容 -->
+              <div style="background: #f8f9fa; padding: 12px; border-radius: 4px; margin-bottom: 12px; border-left: 3px solid #667eea;">
+                <p style="margin: 0; font-size: 0.9em; line-height: 1.5; color: #333; white-space: pre-wrap; word-break: break-word;">
+                  {{ consultation.description || consultation.inquiry || '内容が記録されていません' }}
+                </p>
+              </div>
+
+              <!-- 返信内容（返信済みの場合） -->
+              @if (consultation.status === 'replied' && consultation.response) {
+                <div style="background: #d4edda; padding: 12px; border-radius: 4px; border-left: 4px solid #155724;">
+                  <p style="margin: 0 0 8px 0; font-weight: bold; color: #155724; font-size: 0.85em;">【人事からの返信】</p>
+                  <div style="background: white; padding: 12px; border-radius: 4px; font-size: 0.9em; color: #333; line-height: 1.6; white-space: pre-wrap; word-break: break-word;">
+                    {{ consultation.response }}
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </section>
   </div>
 </div>
 
