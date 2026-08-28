@@ -44,10 +44,6 @@
                     <p style="margin: 4px 0 0 0; color: #27ae60; font-weight: bold; font-size: 0.9em;">{{ pendingConsultationsCount }}件</p>
                   </div>
                 </button>
-                <!-- ホバー背景 -->
-                <style>
-                  button:hover { background-color: #f9f9f9 !important; }
-                </style>
               </div>
 
               <!-- 面談予約 -->
@@ -88,6 +84,9 @@
   </div>
 
   <div class="content">
+    <!-- ============================================== -->
+    <!-- ホームタブ (ダッシュボード) -->
+    <!-- ============================================== -->
     @if (activeTab() === 'dashboard' && dashboard()) {
       <div class="dashboard-section">
         <h2>全体指標</h2>
@@ -354,6 +353,9 @@
       </div>
     }
 
+    <!-- ============================================== -->
+    <!-- 配置シミュレーションタブ -->
+    <!-- ============================================== -->
     @if (activeTab() === 'simulation') {
       <div class="simulation-section">
         <h2>人材配置シミュレーションの実行</h2>
@@ -373,7 +375,11 @@
           <div class="form-group" style="margin-top: 15px; padding: 15px; background-color: #f0f4ff; border-radius: 4px; border-left: 4px solid #667eea;">
             <label style="display: block; font-weight: bold; margin-bottom: 8px; color: #333;">昨年の全社売上（制約値）</label>
             <p style="margin: 0 0 10px 0; font-size: 0.9em; color: #666;">シミュレーション結果がこの金額を下回らないように制約が適用されます</p>
-            <input type="number" [(ngModel)]="lastYearTotalRevenue" placeholder="例: 100000000" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 1em;" />
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-weight: bold; color: #555; font-size: 1.1em;">¥</span>
+              <input type="number" [(ngModel)]="lastYearTotalRevenue" placeholder="例: 100000000" style="width: 100%; max-width: 300px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 1em;" />
+              <span style="font-weight: bold; color: #555;">円</span>
+            </div>
           </div>
 
           <button (click)="runMultiDepartmentSimulation()" [disabled]="loading() || selectedDepartments().length === 0" style="margin-top: 10px;">
@@ -381,12 +387,12 @@
           </button>
         </div>
 
-        <div class="paste-data-form">
-          <h3>データの直接読み込み（コピペ）</h3>
-          <p class="hint">Excelからコピペしたデータ（CSV/TSV形式）を貼り付けてください。</p>
-          <p class="hint">カラム: 社員番号, 営業力, 管理力, 開拓力, 育成力, 人件費</p>
-          <textarea [(ngModel)]="pasteDataText" placeholder="社員番号,営業力,管理力,開拓力,育成力,人件費&#10;E001,75,46,63,40,6.7&#10;E002,85,67,59,42,9.9" class="data-textarea"></textarea>
-          <button (click)="runPastedDataSimulation()" [disabled]="loading()">
+        <div class="paste-data-form" style="margin-top: 20px; padding: 20px; background: #fff; border-radius: 8px; border: 1px solid #e0e0e0;">
+          <h3 style="margin-top: 0; display: flex; align-items: center; gap: 8px;">📋 データの直接読み込み（コピペ）</h3>
+          <p class="hint" style="color: #666; margin-bottom: 5px;">Excelからコピペしたデータ（CSV/TSV形式）を貼り付けてください。</p>
+          <p class="hint" style="color: #888; font-size: 0.85em; margin-bottom: 15px;">カラム: 社員番号, 営業力, 管理力, 開拓力, 育成力, 人件費</p>
+          <textarea [(ngModel)]="pasteDataText" placeholder="社員番号,営業力,管理力,開拓力,育成力,人件費&#10;E001,75,46,63,40,6.7&#10;E002,85,67,59,42,9.9" class="data-textarea" style="font-family: 'Courier New', Consolas, monospace; width: 100%; min-height: 120px; padding: 12px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; line-height: 1.5; font-size: 0.95em;"></textarea>
+          <button (click)="runPastedDataSimulation()" [disabled]="loading()" style="margin-top: 15px; padding: 10px 20px; background-color: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
             {{ loading() ? 'シミュレーション実行中...' : 'データから実行' }}
           </button>
         </div>
@@ -634,6 +640,9 @@
       </div>
     }
 
+    <!-- ============================================== -->
+    <!-- 社員データ一覧タブ -->
+    <!-- ============================================== -->
     @if (activeTab() === 'employees') {
       <div class="employees-section">
         <h2>社員データ一覧</h2>
@@ -696,7 +705,7 @@
     }
 
     <!-- ============================================== -->
-    <!-- 人事ダッシュボード (面談予約管理) -->
+    <!-- 人事管理ダッシュボードタブ (面談予約管理) -->
     <!-- ============================================== -->
     @if (activeTab() === 'hr-management' && isHRUser) {
       <div class="hr-management-section">
