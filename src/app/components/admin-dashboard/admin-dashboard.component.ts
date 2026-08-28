@@ -14,6 +14,13 @@ import { CdkDragDrop, moveItemInArray, transferArrayItem, DragDropModule } from 
   styleUrl: './admin-dashboard.component.scss'
 })
 export class AdminDashboardComponent implements OnInit {
+  private toLocalDateString(date: Date): string {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
   Array = Array;
   dashboard = signal<any>(null);
   departments = signal<any[]>([]);
@@ -37,7 +44,30 @@ export class AdminDashboardComponent implements OnInit {
   employeeSearchText: string = '';
   employeeSortKey: string = 'employeeNumber';
   simulationSortKey: string = 'employeeNumber';
+  
+  // 人事権限判定
   isHRUser: boolean = false;
+
+  // --- 面談予約管理・カレンダー用 ---
+  showReservationCalendar: boolean = false;
+  allReservations = signal<any[]>([]);
+  filterReservationStatus: string = 'all';
+  currentDate = signal(new Date());
+  calendarWeeks = signal<(any | null)[][]>([]);
+
+  // --- 人事相談一覧用 ---
+  allConsultations = signal<any[]>([]);
+
+  // --- 予約詳細モーダル用 ---
+  selectedReservationDetail: any = null;
+  showReservationDetailModal = false;
+
+  // --- 予約枠ルール設定用 ---
+  availabilityRules = signal<any[]>([]);
+  showAvailabilityForm = signal(false);
+  newRule = { dayOfWeek: 1, startTime: '10:00', endTime: '12:00' };
+  isSavingRule = signal(false);
+  ruleError = signal('');
 
   // --- ポップアップ用ステート ---
   selectedEmployeeForModal: any = null;
@@ -65,24 +95,189 @@ export class AdminDashboardComponent implements OnInit {
     this.loadDashboard();
     this.loadDepartments();
     this.loadEmployees();
+    
+    if (this.isHRUser) {
+      this.loadAllReservations();
+      this.generateCalendarDays();
+      this.loadAvailabilityRules();
+      this.loadConsultations();
+    }
   }
 
   private checkIsHRUser(user: any): boolean {
     if (!user) return false;
     const role = user.role?.toUpperCase() || '';
     const department = user.department || '';
-
-    if (role === 'HR') {
-      return true;
-    }
-
-    if (department.includes('人事部') || department.includes('人事課')) {
-      return true;
-    }
-
+    if (role === 'HR') return true;
+    if (department.includes('人事部') || department.includes('人事課')) return true;
     return false;
   }
 
+  // --- カレンダー・面談予約関連のメソッド ---
+  toggleReservationCalendar() {
+    this.showReservationCalendar = !this.showReservationCalendar;
+  }
+
+  loadAllReservations() {
+    this.apiService.getAllReservations().subscribe({
+      next: (data: any[]) => this.allReservations.set(data),
+      error: (err: any) => {
+        console.error('Error loading reservations:', err);
+        this.allReservations.set([]);
+      }
+    });
+  }
+
+  loadConsultations() {
+    this.apiService.getAllConsultations().subscribe({
+      next: (data: any[]) => this.allConsultations.set(data),
+      error: (err: any) => {
+        console.error('Error loading consultations:', err);
+        this.allConsultations.set([]);
+      }
+    });
+  }
+
+  getFilteredReservations(): any[] {
+    let filtered = this.allReservations();
+    if (this.filterReservationStatus !== 'all') {
+      filtered = filtered.filter(r => r.status === this.filterReservationStatus);
+    }
+    return filtered.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }
+
+  updateReservationStatus(reservationId: string, status: string) {
+    this.apiService.updateReservationStatus(reservationId, status).subscribe({
+      next: () => {
+        alert('ステータスを更新しました');
+        this.loadAllReservations();
+        this.closeReservationDetail();
+      },
+      error: (err: any) => {
+        console.error('Error updating reservation:', err);
+        alert('更新に失敗しました');
+      }
+    });
+  }
+
+  formatReservationDate(dateStr: string): string {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' });
+  }
+
+  generateCalendarDays() {
+    const year = this.currentDate().getFullYear();
+    const month = this.currentDate().getMonth();
+    const firstDay = new Date(year, month, 1);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - firstDay.getDay());
+
+    const weeks: (any | null)[][] = [];
+    let currentDate = new Date(startDate);
+
+    for (let week = 0; week < 6; week++) {
+      if (week > 0 && currentDate.getMonth() !== month) break; // 空の週を作らない修正
+      const weekDays: (any | null)[] = [];
+      for (let day = 0; day < 7; day++) {
+        if (currentDate.getMonth() === month) {
+          weekDays.push({ date: new Date(currentDate), dayOfMonth: currentDate.getDate() });
+        } else {
+          weekDays.push(null);
+        }
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+      weeks.push(weekDays);
+    }
+    this.calendarWeeks.set(weeks);
+  }
+
+  previousMonth() {
+    const date = new Date(this.currentDate());
+    date.setMonth(date.getMonth() - 1);
+    this.currentDate.set(date);
+    this.generateCalendarDays();
+  }
+
+  nextMonth() {
+    const date = new Date(this.currentDate());
+    date.setMonth(date.getMonth() + 1);
+    this.currentDate.set(date);
+    this.generateCalendarDays();
+  }
+
+  getReservationsForDate(date: Date): any[] {
+    const dateStr = this.toLocalDateString(date);
+    return this.allReservations().filter(r => this.toLocalDateString(new Date(r.date)) === dateStr);
+  }
+
+  getMonthYearDisplay(): string {
+    const date = this.currentDate();
+    return date.toLocaleDateString('ja-JP', { year: 'numeric', month: 'long' });
+  }
+
+  openReservationDetail(reservation: any) {
+    this.selectedReservationDetail = reservation;
+    this.showReservationDetailModal = true;
+  }
+
+  closeReservationDetail() {
+    this.showReservationDetailModal = false;
+    this.selectedReservationDetail = null;
+  }
+
+  loadAvailabilityRules() {
+    this.apiService.getAvailabilityRules().subscribe({
+      next: (data: any[]) => this.availabilityRules.set(data),
+      error: (err: any) => {
+        console.error('Error loading availability rules:', err);
+        this.availabilityRules.set([]);
+      }
+    });
+  }
+
+  toggleAvailabilityForm() {
+    this.showAvailabilityForm.set(!this.showAvailabilityForm());
+    if (!this.showAvailabilityForm()) {
+      this.newRule = { dayOfWeek: 1, startTime: '10:00', endTime: '12:00' };
+      this.ruleError.set('');
+    }
+  }
+
+  saveAvailabilityRule() {
+    if (this.newRule.dayOfWeek === undefined || !this.newRule.startTime || !this.newRule.endTime) {
+      this.ruleError.set('すべてのフィールドを入力してください');
+      return;
+    }
+    this.isSavingRule.set(true);
+    this.apiService.saveAvailabilityRule(this.newRule).subscribe({
+      next: () => {
+        this.ruleError.set('');
+        this.newRule = { dayOfWeek: 1, startTime: '10:00', endTime: '12:00' };
+        this.showAvailabilityForm.set(false);
+        this.loadAvailabilityRules();
+        this.isSavingRule.set(false);
+      },
+      error: (err: any) => {
+        this.ruleError.set(err.error?.error || 'ルールの保存に失敗しました');
+        this.isSavingRule.set(false);
+      }
+    });
+  }
+
+  deleteAvailabilityRule(id: string) {
+    if (!confirm('このルールを削除してもよろしいですか？')) return;
+    this.apiService.deleteAvailabilityRule(id).subscribe({
+      next: () => this.loadAvailabilityRules(),
+      error: () => alert('削除に失敗しました')
+    });
+  }
+
+  getDayOfWeekLabel(dayOfWeek: number): string {
+    const days = ['日', '月', '火', '水', '木', '金', '土'];
+    return days[dayOfWeek] || '不明';
+  }
+
+  // --- 既存のダッシュボード・シミュレーション関連メソッド（変更なし） ---
   loadDashboard() {
     this.apiService.getDashboard().subscribe({
       next: (data: any) => this.dashboard.set(data),
@@ -701,8 +896,6 @@ export class AdminDashboardComponent implements OnInit {
 
   private enrichWithMyPageData(results: any): any {
     const dbEmployees = this.employees();
-
-    // 単一部署のシミュレーション結果も正しく処理できるように配列化
     const isArray = Array.isArray(results);
     const resultsArray = isArray ? results : [results];
 
@@ -714,7 +907,6 @@ export class AdminDashboardComponent implements OnInit {
           (cand.employeeNumber && e.employeeNumber === cand.employeeNumber)
         );
 
-        // --- 1. 一番高い能力を判定 ---
         const s = Number(cand.salesForce) || 0;
         const m = Number(cand.managementForce) || 0;
         const e = Number(cand.explorationForce) || 0;
@@ -729,15 +921,12 @@ export class AdminDashboardComponent implements OnInit {
           else if (maxVal === d) topSkill = '育成力';
         }
 
-        // --- 2. 既存のタグと統合 ---
         let currentTags = dbEmp?.tags || cand.tags || [];
         if (!Array.isArray(currentTags)) currentTags = [];
 
-        // 重複を防ぐため、古い能力タグを一旦リセット
         const abilityTypes = ['営業力', '管理力', '開拓力', '育成力'];
         let newTags = currentTags.filter((t: string) => !abilityTypes.includes(t));
 
-        // 一番高い能力をタグの先頭に追加
         if (topSkill) {
           newTags.unshift(topSkill);
         }
@@ -773,19 +962,15 @@ export class AdminDashboardComponent implements OnInit {
   getDisplayName(emp: any): string {
     const dbEmployees = this.employees();
     const match = dbEmployees.find((e: any) => e.employeeNumber && e.employeeNumber === String(emp.employeeNumber));
-
     if (match && (match.employeeName || match.name || match.user?.name)) {
       return match.employeeName || match.name || match.user?.name;
     }
-
     if (emp.employeeName && emp.employeeName !== '名前未設定') {
       return emp.employeeName;
     }
-
     return emp.employeeNumber || '名前未設定';
   }
 
-  // --- ポップアップ操作 ---
   openEmployeeModal(emp: any) {
     this.selectedEmployeeForModal = emp;
     this.showEmployeeModal = true;
@@ -796,8 +981,6 @@ export class AdminDashboardComponent implements OnInit {
     this.selectedEmployeeForModal = null;
   }
 
-
-  // --- 配置案の保存 ---
   saveSimulation() {
     if (!confirm('現在の配置案を確定し、社員のマイページに通知します。よろしいですか？')) return;
 
@@ -841,29 +1024,21 @@ export class AdminDashboardComponent implements OnInit {
     const allEmployees = this.employees();
     const searchText = this.employeeSearchText.toLowerCase().trim();
 
-    // フィルタリング
     let filtered = allEmployees.filter((emp: any) => {
       if (!searchText) return true;
-
       const name = String(emp.user?.name || emp.name || emp.employeeName || '').toLowerCase();
       if (name.includes(searchText)) return true;
-
       const empNumber = String(emp.employeeNumber || '').toLowerCase();
       if (empNumber.includes(searchText)) return true;
-
       const desiredDept = String(emp.desiredDept || emp.careerDesire || emp.careerGoals || '').toLowerCase();
       if (desiredDept.includes(searchText)) return true;
-
       const currentDept = String(emp.currentDept || '').toLowerCase();
       if (currentDept.includes(searchText)) return true;
-
       const status = String(emp.status || '').toLowerCase();
       if (status.includes(searchText)) return true;
-
       return false;
     });
 
-    // ソート
     if (this.employeeSortKey) {
       filtered.sort((a: any, b: any) => {
         const aVal = a[this.employeeSortKey] || '';
@@ -877,5 +1052,4 @@ export class AdminDashboardComponent implements OnInit {
 
     return filtered;
   }
-
 }
