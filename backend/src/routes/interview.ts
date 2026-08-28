@@ -40,14 +40,18 @@ function generateTimeSlots(startTime: string, endTime: string): string[] {
 // Admin: Save availability rule
 router.post('/availability-rules', authenticate, isAdmin, async (req: AuthRequest, res: Response) => {
   try {
-    const { dayOfWeek, startTime, endTime } = req.body;
+    let { dayOfWeek, startTime, endTime } = req.body;
 
     if (dayOfWeek === undefined || !startTime || !endTime) {
       return res.status(400).json({ error: 'dayOfWeek, startTime, and endTime are required' });
     }
 
-    if (dayOfWeek < 0 || dayOfWeek > 6) {
-      return res.status(400).json({ error: 'dayOfWeek must be between 0 and 6' });
+    // ここで文字列で送られてきた曜日を数値(Int)に変換します
+    dayOfWeek = Number(dayOfWeek);
+
+    // 変換に失敗（NaN）していないかどうかも合わせてチェックします
+    if (isNaN(dayOfWeek) || dayOfWeek < 0 || dayOfWeek > 6) {
+      return res.status(400).json({ error: 'dayOfWeek must be a valid number between 0 and 6' });
     }
 
     const rule = await prisma.interviewAvailabilityRule.upsert({
@@ -62,8 +66,8 @@ router.post('/availability-rules', authenticate, isAdmin, async (req: AuthReques
   }
 });
 
-// Admin: Get availability rules
-router.get('/availability-rules', authenticate, isAdmin, async (req: AuthRequest, res: Response) => {
+// Get availability rules (public - employees need this to see available dates)
+router.get('/availability-rules', authenticate, async (_req: AuthRequest, res: Response) => {
   try {
     const rules = await prisma.interviewAvailabilityRule.findMany({
       where: { isActive: true },
