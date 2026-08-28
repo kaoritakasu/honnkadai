@@ -12,7 +12,66 @@
         <p style="margin: 2px 0 0 0; font-size: 0.85em; color: #6b7280 !important;">Talent Allocation System</p>
       </div>
     </div>
-    <button (click)="logout()" class="logout-btn">ログアウト</button>
+    <div style="display: flex; align-items: center; gap: 16px;">
+      <!-- 通知ベルアイコン（ドロップダウン対応） -->
+      <div style="position: relative;">
+        <div style="display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; cursor: pointer;" title="未対応タスク" (click)="toggleNotificationMenu()">
+          <span style="font-size: 24px;">🔔</span>
+          @if (pendingNotificationCount > 0) {
+            <div style="position: absolute; top: -4px; right: -4px; background: #e74c3c; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); border: 2px solid white;">
+              {{ pendingNotificationCount }}
+            </div>
+          }
+        </div>
+
+        <!-- 通知ドロップダウンメニュー -->
+        @if (showNotificationMenu) {
+          <div style="position: absolute; top: 100%; right: 0; margin-top: 8px; background: white; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.15); border: 1px solid #e0e0e0; width: 320px; z-index: 1000; min-width: 280px;">
+            <!-- ヘッダー -->
+            <div style="padding: 16px; border-bottom: 1px solid #e0e0e0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px 8px 0 0;">
+              <h3 style="margin: 0; color: white; font-size: 1em; font-weight: bold;">📬 通知</h3>
+              <p style="margin: 4px 0 0 0; color: rgba(255,255,255,0.9); font-size: 0.85em;">{{ pendingNotificationCount }}件の対応待ち</p>
+            </div>
+
+            <!-- 通知リスト -->
+            <div style="padding: 12px 0;">
+              <!-- 人事相談 -->
+              <div style="border-bottom: 1px solid #f0f0f0; padding: 0;">
+                <button (click)="openNotificationConsultations()" style="width: 100%; text-align: left; padding: 12px 16px; background: none; border: none; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: background-color 0.2s; font-size: 0.95em;">
+                  <span style="font-size: 1.3em;">💬</span>
+                  <div style="flex: 1;">
+                    <p style="margin: 0; font-weight: 600; color: #2c3e50;">未返信の人事相談</p>
+                    <p style="margin: 4px 0 0 0; color: #27ae60; font-weight: bold; font-size: 0.9em;">{{ pendingConsultationsCount }}件</p>
+                  </div>
+                </button>
+                <!-- ホバー背景 -->
+                <style>
+                  button:hover { background-color: #f9f9f9 !important; }
+                </style>
+              </div>
+
+              <!-- 面談予約 -->
+              <div style="border-bottom: 1px solid #f0f0f0; padding: 0;">
+                <button (click)="openNotificationReservations()" style="width: 100%; text-align: left; padding: 12px 16px; background: none; border: none; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: background-color 0.2s; font-size: 0.95em;">
+                  <span style="font-size: 1.3em;">📅</span>
+                  <div style="flex: 1;">
+                    <p style="margin: 0; font-weight: 600; color: #2c3e50;">新しい面談予約</p>
+                    <p style="margin: 4px 0 0 0; color: #3498db; font-weight: bold; font-size: 0.9em;">{{ upcomingReservationsCount }}件</p>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <!-- フッター -->
+            <div style="padding: 12px 16px; background: #f9f9f9; border-top: 1px solid #e0e0e0; border-radius: 0 0 8px 8px; text-align: center;">
+              <p style="margin: 0; font-size: 0.85em; color: #666;">詳細は人事ダッシュボードをご覧ください</p>
+            </div>
+          </div>
+        }
+      </div>
+
+      <button (click)="logout()" class="logout-btn">ログアウト</button>
+    </div>
   </header>
 
   @if (error()) {
@@ -198,6 +257,51 @@
                       </table>
                     } @else {
                       <p style="margin: 0; color: #999;">ペナルティ条件は設定されていません</p>
+                    }
+                  </div>
+
+                  <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
+                    <h4 style="margin: 0 0 15px 0; display: flex; align-items: center; gap: 8px; color: #2c3e50;">
+                      📊 組織の平均スキルバランス
+                    </h4>
+                    @if (getDepartmentSkillAverages(dept.name).employeeCount > 0) {
+                      <div style="background: #ffffff; padding: 15px; border-radius: 8px; border: 1px solid #e8e8e8;">
+                        <p style="margin: 0 0 15px 0; font-size: 0.9em; color: #666; font-weight: 500;">{{ getDepartmentSkillAverages(dept.name).employeeCount }}名の平均スキル分布</p>
+
+                        @for (skill of [{name: '営業力', key: 'salesForce', emoji: '💼'}, {name: '管理力', key: 'managementForce', emoji: '👔'}, {name: '開拓力', key: 'explorationForce', emoji: '🚀'}, {name: '育成力', key: 'developmentForce', emoji: '🎓'}]; track skill.key) {
+                          @let skillValue = getDepartmentSkillAverages(dept.name)[skill.key];
+                          <div style="margin-bottom: 14px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                              <span style="font-weight: 600; color: #333; font-size: 0.9em;">{{ skill.emoji }} {{ skill.name }}</span>
+                              <span style="font-weight: bold; color: #667eea; font-size: 0.9em;">{{ skillValue }}/100</span>
+                            </div>
+                            <div style="width: 100%; height: 24px; background-color: #f5f5f5; border-radius: 6px; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">
+                              <div [style.width.%]="skillValue" style="height: 100%; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); transition: width 0.3s ease; border-radius: 6px; box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);"></div>
+                            </div>
+                          </div>
+                        }
+
+                        <div style="margin-top: 15px; padding-top: 12px; border-top: 1px solid #f0f0f0;">
+                          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; font-size: 0.85em;">
+                            <div style="text-align: center; padding: 8px; background: #f8f9fa; border-radius: 6px;">
+                              <p style="margin: 0; color: #666; font-size: 0.8em;">平均値</p>
+                              <p style="margin: 3px 0 0 0; font-weight: bold; color: #667eea;">
+                                {{ getDepartmentSkillAverages(dept.name).averageSkill }}/100
+                              </p>
+                            </div>
+                            <div style="text-align: center; padding: 8px; background: #f8f9fa; border-radius: 6px;">
+                              <p style="margin: 0; color: #666; font-size: 0.8em;">最高スキル</p>
+                              <p style="margin: 3px 0 0 0; font-weight: bold; color: #764ba2;">
+                                {{ getDepartmentSkillAverages(dept.name).maxSkill }}/100
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    } @else {
+                      <div style="padding: 20px; background: #f9f9f9; border-radius: 8px; border: 1px dashed #ddd; text-align: center; color: #999;">
+                        <p style="margin: 0; font-size: 0.9em;">この部署に配置されている社員がいません</p>
+                      </div>
                     }
                   </div>
 

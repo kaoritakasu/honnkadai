@@ -89,6 +89,9 @@ export class AdminDashboardComponent implements OnInit {
   selectedEmployeeForModal: any = null;
   showEmployeeModal = false;
 
+  // --- 通知ドロップダウン ---
+  showNotificationMenu = false;
+
   constructor(
     private apiService: ApiService,
     private authService: AuthService,
@@ -1235,5 +1238,84 @@ export class AdminDashboardComponent implements OnInit {
 
   formatExceptionDate(date: Date): string {
     return date.toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+  }
+
+  get pendingNotificationCount(): number {
+    const pendingConsultations = this.allConsultations().filter(c => !c.response || c.status === 'pending').length;
+    const upcomingReservations = this.allReservations().filter(r => r.status !== 'COMPLETED' && r.status !== 'CANCELLED').length;
+    return pendingConsultations + upcomingReservations;
+  }
+
+  get pendingConsultationsCount(): number {
+    return this.allConsultations().filter(c => !c.response || c.status === 'pending').length;
+  }
+
+  get upcomingReservationsCount(): number {
+    return this.allReservations().filter(r => r.status !== 'COMPLETED' && r.status !== 'CANCELLED').length;
+  }
+
+  toggleNotificationMenu() {
+    this.showNotificationMenu = !this.showNotificationMenu;
+  }
+
+  openNotificationConsultations() {
+    this.activeTab.set('hr-management');
+    this.showNotificationMenu = false;
+    this.showConsultations = true;
+  }
+
+  openNotificationReservations() {
+    this.activeTab.set('hr-management');
+    this.showNotificationMenu = false;
+    this.showReservationCalendar = true;
+  }
+
+  getDepartmentSkillAverages(deptName: string): any {
+    const employees = this.employees();
+    const matchingEmployees = employees.filter((emp: any) => emp.currentDept === deptName);
+
+    if (matchingEmployees.length === 0) {
+      return {
+        salesForce: 0,
+        managementForce: 0,
+        explorationForce: 0,
+        developmentForce: 0,
+        employeeCount: 0,
+        averageSkill: 0,
+        maxSkill: 0
+      };
+    }
+
+    const sum = matchingEmployees.reduce((acc: any, emp: any) => ({
+      salesForce: acc.salesForce + (Number(emp.salesForce) || 0),
+      managementForce: acc.managementForce + (Number(emp.managementForce) || 0),
+      explorationForce: acc.explorationForce + (Number(emp.explorationForce) || 0),
+      developmentForce: acc.developmentForce + (Number(emp.developmentForce) || 0)
+    }), { salesForce: 0, managementForce: 0, explorationForce: 0, developmentForce: 0 });
+
+    const averages = {
+      salesForce: Math.round(sum.salesForce / matchingEmployees.length),
+      managementForce: Math.round(sum.managementForce / matchingEmployees.length),
+      explorationForce: Math.round(sum.explorationForce / matchingEmployees.length),
+      developmentForce: Math.round(sum.developmentForce / matchingEmployees.length)
+    };
+
+    const maxSkill = Math.max(
+      averages.salesForce,
+      averages.managementForce,
+      averages.explorationForce,
+      averages.developmentForce
+    );
+
+    const averageSkill = Math.round(
+      (averages.salesForce + averages.managementForce + averages.explorationForce + averages.developmentForce) / 4
+    );
+
+    return {
+      ...averages,
+      employeeCount: matchingEmployees.length,
+      averageSkill,
+      maxSkill
+    };
   }
 }
