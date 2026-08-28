@@ -34,6 +34,7 @@ export class AdminDashboardComponent implements OnInit {
   error = signal('');
   newDepartmentName: string = '';
   editingDeptId: string | null = null;
+  lastYearTotalRevenue: number = 0;
   adjustedAllocations: Map<string, string> = new Map();
   newCandidates: any[] = [];
   dropListIds: string[] = [];
@@ -139,11 +140,32 @@ export class AdminDashboardComponent implements OnInit {
 
   loadConsultations() {
     this.apiService.getAllConsultations().subscribe({
-      next: (data: any[]) => this.allConsultations.set(data),
+      next: (data: any[]) => {
+        const sorted = this.sortConsultations(data);
+        this.allConsultations.set(sorted);
+      },
       error: (err: any) => {
         console.error('Error loading consultations:', err);
         this.allConsultations.set([]);
       }
+    });
+  }
+
+  private sortConsultations(consultations: any[]): any[] {
+    return consultations.sort((a, b) => {
+      // 返信ステータスの判定: 未返信か返信済みか
+      const aIsPending = !a.response || a.status === 'pending';
+      const bIsPending = !b.response || b.status === 'pending';
+
+      // 未返信が優先（未返信は -1, 返信済みは 1 を返す）
+      if (aIsPending !== bIsPending) {
+        return aIsPending ? -1 : 1;
+      }
+
+      // 同じステータス内では createdAt の新しい順（降順）
+      const aDate = new Date(a.createdAt).getTime();
+      const bDate = new Date(b.createdAt).getTime();
+      return bDate - aDate;
     });
   }
 
@@ -347,7 +369,7 @@ export class AdminDashboardComponent implements OnInit {
     }
 
     this.loading.set(true);
-    this.apiService.simulateMultiDepartment(this.selectedDepartments()).subscribe({
+    this.apiService.simulateMultiDepartment(this.selectedDepartments(), this.lastYearTotalRevenue).subscribe({
       next: (data: any) => {
         if (data && data.results && Array.isArray(data.results)) {
           const enrichedResults = this.enrichWithMyPageData(data.results);
@@ -439,8 +461,7 @@ export class AdminDashboardComponent implements OnInit {
       }
     });
   }
-
-  private parseTsvData(text: string): Array<{ employeeId: number; score: number; desiredDept: string }> {
+ private parseTsvData(text: string): Array<{ employeeId: number; score: number; desiredDept: string }> {
     const lines = text.trim().split('\n').filter(line => line.trim());
     if (lines.length < 2) return [];
 
@@ -466,70 +487,48 @@ export class AdminDashboardComponent implements OnInit {
     }
     return data;
   }
+  private parsePastedData(): any[] {
+    const text = this.pasteDataText.trim();
+    if (!text) return [];
 
-  private parsePastedData(): Array<{
-    employeeId: string;
-    employeeNumber?: string;
-    salesForce: number;
-    managementForce: number;
-    explorationForce: number;
-    developmentForce: number;
-    laborCost: number;
-  }> {
-    const lines = this.pasteDataText.trim().split(/\r?\n/).filter(line => line.trim());
+    let rawData: any[] = [];
 
-    if (lines.length < 2) {
-      return [];
-    }
+    try {
+      // 1. JSON形式としての読み込みを試みる
+      const parsedJson = JSON.parse(text);
+      rawData = Array.isArray(parsedJson) ? parsedJson : [parsedJson];
+    } catch (e) {
+      // 2. JSONでなければ、表計算データ（TSV / CSV）として処理
+      // タブ区切り（Excelやスプレッドシートからのコピペ）が含まれているかを優先判定
+      const isTsv = text.includes('\t');
+      const delimiter = isTsv ? '\t' : ',';
+      const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
 
-    const headers = lines[0].split(/[,\t]+/).map(h => h.toLowerCase().trim());
-    const employeeNumberIdx = headers.indexOf('社員番号');
-    const employeeIdIdx = headers.indexOf('社員id') >= 0 ? headers.indexOf('社員id') : 0;
-    const salesForceIdx = headers.indexOf('営業力') >= 0 ? headers.indexOf('営業力') : 1;
-    const managementForceIdx = headers.indexOf('管理力') >= 0 ? headers.indexOf('管理力') : 2;
-    const explorationForceIdx = headers.indexOf('開拓力') >= 0 ? headers.indexOf('開拓力') : 3;
-    const developmentForceIdx = headers.indexOf('育成力') >= 0 ? headers.indexOf('育成力') : 4;
-    const laborCostIdx = headers.indexOf('人件費') >= 0 ? headers.indexOf('人件費') : 5;
-
-    const parsedEmployees: Array<{
-      employeeId: string;
-      employeeNumber?: string;
-      salesForce: number;
-      managementForce: number;
-      explorationForce: number;
-      developmentForce: number;
-      laborCost: number;
-    }> = [];
-
-    for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(/[,\t]+/).map(v => v.trim());
-
-      if (values.length >= Math.max(employeeIdIdx, salesForceIdx, managementForceIdx, explorationForceIdx, developmentForceIdx, laborCostIdx)) {
-        const employeeId = values[employeeIdIdx];
-        const employeeNumber = employeeNumberIdx >= 0 ? values[employeeNumberIdx] : undefined;
-        const salesForce = Number(values[salesForceIdx]) || 0;
-        const managementForce = Number(values[managementForceIdx]) || 0;
-        const explorationForce = Number(values[explorationForceIdx]) || 0;
-        const developmentForce = Number(values[developmentForceIdx]) || 0;
-        const laborCost = Number(values[laborCostIdx]) || 0;
-
-        const emp: any = {
-          employeeId,
-          salesForce,
-          managementForce,
-          explorationForce,
-          developmentForce,
-          laborCost
-        };
-
-        if (employeeNumber) {
-          emp.employeeNumber = employeeNumber;
+      if (lines.length > 1) {
+        // ヘッダー行を取得し、扱いやすいように小文字に統一
+        const headers = lines[0].split(delimiter).map(h => h.trim().toLowerCase());
+        
+        for (let i = 1; i < lines.length; i++) {
+          const values = lines[i].split(delimiter).map(v => v.trim());
+          const obj: any = {};
+          headers.forEach((header, index) => {
+            obj[header] = values[index] !== undefined ? values[index] : '';
+          });
+          rawData.push(obj);
         }
-
-        parsedEmployees.push(emp);
       }
     }
-    return parsedEmployees;
+
+    // 3. アプリケーションで必要なプロパティ名にマッピング（日本語・英語ヘッダー両対応）
+    return rawData.map(item => ({
+      employeeId: item['社員id'] || item.employeeid || item.employeeId || '',
+      employeeNumber: item['社員番号'] || item.employeenumber || item.employeeNumber || undefined,
+      salesForce: Number(item['営業力'] || item.salesforce || item.salesForce) || 0,
+      managementForce: Number(item['管理力'] || item.managementforce || item.managementForce) || 0,
+      explorationForce: Number(item['開拓力'] || item.explorationforce || item.explorationForce) || 0,
+      developmentForce: Number(item['育成力'] || item.developmentforce || item.developmentForce) || 0,
+      laborCost: Number(item['人件費'] || item.laborcost || item.laborCost) || 0,
+    })).filter(emp => emp.employeeId || emp.employeeNumber); // 空行などを除外
   }
 
   runPastedDataSimulation() {
@@ -560,7 +559,7 @@ export class AdminDashboardComponent implements OnInit {
     });
 
     this.loading.set(true);
-    this.apiService.simulateBatchAllocation(convertedData).subscribe({
+    this.apiService.simulateBatchAllocation(convertedData, this.lastYearTotalRevenue).subscribe({
       next: (data: any) => {
         if (data && data.results && Array.isArray(data.results)) {
           const enrichedResults = this.enrichWithMyPageData(data.results);
@@ -732,7 +731,7 @@ export class AdminDashboardComponent implements OnInit {
     }
 
     if (this.simulationResults()) {
-      this.apiService.recalculate({ data: this.simulationResults() }).subscribe({
+      this.apiService.recalculate({ data: this.simulationResults(), lastYearTotalRevenue: this.lastYearTotalRevenue }).subscribe({
         next: (data: any) => {
           if (data && data.results) {
             const enrichedResults = this.enrichWithMyPageData(data.results);
@@ -809,7 +808,7 @@ export class AdminDashboardComponent implements OnInit {
     if (!this.simulationResults() || !Array.isArray(this.simulationResults())) return;
 
     this.loading.set(true);
-    this.apiService.recalculateSimulation({ results: this.simulationResults() }).subscribe({
+    this.apiService.recalculateSimulation({ results: this.simulationResults(), lastYearTotalRevenue: this.lastYearTotalRevenue }).subscribe({
       next: (data: any) => {
         if (data && data.results && Array.isArray(data.results)) {
           const enrichedResults = this.enrichWithMyPageData(data.results);

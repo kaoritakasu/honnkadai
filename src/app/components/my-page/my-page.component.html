@@ -113,16 +113,7 @@
 
     <!-- 人事面談予約セクション -->
     <section class="card">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-        <h2 style="margin: 0;">人事との面談予約</h2>
-        @if (!showReservationForm) {
-          <button
-            (click)="showReservationForm = true; resetReservationForm();"
-            style="padding: 8px 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
-            予約を申し込む
-          </button>
-        }
-      </div>
+      <h2 style="margin-bottom: 15px;">人事との面談予約</h2>
 
       <!-- カレンダービュー -->
       <div style="margin-bottom: 30px; background: #f8f9fa; padding: 20px; border-radius: 8px;">

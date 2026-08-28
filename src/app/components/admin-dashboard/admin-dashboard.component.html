@@ -265,6 +265,13 @@
               }
             </div>
           </div>
+
+          <div class="form-group" style="margin-top: 15px; padding: 15px; background-color: #f0f4ff; border-radius: 4px; border-left: 4px solid #667eea;">
+            <label style="display: block; font-weight: bold; margin-bottom: 8px; color: #333;">昨年の全社売上（制約値）</label>
+            <p style="margin: 0 0 10px 0; font-size: 0.9em; color: #666;">シミュレーション結果がこの金額を下回らないように制約が適用されます</p>
+            <input type="number" [(ngModel)]="lastYearTotalRevenue" placeholder="例: 100000000" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 1em;" />
+          </div>
+
           <button (click)="runMultiDepartmentSimulation()" [disabled]="loading() || selectedDepartments().length === 0" style="margin-top: 10px;">
             {{ loading() ? 'シミュレーション実行中...' : 'シミュレーションを実行' }}
           </button>
@@ -305,6 +312,18 @@
                   <p style="margin: 0; font-size: 1.5em; font-weight: bold;">¥{{ simulationSummary().totalCompanyProfit | number }}</p>
                 </div>
               </div>
+
+              @if (lastYearTotalRevenue > 0) {
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.3);">
+                  <p style="margin: 0 0 5px 0; opacity: 0.9; font-size: 0.9em;">昨年の全社売上（制約値）</p>
+                  <p style="margin: 0; font-size: 1.2em; font-weight: bold;">¥{{ lastYearTotalRevenue | number }}</p>
+                  @if (simulationSummary().totalCompanyRevenue >= lastYearTotalRevenue) {
+                    <p style="margin: 5px 0 0 0; font-size: 0.85em; background: rgba(76, 175, 80, 0.3); padding: 8px; border-radius: 4px; border-left: 3px solid #4caf50;">✓ 制約条件を満たしています</p>
+                  } @else {
+                    <p style="margin: 5px 0 0 0; font-size: 0.85em; background: rgba(244, 67, 54, 0.3); padding: 8px; border-radius: 4px; border-left: 3px solid #f44336;">⚠️ 制約値を下回っています</p>
+                  }
+                </div>
+              }
             </div>
           }
 
@@ -721,9 +740,9 @@
                 <p style="margin: 0; font-size: 1em;">現在、届いている人事相談はありません。</p>
               </div>
             } @else {
-              <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px;">
+              <div style="display: flex; flex-direction: column; gap: 15px;">
                 @for (consultation of allConsultations(); track consultation.id || $index) {
-                  <div style="background: white; border-radius: 8px; padding: 16px; border-left: 4px solid #27ae60; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: transform 0.2s, box-shadow 0.2s; cursor: pointer;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.05)'" (click)="toggleConsultationDetail(consultation.id)">
+                  <div style="background: white; border-radius: 8px; padding: 16px; border-left: 4px solid #27ae60; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; width: 100%; box-sizing: border-box; min-width: 0; overflow: visible;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.05)'" (click)="toggleConsultationDetail(consultation.id)">
                     <!-- 送信者情報 -->
                     <div style="display: flex; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #eee; padding-bottom: 12px;">
                       <div style="flex: 1;">
@@ -767,21 +786,21 @@
 
                     <!-- 展開詳細: 返信フォームまたは返信内容 -->
                     @if (expandedConsultationId === consultation.id) {
-                      <div style="margin-top: 16px; padding-top: 16px; border-top: 2px solid #eee;" (click)="$event.stopPropagation()">
+                      <div style="margin-top: 16px; padding-top: 16px; border-top: 2px solid #eee; width: 100%; box-sizing: border-box; max-width: 100%;" (click)="$event.stopPropagation()">
                         @if (consultation.status === 'replied' && consultation.response) {
                           <!-- 返信済みの場合 -->
-                          <div style="background: #d4edda; padding: 12px; border-radius: 4px; border-left: 4px solid #155724;">
+                          <div style="background: #d4edda; padding: 12px; border-radius: 4px; border-left: 4px solid #155724; width: 100%; box-sizing: border-box; max-width: 100%;">
                             <p style="margin: 0 0 8px 0; font-weight: bold; color: #155724; font-size: 0.9em;">✓ 返信済み</p>
-                            <div style="background: white; padding: 12px; border-radius: 4px; font-size: 0.9em; color: #333; line-height: 1.6; white-space: pre-wrap; word-break: break-word;">
+                            <div style="background: white; padding: 12px; border-radius: 4px; font-size: 0.9em; color: #333; line-height: 1.6; white-space: pre-wrap; word-break: break-word; width: 100%; box-sizing: border-box; max-width: 100%;">
                               {{ consultation.response }}
                             </div>
                           </div>
                         } @else {
                           <!-- 返信未済みの場合: フォーム -->
-                          <div>
+                          <div style="width: 100%; box-sizing: border-box; max-width: 100%;">
                             <p style="margin: 0 0 10px 0; font-weight: bold; color: #555; font-size: 0.9em;">返信内容を入力:</p>
-                            <textarea [(ngModel)]="consultationReplyText[consultation.id]" placeholder="ここに返信内容を入力してください..." (click)="$event.stopPropagation()" style="width: 100%; min-height: 100px; padding: 12px; border: 1px solid #ccc; border-radius: 4px; font-family: sans-serif; font-size: 0.9em; resize: vertical;"></textarea>
-                            <div style="display: flex; gap: 8px; margin-top: 12px;">
+                            <textarea [(ngModel)]="consultationReplyText[consultation.id]" placeholder="ここに返信内容を入力してください..." (click)="$event.stopPropagation()" style="width: 100%; box-sizing: border-box; min-height: 80px; padding: 12px; border: 1px solid #ccc; border-radius: 4px; font-family: sans-serif; font-size: 0.9em; resize: vertical; display: block; margin-bottom: 15px; flex-shrink: 0;"></textarea>
+                            <div style="display: flex; gap: 8px; margin-top: 12px; width: 100%; box-sizing: border-box; max-width: 100%;">
                               <button (click)="submitConsultationReply(consultation.id); $event.stopPropagation()" [disabled]="isReplyingConsultation[consultation.id]" style="padding: 8px 16px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; flex: 1; transition: background 0.2s;" [style.opacity]="isReplyingConsultation[consultation.id] ? '0.6' : '1'">
                                 {{ isReplyingConsultation[consultation.id] ? '送信中...' : '返信を送信' }}
                               </button>

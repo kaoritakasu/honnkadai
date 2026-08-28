@@ -269,8 +269,17 @@ router.post('/simulate', authenticate, isAdmin, async (req: AuthRequest, res: Re
       }
     }
 
-    candidatesWithDeltaProfit.sort((a, b) => b.deltaProfit - a.deltaProfit);
-    const selectedCandidates = candidatesWithDeltaProfit.slice(0, optimalHeadcountValue);
+    const minHeadcountValue = Math.max(department.minHeadcount ?? 0, 1);
+
+    // minHeadcount未満の候補者はスコア順、minHeadcount以上の候補者は利益順でソート
+    const belowMinCandidates = candidatesWithDeltaProfit.slice(0, minHeadcountValue);
+    belowMinCandidates.sort((a, b) => b.matchScore - a.matchScore);
+
+    const aboveMinCandidates = candidatesWithDeltaProfit.slice(minHeadcountValue);
+    aboveMinCandidates.sort((a, b) => b.deltaProfit - a.deltaProfit);
+
+    const allSortedCandidates = [...belowMinCandidates, ...aboveMinCandidates];
+    const selectedCandidates = allSortedCandidates.slice(0, optimalHeadcountValue);
     const allocatedEmployees = selectedCandidates.map(c => c.employee);
     const state = calculateDepartmentState(department, allocatedEmployees);
 
@@ -312,6 +321,7 @@ router.post('/simulate-multi', authenticate, isAdmin, async (req: AuthRequest, r
   try {
     const isAdminUser = req.user?.role === 'ADMIN';
     const { departmentIds } = req.body;
+    const lastYearTotalRevenue = req.body.lastYearTotalRevenue || 0;
 
     if (!Array.isArray(departmentIds) || departmentIds.length === 0) {
       return res.status(400).json({ error: 'Invalid request: provide departmentIds array' });
@@ -333,6 +343,15 @@ router.post('/simulate-multi', authenticate, isAdmin, async (req: AuthRequest, r
       return res.status(404).json({ error: 'No employees found' });
     }
 
+    // 配置前の基準となる全社売上を計算（lastYearTotalRevenueが指定されている場合はそちらを使用）
+    let baselineCompanyRevenue = departments.reduce(
+      (sum, dept) => sum + (dept.baseRevenue ?? 0),
+      0
+    );
+    if (lastYearTotalRevenue && lastYearTotalRevenue > 0) {
+      baselineCompanyRevenue = lastYearTotalRevenue;
+    }
+
     const employeesWithScores = allEmployees.map((emp: any) => ({
       employee: emp,
       scores: departments.map(dept => ({
@@ -348,27 +367,66 @@ router.post('/simulate-multi', authenticate, isAdmin, async (req: AuthRequest, r
     let improved = true;
     while (improved) {
       improved = false;
-      let bestDeltaProfit = 0;
+      let bestDeltaProfit = -Infinity;
       let bestEmployeeId: number | null = null;
       let bestDepartmentId: string | null = null;
+      let isMinHeadcountPhase = false;
 
       for (const empData of employeesWithScores) {
         if (allocatedEmployeeIds.has(empData.employee.id)) continue;
         for (const dept of departments) {
+          const minHeadcount = dept.minHeadcount ?? 0;
           const optimalHeadcount = dept.optimalHeadcount ?? 0;
           const currentAllocations = allocations.get(dept.id) || [];
+
           if (currentAllocations.length < optimalHeadcount) {
+            const isBelowMin = currentAllocations.length < minHeadcount;
+
+            // 制約チェック：配置後の全社総収益が基準値以上か検証
+            const testAllocations = [...currentAllocations, empData.employee];
+            let canAllocate = true;
+
+            if (!isBelowMin) {
+              // minHeadcount以上の場合のみ全社総収益の制約をチェック
+              let projectedRevenue = 0;
+              for (const checkDept of departments) {
+                const checkAllocations = checkDept.id === dept.id
+                  ? testAllocations
+                  : allocations.get(checkDept.id) || [];
+                const checkState = calculateDepartmentState(checkDept, checkAllocations);
+                projectedRevenue += checkState.finalRevenue;
+              }
+
+              if (projectedRevenue < baselineCompanyRevenue) {
+                canAllocate = false;
+              }
+            }
+
+            if (!canAllocate) continue;
+
             const deltaProfit = calculateDeltaProfit(dept, currentAllocations, empData.employee);
-            if (deltaProfit > bestDeltaProfit) {
+
+            if (isBelowMin) {
+              // minHeadcount未満の場合、スコアに基づいて優先（利益は無視）
+              const matchScore = employeesWithScores.find(e => e.employee.id === empData.employee.id)?.scores.find((s: any) => s.departmentId === dept.id)?.matchScore || 0;
+              if (matchScore > bestDeltaProfit || (!isMinHeadcountPhase && matchScore > 0)) {
+                bestDeltaProfit = matchScore;
+                bestEmployeeId = empData.employee.id;
+                bestDepartmentId = dept.id;
+                isMinHeadcountPhase = true;
+              }
+            } else if (deltaProfit > bestDeltaProfit && !isMinHeadcountPhase) {
+              // minHeadcount以上の場合、利益ベースで割り当て
               bestDeltaProfit = deltaProfit;
               bestEmployeeId = empData.employee.id;
               bestDepartmentId = dept.id;
+              isMinHeadcountPhase = false;
             }
           }
         }
       }
 
-      if (bestDeltaProfit > 0 && bestEmployeeId && bestDepartmentId) {
+      if (bestEmployeeId && bestDepartmentId) {
         const emp = employeesWithScores.find(e => e.employee.id === bestEmployeeId);
         const deptAllocations = allocations.get(bestDepartmentId) || [];
         deptAllocations.push(emp!.employee);
@@ -387,10 +445,25 @@ router.post('/simulate-multi', authenticate, isAdmin, async (req: AuthRequest, r
 
       for (const dept of departments) {
         const currentAllocations = allocations.get(dept.id) || [];
-        const deltaProfit = calculateDeltaProfit(dept, currentAllocations, empData.employee);
-        if (deltaProfit > bestDeltaProfit) {
-          bestDeltaProfit = deltaProfit;
-          bestDept = dept.id;
+
+        // フォールバック時も全社総収益の制約をチェック
+        const testAllocations = [...currentAllocations, empData.employee];
+        let projectedRevenue = 0;
+        for (const checkDept of departments) {
+          const checkAllocations = checkDept.id === dept.id
+            ? testAllocations
+            : allocations.get(checkDept.id) || [];
+          const checkState = calculateDepartmentState(checkDept, checkAllocations);
+          projectedRevenue += checkState.finalRevenue;
+        }
+
+        // 制約をクリアする場合のみ候補として検討
+        if (projectedRevenue >= baselineCompanyRevenue) {
+          const deltaProfit = calculateDeltaProfit(dept, currentAllocations, empData.employee);
+          if (deltaProfit > bestDeltaProfit) {
+            bestDeltaProfit = deltaProfit;
+            bestDept = dept.id;
+          }
         }
       }
 
@@ -452,11 +525,19 @@ router.post('/simulate-multi', authenticate, isAdmin, async (req: AuthRequest, r
       totalCompanyProfit += resultObj.profit;
     }
 
+    let constraintViolation = false;
+    if (lastYearTotalRevenue && lastYearTotalRevenue > 0 && totalCompanyRevenue < lastYearTotalRevenue) {
+      constraintViolation = true;
+    }
+
     res.json({
       results,
       totalCompanyRevenue,
       totalCompanyCost,
-      totalCompanyProfit
+      totalCompanyProfit,
+      baselineCompanyRevenue: Math.round(baselineCompanyRevenue),
+      lastYearTotalRevenue: lastYearTotalRevenue || null,
+      constraintViolation
     });
   } catch (error) {
     res.status(400).json({ error: (error as Error).message });
@@ -468,6 +549,7 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
     const isAdminUser = req.user?.role === 'ADMIN';
     let departmentIds: string[] = [];
     let employees: any[] = [];
+    let lastYearTotalRevenue: number = 0;
 
     if (Array.isArray(req.body)) {
       employees = req.body;
@@ -476,10 +558,17 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
     } else if (req.body.departmentIds && req.body.employees) {
       departmentIds = req.body.departmentIds;
       employees = req.body.employees;
+      lastYearTotalRevenue = req.body.lastYearTotalRevenue || 0;
     } else if (req.body.departmentIds && Array.isArray(req.body.departmentIds)) {
       departmentIds = req.body.departmentIds;
       const allEmps = await prisma.employee.findMany({ include: { user: true } });
       employees = allEmps;
+      lastYearTotalRevenue = req.body.lastYearTotalRevenue || 0;
+    } else if (Array.isArray(req.body) || (req.body.employees && Array.isArray(req.body.employees))) {
+      employees = Array.isArray(req.body) ? req.body : req.body.employees;
+      lastYearTotalRevenue = req.body.lastYearTotalRevenue || 0;
+      const allDepts = await prisma.department.findMany();
+      departmentIds = allDepts.map(d => d.id);
     } else {
       return res.status(400).json({ error: 'Invalid request format' });
     }
@@ -494,6 +583,15 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
 
     if (departments.length === 0) {
       return res.status(404).json({ error: 'No departments found' });
+    }
+
+    // 配置前の基準となる全社売上を計算（lastYearTotalRevenueが指定されている場合はそちらを使用）
+    let baselineCompanyRevenue = departments.reduce(
+      (sum, dept) => sum + (dept.baseRevenue ?? 0),
+      0
+    );
+    if (lastYearTotalRevenue && lastYearTotalRevenue > 0) {
+      baselineCompanyRevenue = lastYearTotalRevenue;
     }
 
     const dbEmployees = await prisma.employee.findMany({ include: { user: true } });
@@ -534,30 +632,67 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
     let improved = true;
     while (improved) {
       improved = false;
-      let bestDeltaProfit = 0;
+      let bestScore = -Infinity;
       let bestEmployeeId: string | null = null;
       let bestDepartmentId: string | null = null;
+      let isMinHeadcountPhase = false;
 
       for (const emp of enrichedEmployees) {
         const empId = emp.id || emp.employeeId;
         if (allocatedEmployeeIds.has(empId)) continue;
 
         for (const dept of departments) {
+          const minHeadcount = dept.minHeadcount ?? 0;
           const optimalHeadcount = dept.optimalHeadcount ?? 0;
           const currentAllocations = allocations.get(dept.id) || [];
 
           if (currentAllocations.length < optimalHeadcount) {
+            const isBelowMin = currentAllocations.length < minHeadcount;
+
+            // 制約チェック：配置後の全社総収益が基準値以上か検証
+            const testAllocations = [...currentAllocations, emp];
+            let canAllocate = true;
+
+            if (!isBelowMin) {
+              // minHeadcount以上の場合のみ全社総収益の制約をチェック
+              let projectedRevenue = 0;
+              for (const checkDept of departments) {
+                const checkAllocations = checkDept.id === dept.id
+                  ? testAllocations
+                  : allocations.get(checkDept.id) || [];
+                const checkState = calculateDepartmentState(checkDept, checkAllocations);
+                projectedRevenue += checkState.finalRevenue;
+              }
+
+              if (projectedRevenue < baselineCompanyRevenue) {
+                canAllocate = false;
+              }
+            }
+
+            if (!canAllocate) continue;
+
             const deltaProfit = calculateDeltaProfit(dept, currentAllocations, emp);
-            if (deltaProfit > bestDeltaProfit) {
-              bestDeltaProfit = deltaProfit;
+
+            if (isBelowMin) {
+              // minHeadcount未満の場合、スコアに基づいて優先（利益は無視）
+              if (emp.score > bestScore || (!isMinHeadcountPhase && emp.score >= 0)) {
+                bestScore = emp.score;
+                bestEmployeeId = empId;
+                bestDepartmentId = dept.id;
+                isMinHeadcountPhase = true;
+              }
+            } else if (deltaProfit > bestScore && !isMinHeadcountPhase) {
+              // minHeadcount以上の場合、利益ベースで割り当て
+              bestScore = deltaProfit;
               bestEmployeeId = empId;
               bestDepartmentId = dept.id;
+              isMinHeadcountPhase = false;
             }
           }
         }
       }
 
-      if (bestDeltaProfit > 0 && bestEmployeeId && bestDepartmentId) {
+      if (bestEmployeeId && bestDepartmentId) {
         const emp = employees.find(e => (e.id || e.employeeId) === bestEmployeeId);
         const deptAllocations = allocations.get(bestDepartmentId) || [];
         deptAllocations.push(emp);
@@ -577,10 +712,25 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
 
       for (const dept of departments) {
         const currentAllocations = allocations.get(dept.id) || [];
-        const deltaProfit = calculateDeltaProfit(dept, currentAllocations, emp);
-        if (deltaProfit > bestDeltaProfit) {
-          bestDeltaProfit = deltaProfit;
-          bestDept = dept.id;
+
+        // フォールバック時も全社総収益の制約をチェック
+        const testAllocations = [...currentAllocations, emp];
+        let projectedRevenue = 0;
+        for (const checkDept of departments) {
+          const checkAllocations = checkDept.id === dept.id
+            ? testAllocations
+            : allocations.get(checkDept.id) || [];
+          const checkState = calculateDepartmentState(checkDept, checkAllocations);
+          projectedRevenue += checkState.finalRevenue;
+        }
+
+        // 制約をクリアする場合のみ候補として検討
+        if (projectedRevenue >= baselineCompanyRevenue) {
+          const deltaProfit = calculateDeltaProfit(dept, currentAllocations, emp);
+          if (deltaProfit > bestDeltaProfit) {
+            bestDeltaProfit = deltaProfit;
+            bestDept = dept.id;
+          }
         }
       }
 
@@ -628,12 +778,19 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
     });
 
     const totalCompanyRevenue_Optimized = results.reduce((sum, result) => sum + (Math.round(result.finalRevenue)), 0);
+    let constraintViolation = false;
+    if (lastYearTotalRevenue && lastYearTotalRevenue > 0 && totalCompanyRevenue_Optimized < lastYearTotalRevenue) {
+      constraintViolation = true;
+    }
 
     res.json({
       results,
       totalCompanyRevenue: totalCompanyRevenue_Optimized,
       totalCompanyCost: results.reduce((sum, result) => sum + result.totalCost, 0),
-      totalCompanyProfit: results.reduce((sum, result) => sum + result.profit, 0)
+      totalCompanyProfit: results.reduce((sum, result) => sum + result.profit, 0),
+      baselineCompanyRevenue: Math.round(baselineCompanyRevenue),
+      lastYearTotalRevenue: lastYearTotalRevenue || null,
+      constraintViolation
     });
   } catch (error) {
     res.status(400).json({ error: (error as Error).message });
@@ -644,6 +801,7 @@ router.post('/recalculate', authenticate, isAdmin, async (req: AuthRequest, res:
   try {
     const isAdminUser = req.user?.role === 'ADMIN';
     let requestedData = req.body.results || req.body.departments || req.body;
+    const lastYearTotalRevenue = req.body.lastYearTotalRevenue || 0;
 
     if (req.body.adjustedAllocations) {
       requestedData = Object.entries(req.body.adjustedAllocations).map(([deptId, emps]) => ({
@@ -672,6 +830,7 @@ router.post('/recalculate', authenticate, isAdmin, async (req: AuthRequest, res:
     let totalCompanyRevenue = 0;
     let totalCompanyCost = 0;
     let totalCompanyProfit = 0;
+    let constraintViolation = false;
 
     for (const reqDept of requestedData) {
       const deptId = reqDept.departmentId || reqDept.id;
@@ -749,11 +908,18 @@ router.post('/recalculate', authenticate, isAdmin, async (req: AuthRequest, res:
       totalCompanyProfit += resultObj.profit;
     }
 
+    // 昨年の全社売上が指定されている場合、制約チェック
+    if (lastYearTotalRevenue && lastYearTotalRevenue > 0 && totalCompanyRevenue < lastYearTotalRevenue) {
+      constraintViolation = true;
+    }
+
     res.json({
       results,
       totalCompanyRevenue,
       totalCompanyCost,
-      totalCompanyProfit
+      totalCompanyProfit,
+      lastYearTotalRevenue: lastYearTotalRevenue || null,
+      constraintViolation
     });
   } catch (error) {
     console.error('--- RECALCULATE ERROR ---', error);
