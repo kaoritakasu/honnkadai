@@ -5,14 +5,14 @@ const prisma = new PrismaClient();
 
 async function main() {
   try {
-    // Delete existing test users
-    await prisma.user.deleteMany({
-      where: {
-        email: {
-          in: ['admin@test.com', 'employee@test.com']
-        }
-      }
-    });
+    // Delete all existing data to start fresh
+    await prisma.consultation.deleteMany();
+    await prisma.feedback.deleteMany();
+    await prisma.allocation.deleteMany();
+    await prisma.interviewReservation.deleteMany();
+    await prisma.employee.deleteMany();
+    await prisma.admin.deleteMany();
+    await prisma.user.deleteMany();
 
     // Create test admin user
     const adminPassword = await bcrypt.hash('admin123', 10);
@@ -46,12 +46,43 @@ async function main() {
     // Create employee record
     await prisma.employee.create({
       data: {
+        employeeNumber: 'EMP001',
         userId: employeeUser.id,
         score: 80,
         desiredDept: 'Sales',
         currentDept: 'Engineering'
       }
     });
+
+    // Create additional test employees with employeeNumber
+    const employees = [
+      { email: 'emp002@test.com', name: 'Alice Johnson', empNumber: 'EMP002', score: 75, dept: 'Sales' },
+      { email: 'emp003@test.com', name: 'Bob Smith', empNumber: 'EMP003', score: 85, dept: 'Engineering' },
+      { email: 'emp004@test.com', name: 'Carol Davis', empNumber: 'EMP004', score: 90, dept: 'Marketing' },
+      { email: 'emp005@test.com', name: 'David Wilson', empNumber: 'EMP005', score: 70, dept: 'Sales' }
+    ];
+
+    for (const emp of employees) {
+      const password = await bcrypt.hash('password123', 10);
+      const user = await prisma.user.create({
+        data: {
+          email: emp.email,
+          password,
+          name: emp.name,
+          role: 'EMPLOYEE'
+        }
+      });
+
+      await prisma.employee.create({
+        data: {
+          employeeNumber: emp.empNumber,
+          userId: user.id,
+          score: emp.score,
+          desiredDept: emp.dept,
+          currentDept: emp.dept
+        }
+      });
+    }
 
     // Create sample departments
     await prisma.department.deleteMany();
@@ -75,6 +106,44 @@ async function main() {
         description: 'Engineering department'
       }
     });
+
+    // Create sample consultations
+    const allEmployees = await prisma.employee.findMany();
+    if (allEmployees.length > 0) {
+      await prisma.consultation.deleteMany();
+
+      const consultations = [
+        {
+          title: 'キャリアについての相談',
+          description: 'マネージャーへのステップアップについて相談したいです。現在の職務経歴書の作成手伝いや、必要なスキルについてのアドバイスをいただきたいと考えています。',
+          status: 'pending'
+        },
+        {
+          title: '異動希望の相談',
+          description: '現在の部署から営業部への異動を希望しています。営業スキルの育成計画や、キャリアパスについて相談させていただきたいです。',
+          status: 'resolved',
+          response: 'ご相談ありがとうございます。営業部への異動について前向きに検討させていただきます。来月のキャリア面談時に詳しくお話しましょう。'
+        },
+        {
+          title: 'スキルアップ研修についての相談',
+          description: 'プログラミングスキルを向上させるための研修プログラムについて知りたいです。会社で提供している研修制度はありますか？',
+          status: 'resolved',
+          response: 'スキルアップについてのご質問ありがとうございます。複数の研修プログラムをご用意しており、Webポータルから申し込み可能です。詳しくはHRまでお問い合わせください。'
+        }
+      ];
+
+      for (let i = 0; i < Math.min(consultations.length, allEmployees.length); i++) {
+        await prisma.consultation.create({
+          data: {
+            employeeId: allEmployees[i].id,
+            title: consultations[i].title,
+            description: consultations[i].description,
+            status: consultations[i].status,
+            response: consultations[i].response || null
+          }
+        });
+      }
+    }
 
     // Create interview availability rules (Monday-Friday 10:00-18:00)
     await prisma.interviewAvailabilityRule.deleteMany();

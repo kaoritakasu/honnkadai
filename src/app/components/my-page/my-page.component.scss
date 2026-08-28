@@ -159,6 +159,12 @@
     }
   }
 
+  .hover-cell {
+    &:hover {
+      background-color: #f8faff !important;
+    }
+  }
+
   .btn {
     padding: 12px 30px;
     font-size: 14px;

@@ -148,7 +148,7 @@ export class ApiService {
   }
 
   getAllConsultations(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/consultations`, { headers: this.getHeaders() });
+    return this.http.get<any[]>(`${this.apiUrl}/admin/consultations`, { headers: this.getHeaders() });
   }
 
   respondToConsultation(id: string, response: string, status: string): Observable<any> {

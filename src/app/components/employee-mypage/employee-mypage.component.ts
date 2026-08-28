@@ -13,6 +13,12 @@ import { AuthService } from '../../services/auth.service';
   styleUrl: './employee-mypage.component.scss'
 })
 export class EmployeeMyPageComponent implements OnInit {
+  private toLocalDateString(date: Date): string {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
   profile = signal<any>(null);
   allocations = signal<any[]>([]);
   consultations = signal<any[]>([]);

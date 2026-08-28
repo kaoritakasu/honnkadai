@@ -37,21 +37,7 @@ export class AdminDashboardComponent implements OnInit {
   employeeSearchText: string = '';
   employeeSortKey: string = 'employeeNumber';
   simulationSortKey: string = 'employeeNumber';
-
-  // Interview reservations
-  allReservations = signal<any[]>([]);
-  filterReservationStatus: string = 'all';
-
-  // Calendar logic
-  currentDate = signal(new Date());
-  calendarWeeks = signal<(any | null)[][]>([]);
-
-  // Interview availability rules
-  availabilityRules = signal<any[]>([]);
-  showAvailabilityForm = signal(false);
-  newRule = { dayOfWeek: 1, startTime: '10:00', endTime: '12:00' };
-  isSavingRule = signal(false);
-  ruleError = signal('');
+  isHRUser: boolean = false;
 
   // --- ポップアップ用ステート ---
   selectedEmployeeForModal: any = null;
@@ -69,17 +55,32 @@ export class AdminDashboardComponent implements OnInit {
       try {
         const user = JSON.parse(userStr);
         this.currentUserRole = user.role || 'EMPLOYEE';
+        this.isHRUser = this.checkIsHRUser(user);
       } catch (e) {
         this.currentUserRole = 'EMPLOYEE';
+        this.isHRUser = false;
       }
     }
 
     this.loadDashboard();
     this.loadDepartments();
     this.loadEmployees();
-    this.loadAllReservations();
-    this.generateCalendarDays();
-    this.loadAvailabilityRules();
+  }
+
+  private checkIsHRUser(user: any): boolean {
+    if (!user) return false;
+    const role = user.role?.toUpperCase() || '';
+    const department = user.department || '';
+
+    if (role === 'ADMIN' || role === 'HR') {
+      return true;
+    }
+
+    if (department.includes('人事') || department.includes('人事部') || department.includes('人事課')) {
+      return true;
+    }
+
+    return false;
   }
 
   loadDashboard() {
@@ -795,6 +796,7 @@ export class AdminDashboardComponent implements OnInit {
     this.selectedEmployeeForModal = null;
   }
 
+
   // --- 配置案の保存 ---
   saveSimulation() {
     if (!confirm('現在の配置案を確定し、社員のマイページに通知します。よろしいですか？')) return;
@@ -874,160 +876,6 @@ export class AdminDashboardComponent implements OnInit {
     }
 
     return filtered;
-  }
-
-  loadAllReservations() {
-    this.apiService.getAllReservations().subscribe({
-      next: (data: any[]) => {
-        this.allReservations.set(data);
-      },
-      error: (err) => {
-        console.error('Error loading reservations:', err);
-        this.allReservations.set([]);
-      }
-    });
-  }
-
-  getFilteredReservations(): any[] {
-    let filtered = this.allReservations();
-    if (this.filterReservationStatus !== 'all') {
-      filtered = filtered.filter(r => r.status === this.filterReservationStatus);
-    }
-    return filtered.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }
-
-  updateReservationStatus(reservationId: string, status: string) {
-    this.apiService.updateReservationStatus(reservationId, status).subscribe({
-      next: () => {
-        alert('ステータスを更新しました');
-        this.loadAllReservations();
-      },
-      error: (err) => {
-        console.error('Error updating reservation:', err);
-        alert('更新に失敗しました');
-      }
-    });
-  }
-
-  formatReservationDate(dateStr: string): string {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' });
-  }
-
-  generateCalendarDays() {
-    const year = this.currentDate().getFullYear();
-    const month = this.currentDate().getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const startDate = new Date(firstDay);
-    startDate.setDate(startDate.getDate() - firstDay.getDay());
-
-    const weeks: (any | null)[][] = [];
-    let currentDate = new Date(startDate);
-
-    for (let week = 0; week < 6; week++) {
-      const weekDays: (any | null)[] = [];
-      for (let day = 0; day < 7; day++) {
-        if (currentDate.getMonth() === month) {
-          weekDays.push({ date: new Date(currentDate), dayOfMonth: currentDate.getDate() });
-        } else {
-          weekDays.push(null);
-        }
-        currentDate.setDate(currentDate.getDate() + 1);
-      }
-      weeks.push(weekDays);
-    }
-
-    this.calendarWeeks.set(weeks);
-  }
-
-  previousMonth() {
-    const date = new Date(this.currentDate());
-    date.setMonth(date.getMonth() - 1);
-    this.currentDate.set(date);
-    this.generateCalendarDays();
-  }
-
-  nextMonth() {
-    const date = new Date(this.currentDate());
-    date.setMonth(date.getMonth() + 1);
-    this.currentDate.set(date);
-    this.generateCalendarDays();
-  }
-
-  getReservationsForDate(date: Date): any[] {
-    const dateStr = date.toISOString().split('T')[0];
-    return this.allReservations().filter(r => r.date.split('T')[0] === dateStr);
-  }
-
-  getMonthYearDisplay(): string {
-    const date = this.currentDate();
-    return date.toLocaleDateString('ja-JP', { year: 'numeric', month: 'long' });
-  }
-
-  loadAvailabilityRules() {
-    this.apiService.getAvailabilityRules().subscribe({
-      next: (data: any[]) => {
-        this.availabilityRules.set(data);
-      },
-      error: (err) => {
-        console.error('Error loading availability rules:', err);
-        this.availabilityRules.set([]);
-      }
-    });
-  }
-
-  toggleAvailabilityForm() {
-    this.showAvailabilityForm.set(!this.showAvailabilityForm());
-    if (!this.showAvailabilityForm()) {
-      this.newRule = { dayOfWeek: 1, startTime: '10:00', endTime: '12:00' };
-      this.ruleError.set('');
-    }
-  }
-
-  saveAvailabilityRule() {
-    if (this.newRule.dayOfWeek === undefined || !this.newRule.startTime || !this.newRule.endTime) {
-      this.ruleError.set('すべてのフィールドを入力してください');
-      return;
-    }
-
-    if (this.newRule.dayOfWeek < 0 || this.newRule.dayOfWeek > 6) {
-      this.ruleError.set('曜日は0〜6の値を入力してください');
-      return;
-    }
-
-    this.isSavingRule.set(true);
-    this.apiService.saveAvailabilityRule(this.newRule).subscribe({
-      next: () => {
-        this.ruleError.set('');
-        this.newRule = { dayOfWeek: 1, startTime: '10:00', endTime: '12:00' };
-        this.showAvailabilityForm.set(false);
-        this.loadAvailabilityRules();
-        this.isSavingRule.set(false);
-      },
-      error: (err) => {
-        this.ruleError.set(err.error?.error || 'ルールの保存に失敗しました');
-        this.isSavingRule.set(false);
-      }
-    });
-  }
-
-  deleteAvailabilityRule(id: string) {
-    if (!confirm('このルールを削除してもよろしいですか？')) return;
-
-    this.apiService.deleteAvailabilityRule(id).subscribe({
-      next: () => {
-        this.loadAvailabilityRules();
-      },
-      error: (err) => {
-        alert('削除に失敗しました');
-      }
-    });
-  }
-
-  getDayOfWeekLabel(dayOfWeek: number): string {
-    const days = ['日', '月', '火', '水', '木', '金', '土'];
-    return days[dayOfWeek] || '不明';
   }
 
 }

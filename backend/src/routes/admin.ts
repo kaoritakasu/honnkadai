@@ -55,6 +55,24 @@ router.get('/dashboard', authenticate, isAdmin, async (req: AuthRequest, res: Re
   }
 });
 
+// Get all consultations
+router.get('/consultations', authenticate, isAdmin, async (req: AuthRequest, res: Response) => {
+  try {
+    const consultations = await prisma.consultation.findMany({
+      include: {
+        employee: {
+          include: { user: true }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    res.json(consultations);
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+});
+
 // Send feedback to employee
 router.post('/send-feedback/:allocationId', authenticate, isAdmin, async (req: AuthRequest, res: Response) => {
   try {
