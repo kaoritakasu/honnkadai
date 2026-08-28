@@ -14,6 +14,8 @@ import { ChangeDetectorRef } from '@angular/core';
   styleUrl: './my-page.component.scss'
 })
 export class MyPageComponent implements OnInit {
+  Math = Math;
+
   private toLocalDateString(date: Date): string {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -31,6 +33,8 @@ export class MyPageComponent implements OnInit {
   isSaving: boolean = false;
   isSubmittingConsultation: boolean = false;
   allocations = signal<any[]>([]);
+  skillGapData = signal<any[]>([]);
+  desiredDeptData: any = null;
 
   // Interview reservation fields
   selectedDate: string = '';
@@ -94,6 +98,11 @@ export class MyPageComponent implements OnInit {
           if (data) {
             this.desiredDept = data.desiredDept || data.careerDesire || data.careerGoals || '';
             this.workLifeBalance = data.workLifeBalance || '';
+            this.user.salesForce = data.salesForce || 0;
+            this.user.managementForce = data.managementForce || 0;
+            this.user.explorationForce = data.explorationForce || 0;
+            this.user.developmentForce = data.developmentForce || 0;
+            this.buildSkillGapData();
             this.cdr.detectChanges();
           }
         },
@@ -104,9 +113,69 @@ export class MyPageComponent implements OnInit {
 
   loadDepartments() {
     this.apiService.getDepartments().subscribe({
-      next: (data: any[]) => this.departments = data,
+      next: (data: any[]) => {
+        this.departments = data;
+        this.buildSkillGapData();
+      },
       error: (err) => console.error('部署データの取得に失敗しました', err)
     });
+  }
+
+  buildSkillGapData() {
+    if (!this.desiredDept || !this.user) {
+      this.skillGapData.set([]);
+      this.desiredDeptData = null;
+      return;
+    }
+
+    const matchedDept = this.departments.find(d => d.name === this.desiredDept);
+    if (!matchedDept) {
+      this.skillGapData.set([]);
+      this.desiredDeptData = null;
+      return;
+    }
+
+    this.desiredDeptData = matchedDept;
+
+    const userSkills = this.getUserSkills();
+    const skillMappings = [
+      { key: 'salesForce', label: '営業力', deptKey: 'weightSales' },
+      { key: 'managementForce', label: '管理力', deptKey: 'weightManagement' },
+      { key: 'explorationForce', label: '開拓力', deptKey: 'weightExploration' },
+      { key: 'developmentForce', label: '育成力', deptKey: 'weightDevelopment' }
+    ];
+
+    const gapData = skillMappings.map(mapping => {
+      const currentValue = userSkills[mapping.key] || 0;
+      const targetValue = matchedDept[mapping.deptKey] || 0;
+      const gap = Math.max(0, targetValue - currentValue);
+      const maxValue = Math.max(currentValue, targetValue, 10);
+
+      return {
+        label: mapping.label,
+        current: currentValue,
+        target: targetValue,
+        gap: gap,
+        currentPercent: (currentValue / maxValue) * 100,
+        targetPercent: (targetValue / maxValue) * 100,
+        maxValue: maxValue
+      };
+    });
+
+    this.skillGapData.set(gapData);
+  }
+
+  private getUserSkills(): any {
+    if (!this.user) {
+      return { salesForce: 0, managementForce: 0, explorationForce: 0, developmentForce: 0 };
+    }
+
+    return {
+      salesForce: this.user.salesForce || 0,
+      managementForce: this.user.managementForce || 0,
+      explorationForce: this.user.explorationForce || 0,
+      developmentForce: this.user.developmentForce || 0
+    };
   }
 
   toggleEdit() {
@@ -127,6 +196,7 @@ export class MyPageComponent implements OnInit {
         alert('希望条件を更新しました');
         this.isEditing = false;
         this.isSaving = false;
+        this.buildSkillGapData();
         this.cdr.detectChanges();
       },
       error: (err) => {
