@@ -469,6 +469,71 @@
             </button>
           </div>
 
+          <!-- ツリー状の配置案ビュー -->
+          <div style="background-color: #fff; padding: 15px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 20px;">
+            <h4 style="margin: 0 0 15px 0; color: #2c3e50; display: flex; align-items: center; gap: 8px;">
+              🏢 組織図：配置案
+            </h4>
+            <ul style="margin: 0; padding: 0; list-style: none; font-size: 0.95em; line-height: 1.8;">
+              <li style="font-weight: bold; color: #333; padding: 8px 0;">
+                📌 会社全体
+                <ul style="padding-left: 20px; border-left: 1px dashed #ccc; margin-left: 10px; list-style: none;">
+                  @if (Array.isArray(simulationResults())) {
+                    @for (result of simulationResults(); track $index) {
+                      <li style="padding: 8px 0;">
+                        <span style="font-weight: bold; color: #667eea; display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+                          📁 {{ result.departmentName || result.department?.name || '-' }}
+                          <span style="font-size: 0.8em; color: #999; font-weight: normal;">({{ result.candidates?.length || 0 }}名)</span>
+                        </span>
+                        <ul style="padding-left: 20px; border-left: 1px dashed #ccc; margin-left: 10px; list-style: none;">
+                          @if (result.candidates && result.candidates.length > 0) {
+                            @for (emp of result.candidates; track emp.employeeId) {
+                              <li style="padding: 6px 8px; background-color: #f9f9f9; margin-bottom: 4px; border-radius: 3px; font-size: 0.9em;">
+                                <span style="font-weight: 600; color: #333;">{{ emp.employeeNumber || '?' }}</span>
+                                <span style="color: #666; margin-left: 8px;">{{ getDisplayName(emp) }}</span>
+                                <span style="color: #999; margin-left: 12px; font-size: 0.85em;">
+                                  営:{{ emp.salesForce || 0 }} / 管:{{ emp.managementForce || 0 }} / 開:{{ emp.explorationForce || 0 }} / 育:{{ emp.developmentForce || 0 }} / 人件費:¥{{ (emp.laborCost || 0) | number }}
+                                </span>
+                              </li>
+                            }
+                          } @else {
+                            <li style="padding: 6px 8px; color: #999; font-style: italic;">
+                              配置予定者はいません
+                            </li>
+                          }
+                        </ul>
+                      </li>
+                    }
+                  } @else {
+                    <li style="padding: 8px 0;">
+                      <span style="font-weight: bold; color: #667eea; display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+                        📁 {{ simulationResults().departmentName || simulationResults().department?.name || '-' }}
+                        <span style="font-size: 0.8em; color: #999; font-weight: normal;">({{ simulationResults().candidates?.length || 0 }}名)</span>
+                      </span>
+                      <ul style="padding-left: 20px; border-left: 1px dashed #ccc; margin-left: 10px; list-style: none;">
+                        @if (simulationResults().candidates && simulationResults().candidates.length > 0) {
+                          @for (emp of simulationResults().candidates; track emp.employeeId) {
+                            <li style="padding: 6px 8px; background-color: #f9f9f9; margin-bottom: 4px; border-radius: 3px; font-size: 0.9em;">
+                              <span style="font-weight: 600; color: #333;">{{ emp.employeeNumber || '?' }}</span>
+                              <span style="color: #666; margin-left: 8px;">{{ getDisplayName(emp) }}</span>
+                              <span style="color: #999; margin-left: 12px; font-size: 0.85em;">
+                                営:{{ emp.salesForce || 0 }} / 管:{{ emp.managementForce || 0 }} / 開:{{ emp.explorationForce || 0 }} / 育:{{ emp.developmentForce || 0 }} / 人件費:¥{{ (emp.laborCost || 0) | number }}
+                              </span>
+                            </li>
+                          }
+                        } @else {
+                          <li style="padding: 6px 8px; color: #999; font-style: italic;">
+                            配置予定者はいません
+                          </li>
+                        }
+                      </ul>
+                    </li>
+                  }
+                </ul>
+              </li>
+            </ul>
+          </div>
+
           @if (simulationSummary()) {
             <div class="company-summary-card" style="margin-bottom: 20px; padding: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px;">
               <h4 style="margin: 0 0 10px 0;">全社合計</h4>
@@ -521,7 +586,10 @@
                   <!-- 絞り込みと並び替え -->
                   <div class="dept-controls" style="margin-bottom: 8px; display: flex; flex-direction: column; gap: 4px; flex-wrap: wrap;">
                     <div style="display: flex; gap: 4px; margin-bottom: 8px;">
-                      <input type="text" placeholder="名前/タグ..." [(ngModel)]="filterInputs[result.departmentId]" style="flex: 1; font-size: 0.7em; padding: 4px; box-sizing: border-box;">
+                      <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
+                        <span>🔍</span>
+                        <input type="text" placeholder="名前/タグ..." [(ngModel)]="filterInputs[result.departmentId]" style="flex: 1; font-size: 0.7em; padding: 4px; box-sizing: border-box;">
+                      </div>
                       <button (click)="applyFilter(result.departmentId)" style="font-size: 0.7em; padding: 4px 8px; background-color: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer;">絞り込む</button>
                     </div>
                     <select [(ngModel)]="simulationSortKey" (change)="sortCandidates(result.candidates, $event)" style="font-size: 0.7em; padding: 2px; border: 1px solid #ddd; border-radius: 3px;">
@@ -714,12 +782,15 @@
         <!-- 検索・並び替えコントロール -->
         <div class="employees-controls" style="margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
           <div style="flex: 1; min-width: 200px;">
-            <input
-              type="text"
-              [(ngModel)]="employeeSearchText"
-              placeholder="名前・社員番号・部署で検索..."
-              style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;"
-            />
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span>🔍</span>
+              <input
+                type="text"
+                [(ngModel)]="employeeSearchText"
+                placeholder="名前・社員番号・部署で検索..."
+                style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;"
+              />
+            </div>
           </div>
           <div>
             <select
