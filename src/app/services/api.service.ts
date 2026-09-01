@@ -97,20 +97,12 @@ export class ApiService {
   }
 
   simulateBatchAllocation(data: any[], lastYearTotalRevenue?: number, simulationMode?: string): Observable<any> {
-    let payload: any = Array.isArray(data) ? data : { employees: data };
+    let payload: any = Array.isArray(data) ? { employees: data } : data;
     if (lastYearTotalRevenue && lastYearTotalRevenue > 0) {
-      if (Array.isArray(payload)) {
-        payload = { employees: payload, lastYearTotalRevenue };
-      } else {
-        payload.lastYearTotalRevenue = lastYearTotalRevenue;
-      }
+      payload.lastYearTotalRevenue = lastYearTotalRevenue;
     }
     if (simulationMode) {
-      if (Array.isArray(payload)) {
-        payload.simulationMode = simulationMode;
-      } else {
-        payload.simulationMode = simulationMode;
-      }
+      payload.simulationMode = simulationMode;
     }
     return this.http.post<any>(`${this.apiUrl}/allocations/simulate-batch`, payload, { headers: this.getHeaders() });
   }
