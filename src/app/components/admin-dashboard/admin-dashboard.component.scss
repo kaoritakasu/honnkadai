@@ -323,3 +323,54 @@ textarea.input-field {
   border-radius: 3px;
   white-space: nowrap;
 }
+
+/* =========================================
+   アコーディオンヘッダーのホバースタイル
+   ========================================= */
+.hoverable-header:hover {
+  background-color: #efefef !important;
+}
+
+/* =========================================
+   履歴詳細ボタンのホバースタイル
+   ========================================= */
+.btn-history-detail:hover {
+  background-color: #2980b9 !important;
+}
+
+/* =========================================
+   戦略選択ボタンのホバースタイル
+   ========================================= */
+.btn-strategy:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* =========================================
+   グレーの閉じるボタンのホバースタイル
+   ========================================= */
+.btn-close-gray:hover {
+  background-color: #7f8c8d !important;
+}
+
+/* =========================================
+   例外設定アイコンボタンのホバースタイル
+   ========================================= */
+.btn-exception-icon:hover {
+  opacity: 1 !important;
+}
+
+/* =========================================
+   予約バッジのホバースタイル
+   ========================================= */
+.reservation-badge-hover:hover {
+  background-color: #d4ebff !important;
+}
+
+/* =========================================
+   人事相談カードのホバースタイル
+   ========================================= */
+.consultation-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+}

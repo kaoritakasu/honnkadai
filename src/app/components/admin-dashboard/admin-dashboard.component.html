@@ -128,12 +128,15 @@
         <h2>部署一覧と編集</h2>
         <div class="departments-edit-list">
           @for (dept of departments(); track dept.id) {
-            <div class="department-edit-card">
-              <div class="dept-header">
-                <h3>{{ dept.name }}</h3>
+            <div class="department-edit-card" style="border: 1px solid #ddd; border-radius: 8px; margin-bottom: 12px; overflow: hidden;">
+              <div class="dept-header hoverable-header" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 15px; background-color: #f5f5f5; border-bottom: 1px solid #ddd; transition: background-color 0.2s ease;" (click)="toggleDepartmentAccordion(dept.id)">
+                <h3 style="margin: 0; flex: 1; font-size: 1em;">{{ dept.name }}</h3>
+                <span style="font-size: 1.2em; margin-left: 10px; transition: transform 0.3s ease; flex-shrink: 0;" [style.transform]="expandedDeptIds[dept.id] ? 'rotateZ(180deg)' : 'rotateZ(0deg)'">▼</span>
               </div>
 
-              @if (editingDeptId === dept.id) {
+              @if (expandedDeptIds[dept.id]) {
+                <div style="padding: 20px; background-color: #ffffff;">
+                @if (editingDeptId === dept.id) {
                 <div class="dept-fields" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                   <div class="field-group" style="flex: 0 1 auto; min-width: 150px;">
                     <label>部署名</label>
@@ -308,6 +311,8 @@
                   <button (click)="deleteDepartment(dept.id)" class="btn-delete" style="margin-top: 15px; margin-left: 10px; padding: 8px 16px; background-color: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer;">削除する</button>
                 </div>
               }
+                </div>
+              }
             </div>
           }
         </div>
@@ -345,7 +350,7 @@
                       <td style="padding: 12px; text-align: right; border-right: 1px solid #eee;">¥{{ history.totalCost | number }}</td>
                       <td style="padding: 12px; text-align: right; border-right: 1px solid #eee;">¥{{ history.totalProfit | number }}</td>
                       <td style="padding: 12px; text-align: center;">
-                        <button (click)="loadHistoryDetail(history)" style="padding: 6px 16px; background-color: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s;" onmouseover="this.style.backgroundColor='#2980b9'" onmouseout="this.style.backgroundColor='#3498db'">
+                        <button (click)="loadHistoryDetail(history)" class="btn-history-detail" style="padding: 6px 16px; background-color: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s; white-space: nowrap;">
                           👀 詳細を見る
                         </button>
                       </td>
@@ -397,13 +402,12 @@
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
               <!-- ⚖️ 全社バランス重視 -->
               <button
+                class="btn-strategy"
                 (click)="simulationMode = 'balanced'"
                 [style.background]="simulationMode === 'balanced' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : '#ffffff'"
                 [style.color]="simulationMode === 'balanced' ? 'white' : '#333'"
                 [style.border]="simulationMode === 'balanced' ? '2px solid #667eea' : '2px solid #ddd'"
                 style="padding: 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: left; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"
-                onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.1)'"
-                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.05)'"
               >
                 <p style="margin: 0 0 4px 0; font-weight: bold; font-size: 1em;">⚖️ 全社バランス重視</p>
                 <p style="margin: 0; font-size: 0.85em; opacity: 0.8;">すべてのスキルを均等に評価</p>
@@ -411,13 +415,12 @@
 
               <!-- 🚀 営業・開拓特化 -->
               <button
+                class="btn-strategy"
                 (click)="simulationMode = 'sales_focus'"
                 [style.background]="simulationMode === 'sales_focus' ? 'linear-gradient(135deg, #f39c12 0%, #e67e22 100%)' : '#ffffff'"
                 [style.color]="simulationMode === 'sales_focus' ? 'white' : '#333'"
                 [style.border]="simulationMode === 'sales_focus' ? '2px solid #f39c12' : '2px solid #ddd'"
                 style="padding: 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: left; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"
-                onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.1)'"
-                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.05)'"
               >
                 <p style="margin: 0 0 4px 0; font-weight: bold; font-size: 1em;">🚀 営業・開拓特化</p>
                 <p style="margin: 0; font-size: 0.85em; opacity: 0.8;">短期売上拡大を最優先</p>
@@ -425,13 +428,12 @@
 
               <!-- 🎓 育成・技術投資 -->
               <button
+                class="btn-strategy"
                 (click)="simulationMode = 'tech_focus'"
                 [style.background]="simulationMode === 'tech_focus' ? 'linear-gradient(135deg, #27ae60 0%, #16a085 100%)' : '#ffffff'"
                 [style.color]="simulationMode === 'tech_focus' ? 'white' : '#333'"
                 [style.border]="simulationMode === 'tech_focus' ? '2px solid #27ae60' : '2px solid #ddd'"
                 style="padding: 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: left; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"
-                onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.1)'"
-                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.05)'"
               >
                 <p style="margin: 0 0 4px 0; font-weight: bold; font-size: 1em;">🎓 育成・技術投資</p>
                 <p style="margin: 0; font-size: 0.85em; opacity: 0.8;">中長期成長基盤を構築</p>
@@ -439,13 +441,12 @@
 
               <!-- 👔 管理体制強化 -->
               <button
+                class="btn-strategy"
                 (click)="simulationMode = 'management_focus'"
                 [style.background]="simulationMode === 'management_focus' ? 'linear-gradient(135deg, #3498db 0%, #2980b9 100%)' : '#ffffff'"
                 [style.color]="simulationMode === 'management_focus' ? 'white' : '#333'"
                 [style.border]="simulationMode === 'management_focus' ? '2px solid #3498db' : '2px solid #ddd'"
                 style="padding: 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: left; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"
-                onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.1)'"
-                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.05)'"
               >
                 <p style="margin: 0 0 4px 0; font-weight: bold; font-size: 1em;">👔 管理体制強化</p>
                 <p style="margin: 0; font-size: 0.85em; opacity: 0.8;">組織安定・リスク管理を重視</p>
@@ -467,7 +468,7 @@
           <div style="padding: 20px; background-color: #f0f9ff; border: 2px solid #3498db; border-radius: 8px; margin-bottom: 20px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
               <h3 style="margin: 0; color: #2c3e50;">📂 シミュレーション履歴 - 詳細表示</h3>
-              <button (click)="closeHistoryDetail()" style="padding: 8px 16px; background-color: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s;" onmouseover="this.style.backgroundColor='#7f8c8d'" onmouseout="this.style.backgroundColor='#95a5a6'">
+              <button (click)="closeHistoryDetail()" class="btn-close-gray" style="padding: 8px 16px; background-color: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s;">
                 ✕ 閉じる
               </button>
             </div>
@@ -477,10 +478,26 @@
 
         @if (simulationResults()) {
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
-            <h3 style="margin: 0; color: #2c3e50;">📊 シミュレーション結果</h3>
-            <button (click)="saveSimulation()" style="padding: 10px 20px; background-color: #e67e22; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: all 0.2s;">
-              💾 この配置案を確定・保存する
-            </button>
+            <h3 style="margin: 0; color: #2c3e50;">
+              📊 {{ viewingHistoryDetail ? '過去の配置案（履歴）' : 'シミュレーション結果' }}
+            </h3>
+            <div style="display: flex; gap: 10px;">
+              <button (click)="resetSimulation()" style="padding: 10px 15px; background-color: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: all 0.2s;">
+                🔙 {{ viewingHistoryDetail ? '履歴一覧に戻る' : '条件入力に戻る' }}
+              </button>
+
+              <!-- 履歴保存ボタンは常に表示（微調整後の再保存用） -->
+              <button (click)="saveSimulationHistory()" style="padding: 10px 20px; background-color: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: all 0.2s;">
+                💾 履歴に保存する (通知なし)
+              </button>
+
+              <!-- 本番反映ボタンは履歴閲覧中のみ表示 -->
+              @if (viewingHistoryDetail) {
+                <button (click)="applySimulation()" style="padding: 10px 20px; background-color: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: all 0.2s;">
+                  🚀 この配置を本番環境に反映する
+                </button>
+              }
+            </div>
           </div>
 
           <!-- ビューモード切り替えボタン -->
@@ -995,7 +1012,7 @@
                       @if (dayCell) {
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
                           <div style="font-weight: bold; color: #667eea;">{{ dayCell.dayOfMonth }}</div>
-                          <button (click)="openExceptionModal(dayCell.date); $event.stopPropagation()" title="例外設定" style="padding: 2px 6px; font-size: 0.7em; background: #f39c12; color: white; border: none; border-radius: 3px; cursor: pointer; opacity: 0.7; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">⚙️</button>
+                          <button (click)="openExceptionModal(dayCell.date); $event.stopPropagation()" class="btn-exception-icon" title="例外設定" style="padding: 2px 6px; font-size: 0.7em; background: #f39c12; color: white; border: none; border-radius: 3px; cursor: pointer; opacity: 0.7; transition: opacity 0.2s;">⚙️</button>
                         </div>
 
                         @if (getExceptionForDate(dayCell.date)) {
@@ -1006,7 +1023,7 @@
 
                         @for (res of getReservationsForDate(dayCell.date); track res.id) {
                           <!-- 予約済みのクリックできるバッジ -->
-                          <div (click)="openReservationDetail(res); $event.stopPropagation()" style="padding: 6px; margin: 4px 0; border-left: 3px solid #667eea; border-radius: 4px; background: #e7f3ff; font-size: 0.8em; line-height: 1.3; color: #2c3e50; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.backgroundColor='#d4ebff'" onmouseout="this.style.backgroundColor='#e7f3ff'">
+                          <div (click)="openReservationDetail(res); $event.stopPropagation()" class="reservation-badge-hover" style="padding: 6px; margin: 4px 0; border-left: 3px solid #667eea; border-radius: 4px; background: #e7f3ff; font-size: 0.8em; line-height: 1.3; color: #2c3e50; cursor: pointer; transition: background 0.2s;">
                             <p style="margin: 0; font-weight: bold;">{{ res.timeSlot }}</p>
                             <p style="margin: 2px 0 0 0; color: #667eea; font-weight: bold;">{{ res.employee?.user?.name || res.employee?.employeeNumber || '社員' }}</p>
                           </div>
@@ -1040,7 +1057,7 @@
             } @else {
               <div style="display: flex; flex-direction: column; gap: 15px;">
                 @for (consultation of allConsultations(); track consultation.id || $index) {
-                  <div style="background: white; border-radius: 8px; padding: 16px; border-left: 4px solid #27ae60; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; width: 100%; box-sizing: border-box; min-width: 0; overflow: visible;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.05)'" (click)="toggleConsultationDetail(consultation.id)">
+                  <div class="consultation-card-hover" style="background: white; border-radius: 8px; padding: 16px; border-left: 4px solid #27ae60; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; width: 100%; box-sizing: border-box; min-width: 0; overflow: visible;" (click)="toggleConsultationDetail(consultation.id)">
                     <!-- 送信者情報 -->
                     <div style="display: flex; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #eee; padding-bottom: 12px;">
                       <div style="flex: 1;">

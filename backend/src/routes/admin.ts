@@ -114,8 +114,8 @@ router.get('/dashboard', authenticate, isAdmin, async (req: AuthRequest, res: Re
         let resultsArray: any[] = [];
         if (Array.isArray(simulationResults)) {
           resultsArray = simulationResults;
-        } else if (simulationResults && simulationResults.results && Array.isArray(simulationResults.results)) {
-          resultsArray = simulationResults.results;
+        } else if (simulationResults && (simulationResults as any).results && Array.isArray((simulationResults as any).results)) {
+          resultsArray = (simulationResults as any).results;
         }
 
         // シミュレーション結果からスキルバランスを計算

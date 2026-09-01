@@ -95,6 +95,9 @@ export class AdminDashboardComponent implements OnInit {
   // --- 通知ドロップダウン ---
   showNotificationMenu = false;
 
+  // --- 部署アコーディオン ---
+  expandedDeptIds: { [key: string]: boolean } = {};
+
   constructor(
     private apiService: ApiService,
     private authService: AuthService,
@@ -366,6 +369,10 @@ export class AdminDashboardComponent implements OnInit {
     } else {
       this.selectedDepartments.set([...current, deptId]);
     }
+  }
+
+  toggleDepartmentAccordion(deptId: string) {
+    this.expandedDeptIds[deptId] = !this.expandedDeptIds[deptId];
   }
 
   runMultiDepartmentSimulation() {
@@ -978,6 +985,59 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
+  saveSimulationHistory() {
+    const summary = this.simulationSummary();
+    const totalCompanyCost = Array.isArray(this.simulationResults())
+      ? this.simulationResults().reduce((sum: number, result: any) => sum + (result.cost || 0), 0)
+      : (this.simulationResults().cost || 0);
+
+    const payload = {
+      results: this.simulationResults(),
+      totalCompanyRevenue: summary ? summary.totalCompanyRevenue : 0,
+      totalCompanyCost: totalCompanyCost,
+      totalCompanyProfit: summary ? summary.totalCompanyProfit : 0
+    };
+
+    this.apiService.saveSimulation(payload).subscribe({
+      next: () => {
+        alert('配置案を履歴に保存しました（社員への通知はありません）');
+        this.resetSimulation();
+      },
+      error: (err: any) => {
+        console.error(err);
+        alert('保存に失敗しました。サーバーが立ち上がっているか確認してください。');
+      }
+    });
+  }
+
+  applySimulation() {
+    if (!confirm('この過去の配置案を本番環境に反映し、社員のマイページに通知します。よろしいですか？')) return;
+
+    const summary = this.simulationSummary();
+    const totalCompanyCost = Array.isArray(this.simulationResults())
+      ? this.simulationResults().reduce((sum: number, result: any) => sum + (result.cost || 0), 0)
+      : (this.simulationResults().cost || 0);
+
+    const payload = {
+      results: this.simulationResults(),
+      totalCompanyRevenue: summary ? summary.totalCompanyRevenue : 0,
+      totalCompanyCost: totalCompanyCost,
+      totalCompanyProfit: summary ? summary.totalCompanyProfit : 0
+    };
+
+    this.apiService.saveSimulation(payload).subscribe({
+      next: () => {
+        alert('配置案を本番環境に反映し、社員への通知が完了しました！');
+        this.resetSimulation();
+        this.loadDashboard();
+      },
+      error: (err: any) => {
+        console.error(err);
+        alert('反映に失敗しました。サーバーが立ち上がっているか確認してください。');
+      }
+    });
+  }
+
   loadHistoryDetail(history: any) {
     try {
       console.log('取得した履歴データ:', history);
@@ -1028,6 +1088,12 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   resetSimulation() {
+    // 履歴を見ている状態から戻る場合は、ホームタブへジャンプする
+    if (this.viewingHistoryDetail) {
+      this.activeTab.set('dashboard');
+    }
+
+    // 画面の表示データをクリア
     this.simulationResults.set(null);
     this.simulationSummary.set(null);
     this.viewingHistoryDetail = false;
