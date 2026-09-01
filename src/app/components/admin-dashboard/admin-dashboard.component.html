@@ -390,10 +390,10 @@
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
               <!-- ⚖️ 全社バランス重視 -->
               <button
-                (click)="simulationStrategy = 'balanced'"
-                [style.background]="simulationStrategy === 'balanced' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : '#ffffff'"
-                [style.color]="simulationStrategy === 'balanced' ? 'white' : '#333'"
-                [style.border]="simulationStrategy === 'balanced' ? '2px solid #667eea' : '2px solid #ddd'"
+                (click)="simulationMode = 'balanced'"
+                [style.background]="simulationMode === 'balanced' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : '#ffffff'"
+                [style.color]="simulationMode === 'balanced' ? 'white' : '#333'"
+                [style.border]="simulationMode === 'balanced' ? '2px solid #667eea' : '2px solid #ddd'"
                 style="padding: 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: left; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"
                 onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.1)'"
                 onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.05)'"
@@ -404,10 +404,10 @@
 
               <!-- 🚀 営業・開拓特化 -->
               <button
-                (click)="simulationStrategy = 'sales_focus'"
-                [style.background]="simulationStrategy === 'sales_focus' ? 'linear-gradient(135deg, #f39c12 0%, #e67e22 100%)' : '#ffffff'"
-                [style.color]="simulationStrategy === 'sales_focus' ? 'white' : '#333'"
-                [style.border]="simulationStrategy === 'sales_focus' ? '2px solid #f39c12' : '2px solid #ddd'"
+                (click)="simulationMode = 'sales_focus'"
+                [style.background]="simulationMode === 'sales_focus' ? 'linear-gradient(135deg, #f39c12 0%, #e67e22 100%)' : '#ffffff'"
+                [style.color]="simulationMode === 'sales_focus' ? 'white' : '#333'"
+                [style.border]="simulationMode === 'sales_focus' ? '2px solid #f39c12' : '2px solid #ddd'"
                 style="padding: 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: left; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"
                 onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.1)'"
                 onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.05)'"
@@ -418,10 +418,10 @@
 
               <!-- 🎓 育成・技術投資 -->
               <button
-                (click)="simulationStrategy = 'tech_focus'"
-                [style.background]="simulationStrategy === 'tech_focus' ? 'linear-gradient(135deg, #27ae60 0%, #16a085 100%)' : '#ffffff'"
-                [style.color]="simulationStrategy === 'tech_focus' ? 'white' : '#333'"
-                [style.border]="simulationStrategy === 'tech_focus' ? '2px solid #27ae60' : '2px solid #ddd'"
+                (click)="simulationMode = 'tech_focus'"
+                [style.background]="simulationMode === 'tech_focus' ? 'linear-gradient(135deg, #27ae60 0%, #16a085 100%)' : '#ffffff'"
+                [style.color]="simulationMode === 'tech_focus' ? 'white' : '#333'"
+                [style.border]="simulationMode === 'tech_focus' ? '2px solid #27ae60' : '2px solid #ddd'"
                 style="padding: 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: left; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"
                 onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.1)'"
                 onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.05)'"
@@ -432,10 +432,10 @@
 
               <!-- 👔 管理体制強化 -->
               <button
-                (click)="simulationStrategy = 'management_focus'"
-                [style.background]="simulationStrategy === 'management_focus' ? 'linear-gradient(135deg, #3498db 0%, #2980b9 100%)' : '#ffffff'"
-                [style.color]="simulationStrategy === 'management_focus' ? 'white' : '#333'"
-                [style.border]="simulationStrategy === 'management_focus' ? '2px solid #3498db' : '2px solid #ddd'"
+                (click)="simulationMode = 'management_focus'"
+                [style.background]="simulationMode === 'management_focus' ? 'linear-gradient(135deg, #3498db 0%, #2980b9 100%)' : '#ffffff'"
+                [style.color]="simulationMode === 'management_focus' ? 'white' : '#333'"
+                [style.border]="simulationMode === 'management_focus' ? '2px solid #3498db' : '2px solid #ddd'"
                 style="padding: 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: left; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"
                 onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.1)'"
                 onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.05)'"
