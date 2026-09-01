@@ -22,24 +22,19 @@ export class EmployeeMyPageComponent implements OnInit {
   error = signal('');
   success = signal('');
 
-  // フォーム用シグナル
   score = signal(0);
   desiredDept = signal('');
   workLifeBalance = signal('');
 
-  // 相談用シグナル
   consultationTitle = signal('');
   consultationDescription = signal('');
   showConsultationForm = signal(false);
 
-  // 面談予約用カレンダーのプレースホルダー
-  showReservation = signal(false);
-
-  // タブ管理
+  // 新しいタブ管理（これで画面が3つに分かれます）
   activeTab = signal<'profile' | 'allocations' | 'consultation'>('profile');
 
-  // スキルギャップデータ
   allocationSkillGapData = signal<any>(null);
+  simulationSkillGapData = signal<any>(null);
 
   Math = Math;
 
@@ -53,6 +48,7 @@ export class EmployeeMyPageComponent implements OnInit {
     this.loadProfile();
     this.loadAllocations();
     this.loadConsultations();
+    this.loadSimulationSkillGap();
   }
 
   loadProfile() {
@@ -62,6 +58,8 @@ export class EmployeeMyPageComponent implements OnInit {
         this.score.set(data.score || 0);
         this.desiredDept.set(data.desiredDept || data.careerDesire || '');
         this.workLifeBalance.set(data.workLifeBalance || '');
+        // プロフィール読み込み後にギャップを再計算
+        this.calculateAllocationSkillGap();
       },
       error: (err) => this.error.set(err.error?.error || 'プロフィールの読み込みに失敗しました')
     });
@@ -81,6 +79,18 @@ export class EmployeeMyPageComponent implements OnInit {
     this.apiService.getMyConsultations().subscribe({
       next: (data) => this.consultations.set(data),
       error: (err) => this.error.set(err.error?.error || '相談履歴の読み込みに失敗しました')
+    });
+  }
+
+  loadSimulationSkillGap() {
+    this.apiService.getMyLatestSimulation().subscribe({
+      next: (data) => {
+        this.simulationSkillGapData.set(this.calculateSimulationSkillGap(data));
+      },
+      error: (err) => {
+        // Silently fail - simulation history is optional
+        console.log('No simulation history available');
+      }
     });
   }
 
@@ -148,7 +158,6 @@ export class EmployeeMyPageComponent implements OnInit {
     this.allocationSkillGapData.set(this.getAllocationSkillGapData());
   }
 
-  // 配属先とのスキルギャップ計算
   getAllocationSkillGapData(): any {
     const allocationsList = this.allocations();
     if (!allocationsList || allocationsList.length === 0) return null;
@@ -192,6 +201,7 @@ export class EmployeeMyPageComponent implements OnInit {
   }
 
   getAverageGap(gapData: any): number {
+    if (!gapData) return 0;
     const gaps = [
       Math.abs(gapData.ideal.salesForce - gapData.actual.salesForce),
       Math.abs(gapData.ideal.managementForce - gapData.actual.managementForce),
@@ -199,5 +209,51 @@ export class EmployeeMyPageComponent implements OnInit {
       Math.abs(gapData.ideal.developmentForce - gapData.actual.developmentForce)
     ];
     return Math.round(gaps.reduce((a, b) => a + b, 0) / gaps.length);
+  }
+
+  calculateSimulationSkillGap(simulationResult: any): any {
+    if (!simulationResult || !simulationResult.employeeData) {
+      return null;
+    }
+
+    const empData = simulationResult.employeeData;
+    const deptName = empData.department?.name || '';
+
+    // Employee skills from simulation
+    const aS = Number(empData.salesForce) || 0;
+    const aM = Number(empData.managementForce) || 0;
+    const aE = Number(empData.explorationForce) || 0;
+    const aD = Number(empData.developmentForce) || 0;
+    const totalActual = aS + aM + aE + aD;
+
+    const actual = {
+      salesForce: totalActual > 0 ? Math.round((aS / totalActual) * 100) : 0,
+      managementForce: totalActual > 0 ? Math.round((aM / totalActual) * 100) : 0,
+      explorationForce: totalActual > 0 ? Math.round((aE / totalActual) * 100) : 0,
+      developmentForce: totalActual > 0 ? Math.round((aD / totalActual) * 100) : 0
+    };
+
+    // Get department weights from department object
+    const dept = empData.department || {};
+    const wS = Number(dept.weightSales) || 0;
+    const wM = Number(dept.weightManagement) || 0;
+    const wE = Number(dept.weightExploration) || 0;
+    const wD = Number(dept.weightDevelopment) || 0;
+    const totalWeight = wS + wM + wE + wD;
+
+    const ideal = totalWeight > 0 ? {
+      salesForce: Math.round((wS / totalWeight) * 100),
+      managementForce: Math.round((wM / totalWeight) * 100),
+      explorationForce: Math.round((wE / totalWeight) * 100),
+      developmentForce: Math.round((wD / totalWeight) * 100)
+    } : null;
+
+    return {
+      deptName: deptName,
+      ideal: ideal,
+      actual: actual,
+      isFromSimulation: true,
+      simulationDate: simulationResult.createdAt
+    };
   }
 }

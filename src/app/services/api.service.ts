@@ -161,6 +161,10 @@ export class ApiService {
     return this.http.get<any[]>(`${this.apiUrl}/consultations/me`, { headers: this.getHeaders() });
   }
 
+  getMyLatestSimulation(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/allocations/my-latest-simulation`, { headers: this.getHeaders() });
+  }
+
   getAllConsultations(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/admin/consultations`, { headers: this.getHeaders() });
   }

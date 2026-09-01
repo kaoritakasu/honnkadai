@@ -58,6 +58,12 @@ model Employee {
   careerGoals     String?
   workLifeBalance String?
 
+  salesForce      Float    @default(0)
+  managementForce Float    @default(0)
+  explorationForce Float   @default(0)
+  developmentForce Float   @default(0)
+  laborCost       Float    @default(0)
+
   allocations     Allocation[]
   feedback        Feedback[]
   consultations   Consultation[]

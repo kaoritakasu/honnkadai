@@ -74,7 +74,7 @@ export class MyPageComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.authService.currentUser$.subscribe(u => this.user = u);
+    this.authService.currentUser$.subscribe((u: any) => this.user = u);
     this.loadAssignmentDetails();
     this.loadDepartments();
     this.loadMyAllocations();
@@ -112,7 +112,7 @@ export class MyPageComponent implements OnInit {
             this.cdr.detectChanges();
           }
         },
-        (err) => console.error('Error loading preferences:', err)
+        (err: any) => console.error('Error loading preferences:', err)
       );
     }
   }
@@ -123,7 +123,7 @@ export class MyPageComponent implements OnInit {
         this.departments = data;
         this.buildSkillGapData();
       },
-      error: (err) => console.error('部署データの取得に失敗しました', err)
+      error: (err: any) => console.error('部署データの取得に失敗しました', err)
     });
   }
 
@@ -198,14 +198,14 @@ export class MyPageComponent implements OnInit {
     };
 
     this.apiService.updatePreferences(this.user.id, payload).subscribe({
-      next: (res) => {
+      next: (res: any) => {
         alert('希望条件を更新しました');
         this.isEditing = false;
         this.isSaving = false;
         this.buildSkillGapData();
         this.cdr.detectChanges();
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error(err);
         alert('更新に失敗しました');
         this.isSaving = false;
@@ -233,7 +233,7 @@ export class MyPageComponent implements OnInit {
         this.isSubmittingConsultation = false;
         this.cdr.detectChanges();
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error submitting consultation:', err);
         alert(err.error?.error || '相談の送信に失敗しました');
         this.isSubmittingConsultation = false;
@@ -248,7 +248,7 @@ export class MyPageComponent implements OnInit {
         this.allocations.set(data);
         this.cdr.detectChanges();
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error loading allocations:', err);
         this.allocations.set([]);
       }
@@ -270,7 +270,7 @@ export class MyPageComponent implements OnInit {
         this.isLoadingSlots = false;
         this.cdr.detectChanges();
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error loading available slots:', err);
         this.availableSlots = [];
         this.isLoadingSlots = false;
@@ -299,7 +299,7 @@ export class MyPageComponent implements OnInit {
         this.showReservationForm = false;
         this.cdr.detectChanges();
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error booking reservation:', err);
         alert(err.error?.error || '予約に失敗しました');
         this.isBookingReservation = false;
@@ -314,7 +314,7 @@ export class MyPageComponent implements OnInit {
         this.myReservations = data;
         this.cdr.detectChanges();
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error loading reservations:', err);
         this.myReservations = [];
       }
@@ -329,7 +329,7 @@ export class MyPageComponent implements OnInit {
           this.loadMyReservations();
           this.cdr.detectChanges();
         },
-        error: (err) => {
+        error: (err: any) => {
           console.error('Error canceling reservation:', err);
           alert('キャンセルに失敗しました');
         }
@@ -441,7 +441,7 @@ export class MyPageComponent implements OnInit {
         this.availabilityRules.set(data);
         this.cdr.detectChanges();
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error loading availability rules:', err);
         this.availabilityRules.set([]);
       }
@@ -473,7 +473,7 @@ export class MyPageComponent implements OnInit {
         this.isLoadingModalSlots = false;
         this.cdr.detectChanges();
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error loading available slots:', err);
         this.modalAvailableSlots = [];
         this.isLoadingModalSlots = false;
@@ -504,7 +504,7 @@ export class MyPageComponent implements OnInit {
         this.isBookingReservation = false;
         this.cdr.detectChanges();
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error booking reservation:', err);
         alert(err.error?.error || '予約に失敗しました');
         this.isBookingReservation = false;
@@ -527,7 +527,7 @@ export class MyPageComponent implements OnInit {
         this.myConsultations.set(data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
         this.cdr.detectChanges();
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error loading consultations:', err);
         this.myConsultations.set([]);
       }
@@ -564,7 +564,7 @@ export class MyPageComponent implements OnInit {
         this.availabilityExceptions.set(data);
         this.cdr.detectChanges();
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error loading availability exceptions:', err);
         this.availabilityExceptions.set([]);
       }

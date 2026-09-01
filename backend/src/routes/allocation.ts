@@ -972,4 +972,99 @@ router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
   }
 });
 
+router.get('/my-latest-simulation', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const employee = await prisma.employee.findUnique({
+      where: { userId: req.user.id }
+    });
+
+    if (!employee) {
+      return res.status(404).json({ error: 'Employee not found' });
+    }
+
+    // Get the latest simulation result
+    const latestSimulation = await prisma.simulationResult.findFirst({
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        details: true,
+        totalRevenue: true,
+        totalCost: true,
+        totalProfit: true,
+        createdAt: true,
+      }
+    });
+
+    if (!latestSimulation) {
+      return res.status(404).json({ error: 'No simulation history found' });
+    }
+
+    // Parse details and find current employee's data
+    let results: any = latestSimulation.details;
+    if (typeof results === 'string') {
+      results = JSON.parse(results);
+    }
+
+    // Find employee in the simulation results
+    let employeeData = null;
+    let departmentInfo: any = null;
+    if (Array.isArray(results)) {
+      for (const dept of results) {
+        if (dept && typeof dept === 'object' && dept.candidates && Array.isArray(dept.candidates)) {
+          const found = dept.candidates.find((c: any) =>
+            c.employeeNumber === employee.employeeNumber ||
+            c.employeeId === employee.id
+          );
+          if (found) {
+            // Try to get department info from database for complete data
+            const deptId = (dept as any).departmentId;
+            if (deptId) {
+              departmentInfo = await prisma.department.findUnique({
+                where: { id: deptId },
+                select: {
+                  id: true,
+                  name: true,
+                  weightSales: true,
+                  weightManagement: true,
+                  weightExploration: true,
+                  weightDevelopment: true
+                }
+              });
+            }
+
+            employeeData = {
+              ...found,
+              department: {
+                name: (dept as any).departmentName,
+                id: (dept as any).departmentId,
+                weightSales: departmentInfo?.weightSales || (dept as any).weightSales,
+                weightManagement: departmentInfo?.weightManagement || (dept as any).weightManagement,
+                weightExploration: departmentInfo?.weightExploration || (dept as any).weightExploration,
+                weightDevelopment: departmentInfo?.weightDevelopment || (dept as any).weightDevelopment
+              }
+            };
+            break;
+          }
+        }
+      }
+    }
+
+    res.json({
+      simulationId: latestSimulation.id,
+      createdAt: latestSimulation.createdAt,
+      employeeData: employeeData,
+      totalCompanyRevenue: latestSimulation.totalRevenue,
+      totalCompanyCost: latestSimulation.totalCost,
+      totalCompanyProfit: latestSimulation.totalProfit
+    });
+  } catch (error) {
+    console.error('Error fetching latest simulation:', error);
+    res.status(400).json({ error: (error as Error).message });
+  }
+});
+
 export default router;

@@ -438,7 +438,8 @@ export class AdminDashboardComponent implements OnInit {
     }
 
     this.loading.set(true);
-    this.apiService.simulateBatchAllocation(parsed).subscribe({
+    // 💡 修正箇所：引数を3つに増やしました
+    this.apiService.simulateBatchAllocation(parsed, this.lastYearTotalRevenue, this.simulationMode).subscribe({
       next: (data: any) => {
         if (data && data.results && Array.isArray(data.results)) {
           const enrichedResults = this.enrichWithMyPageData(data.results);
@@ -552,7 +553,7 @@ export class AdminDashboardComponent implements OnInit {
       this.lastYearTotalRevenue,
       this.simulationMode
     ).subscribe({
-      next: (res) => {
+      next: (res: any) => {
         if (res && res.results && Array.isArray(res.results)) {
           const enrichedResults = this.enrichWithMyPageData(res.results);
           const sortedResults = this.sortResultsByEmployeeNumber(enrichedResults.map((result: any) => ({
@@ -574,7 +575,7 @@ export class AdminDashboardComponent implements OnInit {
         this.loading.set(false);
         this.pasteDataText = '';
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('API Error:', err);
         this.loading.set(false);
         alert('シミュレーションの実行に失敗しました。');
