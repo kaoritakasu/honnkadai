@@ -475,6 +475,41 @@ router.post('/simulate-multi', authenticate, isAdmin, async (req: AuthRequest, r
       }
     }
 
+    // 強制割り当てフェーズ: 制約をクリアできずに未配置の社員を全員割り当て
+    for (const empData of employeesWithScores) {
+      if (allocatedEmployeeIds.has(empData.employee.id)) continue;
+
+      // 1. 最低配置人数に達していない部門を探す
+      let targetDept: string | null = null;
+      for (const dept of departments) {
+        const currentAllocations = allocations.get(dept.id) || [];
+        const minHeadcount = dept.minHeadcount ?? 0;
+        if (currentAllocations.length < minHeadcount) {
+          targetDept = dept.id;
+          break;
+        }
+      }
+
+      // 2. 最低配置人数に達していない部門がない場合、最も人員が少ない部門を選択
+      if (!targetDept) {
+        let minAllocations = Infinity;
+        for (const dept of departments) {
+          const currentAllocations = allocations.get(dept.id) || [];
+          if (currentAllocations.length < minAllocations) {
+            minAllocations = currentAllocations.length;
+            targetDept = dept.id;
+          }
+        }
+      }
+
+      if (targetDept) {
+        const deptAllocations = allocations.get(targetDept) || [];
+        deptAllocations.push(empData.employee);
+        allocations.set(targetDept, deptAllocations);
+        allocatedEmployeeIds.add(empData.employee.id);
+      }
+    }
+
     const results = [];
     let totalCompanyRevenue = 0;
     let totalCompanyCost = 0;
@@ -738,6 +773,42 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
         const deptAllocations = allocations.get(bestDept) || [];
         deptAllocations.push(emp);
         allocations.set(bestDept, deptAllocations);
+        allocatedEmployeeIds.add(empId);
+      }
+    }
+
+    // 強制割り当てフェーズ: 制約をクリアできずに未配置の社員を全員割り当て
+    for (const emp of enrichedEmployees) {
+      const empId = emp.id || emp.employeeId;
+      if (allocatedEmployeeIds.has(empId)) continue;
+
+      // 1. 最低配置人数に達していない部門を探す
+      let targetDept: string | null = null;
+      for (const dept of departments) {
+        const currentAllocations = allocations.get(dept.id) || [];
+        const minHeadcount = dept.minHeadcount ?? 0;
+        if (currentAllocations.length < minHeadcount) {
+          targetDept = dept.id;
+          break;
+        }
+      }
+
+      // 2. 最低配置人数に達していない部門がない場合、最も人員が少ない部門を選択
+      if (!targetDept) {
+        let minAllocations = Infinity;
+        for (const dept of departments) {
+          const currentAllocations = allocations.get(dept.id) || [];
+          if (currentAllocations.length < minAllocations) {
+            minAllocations = currentAllocations.length;
+            targetDept = dept.id;
+          }
+        }
+      }
+
+      if (targetDept) {
+        const deptAllocations = allocations.get(targetDept) || [];
+        deptAllocations.push(emp);
+        allocations.set(targetDept, deptAllocations);
         allocatedEmployeeIds.add(empId);
       }
     }
