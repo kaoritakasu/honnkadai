@@ -171,6 +171,140 @@ const calculateDeltaProfit = (
   return newState.profit - currentState.profit;
 };
 
+// 【新】2段階配置アルゴリズム
+const calculateTwoPhaseAllocation = (
+  allEmployees: any[],
+  departments: any[],
+  simulationMode?: string
+): Map<string, any[]> => {
+  const allocations = new Map<string, any[]>();
+  departments.forEach(dept => allocations.set(dept.id, []));
+  const allocatedEmployeeIds = new Set<number>();
+
+  // フェーズ1: 最低配置人数の確実な確保
+  const employeesByDepartment: { [deptId: string]: any[] } = {};
+
+  for (const dept of departments) {
+    const deptId = dept.id;
+    const minHeadcount = dept.minHeadcount ?? 0;
+
+    // この部門への適性スコアでソート
+    const empScores = allEmployees
+      .filter(emp => !allocatedEmployeeIds.has(emp.id))
+      .map(emp => ({
+        employee: emp,
+        matchScore: calculateMatchScore(emp, dept)
+      }))
+      .sort((a, b) => b.matchScore - a.matchScore);
+
+    // 最低配置人数を割り当て
+    for (let i = 0; i < minHeadcount && i < empScores.length; i++) {
+      const deptAllocations = allocations.get(deptId) || [];
+      deptAllocations.push(empScores[i].employee);
+      allocations.set(deptId, deptAllocations);
+      allocatedEmployeeIds.add(empScores[i].employee.id);
+    }
+  }
+
+  // フェーズ2: 残り人員の戦略的最適化（限界効用で配置）
+  let improved = true;
+  while (improved && allocatedEmployeeIds.size < allEmployees.length) {
+    improved = false;
+    let bestDeltaScore = -Infinity;
+    let bestEmployeeId: number | null = null;
+    let bestDepartmentId: string | null = null;
+
+    // 未配置の全社員を検討
+    for (const emp of allEmployees) {
+      if (allocatedEmployeeIds.has(emp.id)) continue;
+
+      // 各部門への追加配置での限界効用を計算
+      for (const dept of departments) {
+        const currentAllocations = allocations.get(dept.id) || [];
+        const optimalHeadcount = dept.optimalHeadcount ?? 0;
+
+        // 最適人数未満の場合のみ候補として検討
+        if (currentAllocations.length >= optimalHeadcount) continue;
+
+        // シミュレーションモードに応じたスコア計算
+        let deltaScore = 0;
+
+        if (simulationMode === 'task2' || simulationMode === 'sales_focus') {
+          // 営業・開拓特化：売上への貢献度
+          deltaScore = (emp.salesForce || 0) + (emp.explorationForce || 0);
+        } else if (simulationMode === 'task3' || simulationMode === 'tech_focus') {
+          // 育成・技術投資：育成力と管理力
+          deltaScore = (emp.developmentForce || 0) + (emp.managementForce || 0);
+        } else if (simulationMode === 'task4' || simulationMode === 'management_focus') {
+          // 管理体制強化：管理力
+          deltaScore = (emp.managementForce || 0);
+        } else {
+          // デフォルト（全社バランス）：全能力の平均
+          deltaScore = ((emp.salesForce || 0) + (emp.managementForce || 0) +
+                       (emp.explorationForce || 0) + (emp.developmentForce || 0)) / 4;
+        }
+
+        // 部門の重み付けを考慮
+        const deptWeight = (dept.weightSales ?? 0) + (dept.weightManagement ?? 0) +
+                          (dept.weightExploration ?? 0) + (dept.weightDevelopment ?? 0);
+        deltaScore = deltaScore * Math.max(1, deptWeight);
+
+        if (deltaScore > bestDeltaScore) {
+          bestDeltaScore = deltaScore;
+          bestEmployeeId = emp.id;
+          bestDepartmentId = dept.id;
+        }
+      }
+    }
+
+    if (bestEmployeeId && bestDepartmentId) {
+      const emp = allEmployees.find(e => e.id === bestEmployeeId);
+      const deptAllocations = allocations.get(bestDepartmentId) || [];
+      deptAllocations.push(emp!);
+      allocations.set(bestDepartmentId, deptAllocations);
+      allocatedEmployeeIds.add(bestEmployeeId);
+      improved = true;
+    }
+  }
+
+  // 強制割り当てフェーズ: 残りの未配置社員を配置
+  for (const emp of allEmployees) {
+    if (allocatedEmployeeIds.has(emp.id)) {
+      // 最低配置人数に達していない部門へ優先割り当て
+      let targetDept: string | null = null;
+      for (const dept of departments) {
+        const currentAllocations = allocations.get(dept.id) || [];
+        const minHeadcount = dept.minHeadcount ?? 0;
+        if (currentAllocations.length < minHeadcount) {
+          targetDept = dept.id;
+          break;
+        }
+      }
+
+      // 最低配置人数に達している場合は最も人員が少ない部門へ
+      if (!targetDept) {
+        let minAllocations = Infinity;
+        for (const dept of departments) {
+          const currentAllocations = allocations.get(dept.id) || [];
+          if (currentAllocations.length < minAllocations) {
+            minAllocations = currentAllocations.length;
+            targetDept = dept.id;
+          }
+        }
+      }
+
+      if (targetDept) {
+        const deptAllocations = allocations.get(targetDept) || [];
+        deptAllocations.push(emp);
+        allocations.set(targetDept, deptAllocations);
+        allocatedEmployeeIds.add(emp.id);
+      }
+    }
+  }
+
+  return allocations;
+};
+
 // タグ計算ロジック
 const calculateTags = (emp: any): string[] => {
   const tags: string[] = [];
@@ -343,7 +477,7 @@ router.post('/simulate-multi', authenticate, isAdmin, async (req: AuthRequest, r
       return res.status(404).json({ error: 'No employees found' });
     }
 
-    // 配置前の基準となる全社売上を計算（lastYearTotalRevenueが指定されている場合はそちらを使用）
+    // 配置前の基準となる全社売上を計算
     let baselineCompanyRevenue = departments.reduce(
       (sum, dept) => sum + (dept.baseRevenue ?? 0),
       0
@@ -352,161 +486,16 @@ router.post('/simulate-multi', authenticate, isAdmin, async (req: AuthRequest, r
       baselineCompanyRevenue = lastYearTotalRevenue;
     }
 
-    const employeesWithScores = allEmployees.map((emp: any) => ({
-      employee: emp,
-      scores: departments.map(dept => ({
-        departmentId: dept.id,
-        matchScore: calculateMatchScore(emp, dept)
-      }))
-    }));
+    // 2段階配置アルゴリズムを使用
+    const simulationMode = req.body.simulationMode;
+    const allocations = calculateTwoPhaseAllocation(allEmployees, departments, simulationMode);
 
-    const allocations = new Map<string, any[]>();
-    const allocatedEmployeeIds = new Set<number>();
-    departments.forEach(dept => allocations.set(dept.id, []));
-
-    let improved = true;
-    while (improved) {
-      improved = false;
-      let bestDeltaProfit = -Infinity;
-      let bestEmployeeId: number | null = null;
-      let bestDepartmentId: string | null = null;
-      let isMinHeadcountPhase = false;
-
-      for (const empData of employeesWithScores) {
-        if (allocatedEmployeeIds.has(empData.employee.id)) continue;
-        for (const dept of departments) {
-          const minHeadcount = dept.minHeadcount ?? 0;
-          const optimalHeadcount = dept.optimalHeadcount ?? 0;
-          const currentAllocations = allocations.get(dept.id) || [];
-
-          if (currentAllocations.length < optimalHeadcount) {
-            const isBelowMin = currentAllocations.length < minHeadcount;
-
-            // 制約チェック：配置後の全社総収益が基準値以上か検証
-            const testAllocations = [...currentAllocations, empData.employee];
-            let canAllocate = true;
-
-            if (!isBelowMin) {
-              // minHeadcount以上の場合のみ全社総収益の制約をチェック
-              let projectedRevenue = 0;
-              for (const checkDept of departments) {
-                const checkAllocations = checkDept.id === dept.id
-                  ? testAllocations
-                  : allocations.get(checkDept.id) || [];
-                const checkState = calculateDepartmentState(checkDept, checkAllocations);
-                projectedRevenue += checkState.finalRevenue;
-              }
-
-              if (projectedRevenue < baselineCompanyRevenue) {
-                canAllocate = false;
-              }
-            }
-
-            if (!canAllocate) continue;
-
-            const deltaProfit = calculateDeltaProfit(dept, currentAllocations, empData.employee);
-
-            if (isBelowMin) {
-              // minHeadcount未満の場合、スコアに基づいて優先（利益は無視）
-              const matchScore = employeesWithScores.find(e => e.employee.id === empData.employee.id)?.scores.find((s: any) => s.departmentId === dept.id)?.matchScore || 0;
-              if (matchScore > bestDeltaProfit || (!isMinHeadcountPhase && matchScore > 0)) {
-                bestDeltaProfit = matchScore;
-                bestEmployeeId = empData.employee.id;
-                bestDepartmentId = dept.id;
-                isMinHeadcountPhase = true;
-              }
-            } else if (deltaProfit > bestDeltaProfit && !isMinHeadcountPhase) {
-              // minHeadcount以上の場合、利益ベースで割り当て
-              bestDeltaProfit = deltaProfit;
-              bestEmployeeId = empData.employee.id;
-              bestDepartmentId = dept.id;
-              isMinHeadcountPhase = false;
-            }
-          }
-        }
-      }
-
-      if (bestEmployeeId && bestDepartmentId) {
-        const emp = employeesWithScores.find(e => e.employee.id === bestEmployeeId);
-        const deptAllocations = allocations.get(bestDepartmentId) || [];
-        deptAllocations.push(emp!.employee);
-        allocations.set(bestDepartmentId, deptAllocations);
-        allocatedEmployeeIds.add(bestEmployeeId);
-        improved = true;
-      }
-    }
-
-    // フォールバック処理: 未配置の社員を全員割り当て
-    for (const empData of employeesWithScores) {
-      if (allocatedEmployeeIds.has(empData.employee.id)) continue;
-
-      let bestDept: string | null = null;
-      let bestDeltaProfit = -Infinity;
-
-      for (const dept of departments) {
-        const currentAllocations = allocations.get(dept.id) || [];
-
-        // フォールバック時も全社総収益の制約をチェック
-        const testAllocations = [...currentAllocations, empData.employee];
-        let projectedRevenue = 0;
-        for (const checkDept of departments) {
-          const checkAllocations = checkDept.id === dept.id
-            ? testAllocations
-            : allocations.get(checkDept.id) || [];
-          const checkState = calculateDepartmentState(checkDept, checkAllocations);
-          projectedRevenue += checkState.finalRevenue;
-        }
-
-        // 制約をクリアする場合のみ候補として検討
-        if (projectedRevenue >= baselineCompanyRevenue) {
-          const deltaProfit = calculateDeltaProfit(dept, currentAllocations, empData.employee);
-          if (deltaProfit > bestDeltaProfit) {
-            bestDeltaProfit = deltaProfit;
-            bestDept = dept.id;
-          }
-        }
-      }
-
-      if (bestDept) {
-        const deptAllocations = allocations.get(bestDept) || [];
-        deptAllocations.push(empData.employee);
-        allocations.set(bestDept, deptAllocations);
-        allocatedEmployeeIds.add(empData.employee.id);
-      }
-    }
-
-    // 強制割り当てフェーズ: 制約をクリアできずに未配置の社員を全員割り当て
-    for (const empData of employeesWithScores) {
-      if (allocatedEmployeeIds.has(empData.employee.id)) continue;
-
-      // 1. 最低配置人数に達していない部門を探す
-      let targetDept: string | null = null;
-      for (const dept of departments) {
-        const currentAllocations = allocations.get(dept.id) || [];
-        const minHeadcount = dept.minHeadcount ?? 0;
-        if (currentAllocations.length < minHeadcount) {
-          targetDept = dept.id;
-          break;
-        }
-      }
-
-      // 2. 最低配置人数に達していない部門がない場合、最も人員が少ない部門を選択
-      if (!targetDept) {
-        let minAllocations = Infinity;
-        for (const dept of departments) {
-          const currentAllocations = allocations.get(dept.id) || [];
-          if (currentAllocations.length < minAllocations) {
-            minAllocations = currentAllocations.length;
-            targetDept = dept.id;
-          }
-        }
-      }
-
-      if (targetDept) {
-        const deptAllocations = allocations.get(targetDept) || [];
-        deptAllocations.push(empData.employee);
-        allocations.set(targetDept, deptAllocations);
-        allocatedEmployeeIds.add(empData.employee.id);
+    // 最終チェック：最低配置人数の制約を満たしているか検証
+    for (const dept of departments) {
+      const allocatedEmployees = allocations.get(dept.id) || [];
+      const minHeadcount = dept.minHeadcount ?? 0;
+      if (allocatedEmployees.length < minHeadcount) {
+        console.warn(`WARNING: Department ${dept.name} has ${allocatedEmployees.length} employees but requires minimum ${minHeadcount}`);
       }
     }
 
@@ -534,8 +523,7 @@ router.post('/simulate-multi', authenticate, isAdmin, async (req: AuthRequest, r
         totalCost: Math.round(state.totalCost),
         profit: Math.round(state.profit),
         candidates: allocatedEmployees.map((emp: any) => {
-          const scoreData = employeesWithScores.find(e => e.employee.id === emp.id);
-          const matchScoreForDept = scoreData?.scores.find((s: any) => s.departmentId === department.id)?.matchScore || 0;
+          const matchScoreForDept = calculateMatchScore(emp, department);
           return {
             employeeId: emp.id,
             employeeNumber: emp.employeeNumber,
@@ -660,156 +648,16 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
       return result;
     });
 
-    const allocations = new Map<string, any[]>();
-    const allocatedEmployeeIds = new Set<number | string>();
-    departments.forEach(dept => allocations.set(dept.id, []));
+    // 2段階配置アルゴリズムを使用
+    const simulationMode = req.body.simulationMode;
+    const allocations = calculateTwoPhaseAllocation(enrichedEmployees, departments, simulationMode);
 
-    let improved = true;
-    while (improved) {
-      improved = false;
-      let bestScore = -Infinity;
-      let bestEmployeeId: string | null = null;
-      let bestDepartmentId: string | null = null;
-      let isMinHeadcountPhase = false;
-
-      for (const emp of enrichedEmployees) {
-        const empId = emp.id || emp.employeeId;
-        if (allocatedEmployeeIds.has(empId)) continue;
-
-        for (const dept of departments) {
-          const minHeadcount = dept.minHeadcount ?? 0;
-          const optimalHeadcount = dept.optimalHeadcount ?? 0;
-          const currentAllocations = allocations.get(dept.id) || [];
-
-          if (currentAllocations.length < optimalHeadcount) {
-            const isBelowMin = currentAllocations.length < minHeadcount;
-
-            // 制約チェック：配置後の全社総収益が基準値以上か検証
-            const testAllocations = [...currentAllocations, emp];
-            let canAllocate = true;
-
-            if (!isBelowMin) {
-              // minHeadcount以上の場合のみ全社総収益の制約をチェック
-              let projectedRevenue = 0;
-              for (const checkDept of departments) {
-                const checkAllocations = checkDept.id === dept.id
-                  ? testAllocations
-                  : allocations.get(checkDept.id) || [];
-                const checkState = calculateDepartmentState(checkDept, checkAllocations);
-                projectedRevenue += checkState.finalRevenue;
-              }
-
-              if (projectedRevenue < baselineCompanyRevenue) {
-                canAllocate = false;
-              }
-            }
-
-            if (!canAllocate) continue;
-
-            const deltaProfit = calculateDeltaProfit(dept, currentAllocations, emp);
-
-            if (isBelowMin) {
-              // minHeadcount未満の場合、スコアに基づいて優先（利益は無視）
-              if (emp.score > bestScore || (!isMinHeadcountPhase && emp.score >= 0)) {
-                bestScore = emp.score;
-                bestEmployeeId = empId;
-                bestDepartmentId = dept.id;
-                isMinHeadcountPhase = true;
-              }
-            } else if (deltaProfit > bestScore && !isMinHeadcountPhase) {
-              // minHeadcount以上の場合、利益ベースで割り当て
-              bestScore = deltaProfit;
-              bestEmployeeId = empId;
-              bestDepartmentId = dept.id;
-              isMinHeadcountPhase = false;
-            }
-          }
-        }
-      }
-
-      if (bestEmployeeId && bestDepartmentId) {
-        const emp = employees.find(e => (e.id || e.employeeId) === bestEmployeeId);
-        const deptAllocations = allocations.get(bestDepartmentId) || [];
-        deptAllocations.push(emp);
-        allocations.set(bestDepartmentId, deptAllocations);
-        allocatedEmployeeIds.add(bestEmployeeId);
-        improved = true;
-      }
-    }
-
-    // フォールバック処理: 未配置の社員を全員割り当て
-    for (const emp of enrichedEmployees) {
-      const empId = emp.id || emp.employeeId;
-      if (allocatedEmployeeIds.has(empId)) continue;
-
-      let bestDept: string | null = null;
-      let bestDeltaProfit = -Infinity;
-
-      for (const dept of departments) {
-        const currentAllocations = allocations.get(dept.id) || [];
-
-        // フォールバック時も全社総収益の制約をチェック
-        const testAllocations = [...currentAllocations, emp];
-        let projectedRevenue = 0;
-        for (const checkDept of departments) {
-          const checkAllocations = checkDept.id === dept.id
-            ? testAllocations
-            : allocations.get(checkDept.id) || [];
-          const checkState = calculateDepartmentState(checkDept, checkAllocations);
-          projectedRevenue += checkState.finalRevenue;
-        }
-
-        // 制約をクリアする場合のみ候補として検討
-        if (projectedRevenue >= baselineCompanyRevenue) {
-          const deltaProfit = calculateDeltaProfit(dept, currentAllocations, emp);
-          if (deltaProfit > bestDeltaProfit) {
-            bestDeltaProfit = deltaProfit;
-            bestDept = dept.id;
-          }
-        }
-      }
-
-      if (bestDept) {
-        const deptAllocations = allocations.get(bestDept) || [];
-        deptAllocations.push(emp);
-        allocations.set(bestDept, deptAllocations);
-        allocatedEmployeeIds.add(empId);
-      }
-    }
-
-    // 強制割り当てフェーズ: 制約をクリアできずに未配置の社員を全員割り当て
-    for (const emp of enrichedEmployees) {
-      const empId = emp.id || emp.employeeId;
-      if (allocatedEmployeeIds.has(empId)) continue;
-
-      // 1. 最低配置人数に達していない部門を探す
-      let targetDept: string | null = null;
-      for (const dept of departments) {
-        const currentAllocations = allocations.get(dept.id) || [];
-        const minHeadcount = dept.minHeadcount ?? 0;
-        if (currentAllocations.length < minHeadcount) {
-          targetDept = dept.id;
-          break;
-        }
-      }
-
-      // 2. 最低配置人数に達していない部門がない場合、最も人員が少ない部門を選択
-      if (!targetDept) {
-        let minAllocations = Infinity;
-        for (const dept of departments) {
-          const currentAllocations = allocations.get(dept.id) || [];
-          if (currentAllocations.length < minAllocations) {
-            minAllocations = currentAllocations.length;
-            targetDept = dept.id;
-          }
-        }
-      }
-
-      if (targetDept) {
-        const deptAllocations = allocations.get(targetDept) || [];
-        deptAllocations.push(emp);
-        allocations.set(targetDept, deptAllocations);
-        allocatedEmployeeIds.add(empId);
+    // 最終チェック：最低配置人数の制約を満たしているか検証
+    for (const dept of departments) {
+      const allocatedEmployees = allocations.get(dept.id) || [];
+      const minHeadcount = dept.minHeadcount ?? 0;
+      if (allocatedEmployees.length < minHeadcount) {
+        console.warn(`WARNING: Department ${dept.name} has ${allocatedEmployees.length} employees but requires minimum ${minHeadcount}`);
       }
     }
 
