@@ -98,6 +98,85 @@ router.get('/dashboard', authenticate, isAdmin, async (req: AuthRequest, res: Re
       take: 10
     });
 
+    // シミュレーション履歴の最新データがある場合、そこからスキルバランスを計算
+    let finalDepartmentSkillStats = departmentSkillStats;
+    if (simulationHistory.length > 0 && simulationHistory[0].details) {
+      try {
+        const latestSimulation = simulationHistory[0];
+        let simulationResults: any = latestSimulation.details;
+
+        // details が JSON 文字列の場合はパース
+        if (typeof simulationResults === 'string') {
+          simulationResults = JSON.parse(simulationResults);
+        }
+
+        // results 配列を取得
+        let resultsArray: any[] = [];
+        if (Array.isArray(simulationResults)) {
+          resultsArray = simulationResults;
+        } else if (simulationResults && simulationResults.results && Array.isArray(simulationResults.results)) {
+          resultsArray = simulationResults.results;
+        }
+
+        // シミュレーション結果からスキルバランスを計算
+        if (resultsArray.length > 0) {
+          finalDepartmentSkillStats = departments.map((dept) => {
+            // シミュレーション結果から該当部署の配置データを取得
+            const deptResult = resultsArray.find((r: any) => {
+              const rId = String(r.departmentId || r.department?.id || '').trim();
+              const rName = String(r.departmentName || r.department?.name || '').trim();
+              const deptId = String(dept.id).trim();
+              const deptName = String(dept.name).trim();
+              return (deptId && rId === deptId) || (deptName && rName === deptName);
+            });
+
+            if (!deptResult || !Array.isArray(deptResult.candidates) || deptResult.candidates.length === 0) {
+              return {
+                departmentId: dept.id,
+                departmentName: dept.name,
+                employeeCount: 0,
+                averageSkills: { salesForce: 0, managementForce: 0, explorationForce: 0, developmentForce: 0 }
+              };
+            }
+
+            const skillStats = {
+              salesForce: 0,
+              managementForce: 0,
+              explorationForce: 0,
+              developmentForce: 0
+            };
+
+            for (const cand of deptResult.candidates) {
+              const s = Number(cand.salesForce) || 0;
+              const m = Number(cand.managementForce) || 0;
+              const e = Number(cand.explorationForce) || 0;
+              const d = Number(cand.developmentForce) || 0;
+
+              skillStats.salesForce += s;
+              skillStats.managementForce += m;
+              skillStats.explorationForce += e;
+              skillStats.developmentForce += d;
+            }
+
+            const count = deptResult.candidates.length;
+            return {
+              departmentId: dept.id,
+              departmentName: dept.name,
+              employeeCount: count,
+              averageSkills: {
+                salesForce: Math.round(skillStats.salesForce / count),
+                managementForce: Math.round(skillStats.managementForce / count),
+                explorationForce: Math.round(skillStats.explorationForce / count),
+                developmentForce: Math.round(skillStats.developmentForce / count)
+              }
+            };
+          });
+        }
+      } catch (e) {
+        console.warn('Failed to parse latest simulation results:', e);
+      }
+    }
+
     res.json({
       totalEmployees,
       totalAllocations: allocations.length,
@@ -107,7 +186,7 @@ router.get('/dashboard', authenticate, isAdmin, async (req: AuthRequest, res: Re
         ...d,
         allocatedCount: allocations.filter((a) => a.departmentId === d.id).length,
       })),
-      departmentSkillStats,
+      departmentSkillStats: finalDepartmentSkillStats,
       simulationHistory
     });
   } catch (error) {
