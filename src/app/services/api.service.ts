@@ -85,18 +85,18 @@ export class ApiService {
     return this.http.post(`${this.apiUrl}/allocations/simulate`, { departmentId, numPositions }, { headers: this.getHeaders() });
   }
 
-  simulateMultiDepartment(departmentIds: string[], lastYearTotalRevenue?: number, strategy?: string): Observable<any> {
+  simulateMultiDepartment(departmentIds: string[], lastYearTotalRevenue?: number, simulationMode?: string): Observable<any> {
     const payload: any = { departmentIds };
     if (lastYearTotalRevenue && lastYearTotalRevenue > 0) {
       payload.lastYearTotalRevenue = lastYearTotalRevenue;
     }
-    if (strategy) {
-      payload.strategy = strategy;
+    if (simulationMode) {
+      payload.simulationMode = simulationMode;
     }
     return this.http.post(`${this.apiUrl}/allocations/simulate-multi`, payload, { headers: this.getHeaders() });
   }
 
-  simulateBatchAllocation(data: any[], lastYearTotalRevenue?: number, strategy?: string): Observable<any> {
+  simulateBatchAllocation(data: any[], lastYearTotalRevenue?: number, simulationMode?: string): Observable<any> {
     let payload: any = Array.isArray(data) ? data : { employees: data };
     if (lastYearTotalRevenue && lastYearTotalRevenue > 0) {
       if (Array.isArray(payload)) {
@@ -105,11 +105,11 @@ export class ApiService {
         payload.lastYearTotalRevenue = lastYearTotalRevenue;
       }
     }
-    if (strategy) {
+    if (simulationMode) {
       if (Array.isArray(payload)) {
-        payload.strategy = strategy;
+        payload.simulationMode = simulationMode;
       } else {
-        payload.strategy = strategy;
+        payload.simulationMode = simulationMode;
       }
     }
     return this.http.post<any>(`${this.apiUrl}/allocations/simulate-batch`, payload, { headers: this.getHeaders() });
