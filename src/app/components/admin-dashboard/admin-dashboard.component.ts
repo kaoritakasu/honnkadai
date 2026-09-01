@@ -47,7 +47,8 @@ export class AdminDashboardComponent implements OnInit {
   simulationSortKey: string = 'employeeNumber';
   simulationMode: 'balanced' | 'sales_focus' | 'tech_focus' | 'management_focus' = 'balanced';
   viewMode: 'tree' | 'dnd' = 'dnd';
-  
+  viewingHistoryDetail: boolean = false;
+
   // 人事権限判定
   isHRUser: boolean = false;
 
@@ -135,7 +136,6 @@ export class AdminDashboardComponent implements OnInit {
     return false;
   }
 
-  // --- カレンダー・面談予約関連のメソッド ---
   toggleReservationCalendar() {
     this.showReservationCalendar = !this.showReservationCalendar;
   }
@@ -169,19 +169,10 @@ export class AdminDashboardComponent implements OnInit {
 
   private sortConsultations(consultations: any[]): any[] {
     return consultations.sort((a, b) => {
-      // 返信ステータスの判定: 未返信か返信済みか
       const aIsPending = !a.response || a.status === 'pending';
       const bIsPending = !b.response || b.status === 'pending';
-
-      // 未返信が優先（未返信は -1, 返信済みは 1 を返す）
-      if (aIsPending !== bIsPending) {
-        return aIsPending ? -1 : 1;
-      }
-
-      // 同じステータス内では createdAt の新しい順（降順）
-      const aDate = new Date(a.createdAt).getTime();
-      const bDate = new Date(b.createdAt).getTime();
-      return bDate - aDate;
+      if (aIsPending !== bIsPending) return aIsPending ? -1 : 1;
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
   }
 
@@ -223,7 +214,7 @@ export class AdminDashboardComponent implements OnInit {
     let currentDate = new Date(startDate);
 
     for (let week = 0; week < 6; week++) {
-      if (week > 0 && currentDate.getMonth() !== month) break; // 空の週を作らない修正
+      if (week > 0 && currentDate.getMonth() !== month) break;
       const weekDays: (any | null)[] = [];
       for (let day = 0; day < 7; day++) {
         if (currentDate.getMonth() === month) {
@@ -324,7 +315,6 @@ export class AdminDashboardComponent implements OnInit {
     return days[dayOfWeek] || '不明';
   }
 
-  // --- 既存のダッシュボード・シミュレーション関連メソッド（変更なし） ---
   loadDashboard() {
     this.apiService.getDashboard().subscribe({
       next: (data: any) => this.dashboard.set(data),
@@ -414,33 +404,6 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
-  runSimulation() {
-    if (!this.selectedDepartments() || this.selectedDepartments().length === 0) {
-      this.error.set('Please select at least one department');
-      return;
-    }
-
-    this.loading.set(true);
-    this.apiService.simulateAllocation(this.selectedDepartments()[0], 1).subscribe({
-      next: (data: any) => {
-        const enrichedData = this.enrichWithMyPageData(data);
-        const mappedData = {
-          ...enrichedData,
-          allocatedCount: enrichedData.candidates ? enrichedData.candidates.length : 0,
-          cost: enrichedData.totalCost || 0
-        };
-        const sortedData = this.sortResultsByEmployeeNumber(mappedData);
-        this.simulationResults.set(sortedData);
-        this.simulationSummary.set(null);
-        this.loading.set(false);
-      },
-      error: (error: any) => {
-        this.error.set(error.error?.error || 'Simulation failed');
-        this.loading.set(false);
-      }
-    });
-  }
-
   runBatchSimulation() {
     if (!this.pasteDataText.trim()) {
       this.error.set('Please paste data');
@@ -477,7 +440,8 @@ export class AdminDashboardComponent implements OnInit {
       }
     });
   }
- private parseTsvData(text: string): Array<{ employeeId: number; score: number; desiredDept: string }> {
+
+  private parseTsvData(text: string): Array<{ employeeId: number; score: number; desiredDept: string }> {
     const lines = text.trim().split('\n').filter(line => line.trim());
     if (lines.length < 2) return [];
 
@@ -502,49 +466,6 @@ export class AdminDashboardComponent implements OnInit {
       }
     }
     return data;
-  }
-  private parsePastedData(): any[] {
-    const text = this.pasteDataText.trim();
-    if (!text) return [];
-
-    let rawData: any[] = [];
-
-    try {
-      // 1. JSON形式としての読み込みを試みる
-      const parsedJson = JSON.parse(text);
-      rawData = Array.isArray(parsedJson) ? parsedJson : [parsedJson];
-    } catch (e) {
-      // 2. JSONでなければ、表計算データ（TSV / CSV）として処理
-      // タブ区切り（Excelやスプレッドシートからのコピペ）が含まれているかを優先判定
-      const isTsv = text.includes('\t');
-      const delimiter = isTsv ? '\t' : ',';
-      const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
-
-      if (lines.length > 1) {
-        // ヘッダー行を取得し、扱いやすいように小文字に統一
-        const headers = lines[0].split(delimiter).map(h => h.trim().toLowerCase());
-        
-        for (let i = 1; i < lines.length; i++) {
-          const values = lines[i].split(delimiter).map(v => v.trim());
-          const obj: any = {};
-          headers.forEach((header, index) => {
-            obj[header] = values[index] !== undefined ? values[index] : '';
-          });
-          rawData.push(obj);
-        }
-      }
-    }
-
-    // 3. アプリケーションで必要なプロパティ名にマッピング（日本語・英語ヘッダー両対応）
-    return rawData.map(item => ({
-      employeeId: item['社員id'] || item.employeeid || item.employeeId || '',
-      employeeNumber: item['社員番号'] || item.employeenumber || item.employeeNumber || undefined,
-      salesForce: Number(item['営業力'] || item.salesforce || item.salesForce) || 0,
-      managementForce: Number(item['管理力'] || item.managementforce || item.managementForce) || 0,
-      explorationForce: Number(item['開拓力'] || item.explorationforce || item.explorationForce) || 0,
-      developmentForce: Number(item['育成力'] || item.developmentforce || item.developmentForce) || 0,
-      laborCost: Number(item['人件費'] || item.laborcost || item.laborCost) || 0,
-    })).filter(emp => emp.employeeId || emp.employeeNumber); // 空行などを除外
   }
 
   runPastedDataSimulation() {
@@ -582,8 +503,6 @@ export class AdminDashboardComponent implements OnInit {
       alert('有効なデータが読み込めませんでした。フォーマットを確認してください。');
       return;
     }
-
-    console.log('送信するデータ件数:', parsedEmployees.length, parsedEmployees[0]);
 
     this.loading.set(true);
 
@@ -800,7 +719,6 @@ export class AdminDashboardComponent implements OnInit {
         event.previousIndex,
         event.currentIndex,
       );
-      // ※ここで再計算API（recalculate）を呼ぶ処理を後で追加可能
     }
   }
 
@@ -1062,17 +980,57 @@ export class AdminDashboardComponent implements OnInit {
 
   loadHistoryDetail(history: any) {
     try {
-      const results = typeof history.results === 'string' ? JSON.parse(history.results) : history.results;
-      this.simulationResults.set(results);
+      console.log('取得した履歴データ:', history);
+
+      // バックエンドからのプロパティ名が異なるケースに対応
+      let rawData = history.results || history.data || history.details || history.allocations;
+
+      if (!rawData) {
+        alert(`【データ取得エラー】\n詳細な配置データが含まれていません。\n(現在取得できている項目: ${Object.keys(history).join(', ')})\n\n💡 バックエンドのダッシュボード取得API（Prisma等）で、履歴の「results（配置情報のJSONカラム）」も一緒に取得（select）するように修正してください。`);
+        return;
+      }
+
+      let parsed = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
+
+      // 万が一 { results: [...] } のようにラップされている場合
+      if (parsed && !Array.isArray(parsed) && Array.isArray(parsed.results)) {
+        parsed = parsed.results;
+      } else if (parsed && !Array.isArray(parsed) && Array.isArray(parsed.data)) {
+        parsed = parsed.data;
+      }
+
+      // 確実に配列にする
+      if (!Array.isArray(parsed)) {
+        parsed = [parsed];
+      }
+
+      this.simulationResults.set(parsed);
+      this.updateDropListIds(); // ドラッグ＆ドロップを機能させるための初期化
+
       this.simulationSummary.set({
-        totalCompanyRevenue: history.totalRevenue,
-        totalCompanyCost: history.totalCost,
-        totalCompanyProfit: history.totalProfit
+        totalCompanyRevenue: history.totalCompanyRevenue || history.totalRevenue || 0,
+        totalCompanyCost: history.totalCompanyCost || history.totalCost || 0,
+        totalCompanyProfit: history.totalCompanyProfit || history.totalProfit || 0
       });
+
       this.activeTab.set('simulation');
+      this.viewingHistoryDetail = true; // 履歴詳細表示モード有効化
     } catch (e) {
-      alert('履歴データの読み込みに失敗しました');
+      console.error('History parse error:', e);
+      alert('履歴データの読み込みに失敗しました。データ形式が不正です。');
     }
+  }
+
+  closeHistoryDetail() {
+    this.viewingHistoryDetail = false;
+    this.simulationResults.set(null);
+    this.simulationSummary.set(null);
+  }
+
+  resetSimulation() {
+    this.simulationResults.set(null);
+    this.simulationSummary.set(null);
+    this.viewingHistoryDetail = false;
   }
 
   getFilteredAndSortedEmployees(): any[] {
@@ -1208,7 +1166,6 @@ export class AdminDashboardComponent implements OnInit {
     if (!this.selectedExceptionDate) return;
 
     if (this.exceptionType === 'none') {
-      // 既存の例外を削除
       const exception = this.getExceptionForDate(this.selectedExceptionDate);
       if (exception) {
         this.deleteException();
@@ -1303,52 +1260,161 @@ export class AdminDashboardComponent implements OnInit {
     this.showReservationCalendar = true;
   }
 
-  getDepartmentSkillAverages(deptName: string): any {
-    const employees = this.employees();
-    const matchingEmployees = employees.filter((emp: any) => emp.currentDept === deptName);
+  getDepartmentSkillAverages(deptInput: any): any {
+    const deptName = typeof deptInput === 'string' ? String(deptInput).trim() : String(deptInput?.name || '').trim();
+    const matchedDept = this.departments().find(d => String(d.name).trim() === deptName);
+    const deptId = matchedDept ? String(matchedDept.id) : '';
 
-    if (matchingEmployees.length === 0) {
-      return {
-        salesForce: 0,
-        managementForce: 0,
-        explorationForce: 0,
-        developmentForce: 0,
-        employeeCount: 0,
-        averageSkill: 0,
-        maxSkill: 0
-      };
+    // バックエンド側から返される departmentSkillStats を最優先で使用
+    if (this.dashboard()?.departmentSkillStats && Array.isArray(this.dashboard().departmentSkillStats)) {
+      const skillStat = this.dashboard().departmentSkillStats.find((stat: any) => {
+        if (deptId && stat.departmentId === deptId) return true;
+        if (deptName && stat.departmentName === deptName) return true;
+        const nameMatch = stat.departmentName === deptName || stat.departmentName.includes(deptName) || deptName.includes(stat.departmentName);
+        const partialMatch = stat.departmentName.replace(/部|課|室|グループ|チーム/g, '') === deptName.replace(/部|課|室|グループ|チーム/g, '');
+        return nameMatch || partialMatch;
+      });
+
+      if (skillStat && skillStat.employeeCount > 0) {
+        const averages = skillStat.averageSkills;
+        const maxSkill = Math.max(averages.salesForce, averages.managementForce, averages.explorationForce, averages.developmentForce);
+        const averageSkill = Math.round((averages.salesForce + averages.managementForce + averages.explorationForce + averages.developmentForce) / 4);
+        return { ...averages, employeeCount: skillStat.employeeCount, averageSkill, maxSkill };
+      }
     }
 
-    const sum = matchingEmployees.reduce((acc: any, emp: any) => ({
-      salesForce: acc.salesForce + (Number(emp.salesForce) || 0),
-      managementForce: acc.managementForce + (Number(emp.managementForce) || 0),
-      explorationForce: acc.explorationForce + (Number(emp.explorationForce) || 0),
-      developmentForce: acc.developmentForce + (Number(emp.developmentForce) || 0)
-    }), { salesForce: 0, managementForce: 0, explorationForce: 0, developmentForce: 0 });
+    let targetEmployees: any[] = [];
+    let currentData = this.simulationResults();
 
+    // シミュレーションデータがない場合は最新の履歴を採用
+    if (!currentData && this.dashboard()?.simulationHistory?.length > 0) {
+      const latestHistory = this.dashboard().simulationHistory[0];
+      try {
+        const historyResults = latestHistory.results || latestHistory.data || latestHistory.details;
+        currentData = typeof historyResults === 'string' ? JSON.parse(historyResults) : historyResults;
+      } catch (e) {
+        console.warn('Failed to parse simulation history results:', e);
+      }
+    }
+
+    // シミュレーションデータから抽出
+    if (currentData) {
+      const resultsArray = Array.isArray(currentData) ? currentData : (Array.isArray(currentData.results) ? currentData.results : [currentData]);
+      const deptResult = resultsArray.find((r: any) => {
+        const rId = String(r.departmentId || r.department?.id || '').trim();
+        const rName = String(r.departmentName || r.department?.name || '').trim();
+        if (deptId && rId === deptId) return true;
+        if (deptName && rName) {
+          const nameMatch = rName === deptName || rName.includes(deptName) || deptName.includes(rName);
+          const partialMatch = rName.replace(/部|課|室|グループ|チーム/g, '') === deptName.replace(/部|課|室|グループ|チーム/g, '');
+          return nameMatch || partialMatch;
+        }
+        return false;
+      });
+      if (deptResult && Array.isArray(deptResult.candidates)) {
+        targetEmployees = deptResult.candidates;
+      }
+    }
+
+    // データベースの社員情報から抽出（シミュレーションデータがない場合）
+    if (targetEmployees.length === 0) {
+      targetEmployees = this.employees().filter((emp: any) => {
+        const eDeptId = String(emp.departmentId || emp.currentDeptId || '').trim();
+        if (deptId && eDeptId === deptId) return true;
+
+        const directDept = String(emp.currentDept || emp.department?.name || emp.departmentName || '').trim();
+        if (directDept) {
+          const nameMatch = directDept === deptName || directDept.includes(deptName) || deptName.includes(directDept);
+          const partialMatch = directDept.replace(/部|課|室|グループ|チーム/g, '') === deptName.replace(/部|課|室|グループ|チーム/g, '');
+          if (nameMatch || partialMatch) return true;
+        }
+
+        if (Array.isArray(emp.allocations) && emp.allocations.length > 0) {
+          return emp.allocations.some((a: any) => {
+            const aId = String(a.departmentId || a.department?.id || '').trim();
+            if (deptId && aId === deptId) return true;
+            const aName = String(a.department?.name || a.departmentName || a.department || '').trim();
+            if (!aName) return false;
+            const nameMatch = aName === deptName || aName.includes(deptName) || deptName.includes(aName);
+            const partialMatch = aName.replace(/部|課|室|グループ|チーム/g, '') === deptName.replace(/部|課|室|グループ|チーム/g, '');
+            return nameMatch || partialMatch;
+          });
+        }
+        return false;
+      });
+    }
+
+    if (targetEmployees.length === 0) {
+      return { salesForce: 0, managementForce: 0, explorationForce: 0, developmentForce: 0, employeeCount: 0, averageSkill: 0, maxSkill: 0 };
+    }
+
+    const extractScore = (obj: any, keys: string[]): number => {
+      if (!obj) return 0;
+      let maxScore = 0;
+      for (const key of keys) {
+        const val = Number(obj[key]);
+        if (!isNaN(val) && val > maxScore) maxScore = val;
+      }
+      for (const val of Object.values(obj)) {
+        if (val && typeof val === 'object' && !Array.isArray(val)) {
+          for (const key of keys) {
+            const nVal = Number((val as any)[key]);
+            if (!isNaN(nVal) && nVal > maxScore) maxScore = nVal;
+          }
+        }
+      }
+      return maxScore;
+    };
+
+    const sum = targetEmployees.reduce((acc: any, emp: any) => {
+      let parsedSkills: any = {};
+      if (typeof emp.skills === 'string') {
+        try { parsedSkills = JSON.parse(emp.skills); } catch (e) {}
+      } else if (emp.skills && typeof emp.skills === 'object') {
+        parsedSkills = emp.skills;
+      }
+
+      const s = Math.max(extractScore(emp, ['salesForce', 'salesforce', 'sales', '営業力']), extractScore(parsedSkills, ['salesForce', 'salesforce', 'sales', '営業力']));
+      const m = Math.max(extractScore(emp, ['managementForce', 'managementforce', 'management', '管理力']), extractScore(parsedSkills, ['managementForce', 'managementforce', 'management', '管理力']));
+      const e = Math.max(extractScore(emp, ['explorationForce', 'explorationforce', 'exploration', '開拓力']), extractScore(parsedSkills, ['explorationForce', 'explorationforce', 'exploration', '開拓力']));
+      const d = Math.max(extractScore(emp, ['developmentForce', 'developmentforce', 'development', '育成力']), extractScore(parsedSkills, ['developmentForce', 'developmentforce', 'development', '育成力']));
+
+      return {
+        salesForce: acc.salesForce + s,
+        managementForce: acc.managementForce + m,
+        explorationForce: acc.explorationForce + e,
+        developmentForce: acc.developmentForce + d
+      };
+    }, { salesForce: 0, managementForce: 0, explorationForce: 0, developmentForce: 0 });
+
+    const count = targetEmployees.length;
     const averages = {
-      salesForce: Math.round(sum.salesForce / matchingEmployees.length),
-      managementForce: Math.round(sum.managementForce / matchingEmployees.length),
-      explorationForce: Math.round(sum.explorationForce / matchingEmployees.length),
-      developmentForce: Math.round(sum.developmentForce / matchingEmployees.length)
+      salesForce: Math.round(sum.salesForce / count),
+      managementForce: Math.round(sum.managementForce / count),
+      explorationForce: Math.round(sum.explorationForce / count),
+      developmentForce: Math.round(sum.developmentForce / count)
     };
 
-    const maxSkill = Math.max(
-      averages.salesForce,
-      averages.managementForce,
-      averages.explorationForce,
-      averages.developmentForce
-    );
+    const maxSkill = Math.max(averages.salesForce, averages.managementForce, averages.explorationForce, averages.developmentForce);
+    const averageSkill = Math.round((averages.salesForce + averages.managementForce + averages.explorationForce + averages.developmentForce) / 4);
 
-    const averageSkill = Math.round(
-      (averages.salesForce + averages.managementForce + averages.explorationForce + averages.developmentForce) / 4
-    );
+    return { ...averages, employeeCount: count, averageSkill, maxSkill };
+  }
 
-    return {
-      ...averages,
-      employeeCount: matchingEmployees.length,
-      averageSkill,
-      maxSkill
-    };
+  // 管理力と育成力の合計が最も高い社員をリーダーとして取得
+  getDepartmentLeader(candidates: any[]): any {
+    if (!candidates || candidates.length === 0) return null;
+    return candidates.reduce((prev, current) => {
+      const prevScore = (Number(prev.managementForce) || 0) + (Number(prev.developmentForce) || 0);
+      const currScore = (Number(current.managementForce) || 0) + (Number(current.developmentForce) || 0);
+      return (prevScore > currScore) ? prev : current;
+    });
+  }
+
+  // リーダー以外のメンバーを取得
+  getDepartmentMembers(candidates: any[], leader: any): any[] {
+    if (!candidates || candidates.length === 0) return [];
+    if (!leader) return candidates;
+    return candidates.filter(c => c.employeeNumber !== leader.employeeNumber);
   }
 }

@@ -10,7 +10,7 @@ router.get('/dashboard', authenticate, isAdmin, async (req: AuthRequest, res: Re
   try {
     const totalEmployees = await prisma.employee.count();
     const allocations = await prisma.allocation.findMany({
-      include: { department: true },
+      include: { department: true, employee: true },
     });
 
     const totalRevenue = allocations.reduce((sum, alloc) => {
@@ -24,6 +24,50 @@ router.get('/dashboard', authenticate, isAdmin, async (req: AuthRequest, res: Re
     };
 
     const departments = await prisma.department.findMany();
+
+    // 部署ごとのスキルバランス情報を計算
+    const departmentSkillStats = departments.map((dept) => {
+      const deptAllocations = allocations.filter((a) => a.departmentId === dept.id);
+
+      if (deptAllocations.length === 0) {
+        return {
+          departmentId: dept.id,
+          departmentName: dept.name,
+          employeeCount: 0,
+          averageSkills: { salesForce: 0, managementForce: 0, explorationForce: 0, developmentForce: 0 }
+        };
+      }
+
+      const skillStats = {
+        salesForce: 0,
+        managementForce: 0,
+        explorationForce: 0,
+        developmentForce: 0
+      };
+
+      for (const alloc of deptAllocations) {
+        const emp = alloc.employee;
+        if (emp) {
+          skillStats.salesForce += Number(emp.salesForce) || 0;
+          skillStats.managementForce += Number(emp.managementForce) || 0;
+          skillStats.explorationForce += Number(emp.explorationForce) || 0;
+          skillStats.developmentForce += Number(emp.developmentForce) || 0;
+        }
+      }
+
+      const count = deptAllocations.length;
+      return {
+        departmentId: dept.id,
+        departmentName: dept.name,
+        employeeCount: count,
+        averageSkills: {
+          salesForce: Math.round(skillStats.salesForce / count),
+          managementForce: Math.round(skillStats.managementForce / count),
+          explorationForce: Math.round(skillStats.explorationForce / count),
+          developmentForce: Math.round(skillStats.developmentForce / count)
+        }
+      };
+    });
 
     const simulationHistory = await prisma.simulationResult.findMany({
       select: {
@@ -48,6 +92,7 @@ router.get('/dashboard', authenticate, isAdmin, async (req: AuthRequest, res: Re
         ...d,
         allocatedCount: allocations.filter((a) => a.departmentId === d.id).length,
       })),
+      departmentSkillStats,
       simulationHistory
     });
   } catch (error) {
