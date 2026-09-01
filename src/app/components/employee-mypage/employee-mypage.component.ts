@@ -49,6 +49,10 @@ export class EmployeeMyPageComponent implements OnInit {
   reservationReason = signal('');
   showReservationModal = signal(false);
 
+  // スキルギャップ表示用
+  allocationSkillGapData = signal<any>(null);
+  Math = Math;
+
   constructor(
     private apiService: ApiService,
     private authService: AuthService,
@@ -76,7 +80,10 @@ export class EmployeeMyPageComponent implements OnInit {
 
   loadAllocations() {
     this.apiService.getMyAllocations().subscribe({
-      next: (data) => this.allocations.set(data),
+      next: (data) => {
+        this.allocations.set(data);
+        this.calculateAllocationSkillGap();
+      },
       error: (error) => this.error.set(error.error?.error || 'Failed to load allocations')
     });
   }
@@ -152,5 +159,77 @@ export class EmployeeMyPageComponent implements OnInit {
   logout() {
     this.authService.logout();
     this.router.navigate(['/login']);
+  }
+
+  calculateAllocationSkillGap() {
+    this.allocationSkillGapData.set(this.getAllocationSkillGapData());
+  }
+
+  getAllocationSkillGapData(): any {
+    const allocationsList = this.allocations();
+    if (!allocationsList || allocationsList.length === 0) return null;
+
+    const allocation = allocationsList[0];
+    const dept = allocation.department;
+    if (!dept) return null;
+
+    // 部署の重みを取得
+    let wS = Number(dept.weightSales) || 0;
+    let wM = Number(dept.weightManagement) || 0;
+    let wE = Number(dept.weightExploration) || 0;
+    let wD = Number(dept.weightDevelopment) || 0;
+
+    // 全て0の場合は均等とみなす
+    if (wS + wM + wE + wD === 0) {
+      wS = wM = wE = wD = 1;
+    }
+    const totalWeight = wS + wM + wE + wD;
+
+    const ideal = {
+      salesForce: Math.round((wS / totalWeight) * 100),
+      managementForce: Math.round((wM / totalWeight) * 100),
+      explorationForce: Math.round((wE / totalWeight) * 100),
+      developmentForce: Math.round((wD / totalWeight) * 100)
+    };
+
+    // 本人の実際のスキル（profile情報から）
+    const emp = this.profile() || {};
+    const empSkills = emp.skills || emp.user?.skills || {};
+
+    let aS = 0, aM = 0, aE = 0, aD = 0;
+
+    // スキルデータを様々な形式から抽出
+    if (typeof empSkills === 'string') {
+      try {
+        const parsed = JSON.parse(empSkills);
+        aS = Number(parsed.salesForce) || 0;
+        aM = Number(parsed.managementForce) || 0;
+        aE = Number(parsed.explorationForce) || 0;
+        aD = Number(parsed.developmentForce) || 0;
+      } catch (e) {}
+    } else if (typeof empSkills === 'object') {
+      aS = Number(empSkills.salesForce) || 0;
+      aM = Number(empSkills.managementForce) || 0;
+      aE = Number(empSkills.explorationForce) || 0;
+      aD = Number(empSkills.developmentForce) || 0;
+    }
+
+    // emp直下にもスキル情報がないか確認
+    if (aS === 0 && aM === 0 && aE === 0 && aD === 0) {
+      aS = Number(emp.salesForce) || 0;
+      aM = Number(emp.managementForce) || 0;
+      aE = Number(emp.explorationForce) || 0;
+      aD = Number(emp.developmentForce) || 0;
+    }
+
+    const totalActual = aS + aM + aE + aD;
+    const actual = {
+      salesForce: totalActual > 0 ? Math.round((aS / totalActual) * 100) : 0,
+      managementForce: totalActual > 0 ? Math.round((aM / totalActual) * 100) : 0,
+      explorationForce: totalActual > 0 ? Math.round((aE / totalActual) * 100) : 0,
+      developmentForce: totalActual > 0 ? Math.round((aD / totalActual) * 100) : 0
+    };
+
+    return { deptName: dept.name, ideal, actual };
   }
 }
