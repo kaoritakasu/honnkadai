@@ -311,6 +311,91 @@
                     }
                   </div>
 
+                  <!-- スキルギャップ比較グラフセクション -->
+                  <div style="margin-top: 25px; padding-top: 25px; border-top: 1px solid #eee;">
+                    <h4 style="margin: 0 0 15px 0; display: flex; align-items: center; gap: 8px; color: #2c3e50;">
+                      📈 スキルギャップ比較グラフ
+                    </h4>
+                    @if (getSkillGapData(dept).employeeCount > 0) {
+                      <div style="background: #ffffff; padding: 15px; border-radius: 8px; border: 1px solid #e8e8e8;">
+                        <p style="margin: 0 0 20px 0; font-size: 0.9em; color: #666; font-weight: 500;">部署が求めるスキル要件（重み）と実際の配置メンバーのスキル割合を比較</p>
+
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px;">
+                          @for (skill of [{name: '営業力', key: 'salesForce', emoji: '💼', color: '#f39c12'}, {name: '管理力', key: 'managementForce', emoji: '👔', color: '#3498db'}, {name: '開拓力', key: 'explorationForce', emoji: '🚀', color: '#e74c3c'}, {name: '育成力', key: 'developmentForce', emoji: '🎓', color: '#27ae60'}]; track skill.key) {
+                            @let gapData = getSkillGapData(dept);
+                            @let idealValue = gapData.ideal[skill.key];
+                            @let actualValue = gapData.actual[skill.key];
+                            <div style="border-radius: 8px; padding: 15px; background: #f8f9fa; border: 1px solid #eee;">
+                              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                                <span style="font-weight: 600; color: #333; font-size: 0.95em;">{{ skill.emoji }} {{ skill.name }}</span>
+                              </div>
+
+                              <!-- 理想値（要件）のバー -->
+                              <div style="margin-bottom: 15px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                  <span style="font-size: 0.85em; color: #666; font-weight: 500;">📋 要件比率</span>
+                                  <span style="font-weight: bold; color: #555; font-size: 0.9em;">{{ idealValue }}%</span>
+                                </div>
+                                <div style="width: 100%; height: 20px; background-color: #e8e8e8; border-radius: 4px; overflow: hidden;">
+                                  <div [style.width.%]="idealValue" [style.background-color]="skill.color" style="height: 100%; opacity: 0.5; transition: width 0.3s ease;"></div>
+                                </div>
+                              </div>
+
+                              <!-- 実際の値（配置メンバー）のバー -->
+                              <div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                  <span style="font-size: 0.85em; color: #666; font-weight: 500;">👥 実際の割合</span>
+                                  <span style="font-weight: bold; color: #555; font-size: 0.9em;">{{ actualValue }}%</span>
+                                </div>
+                                <div style="width: 100%; height: 20px; background-color: #e8e8e8; border-radius: 4px; overflow: hidden;">
+                                  <div [style.width.%]="actualValue" [style.background-color]="skill.color" style="height: 100%; transition: width 0.3s ease;"></div>
+                                </div>
+                              </div>
+
+                              <!-- ギャップ表示 -->
+                              @let gap = idealValue - actualValue;
+                              <div style="margin-top: 10px; padding: 8px; background: white; border-radius: 4px; text-align: center; border: 1px solid #ddd;">
+                                @if (gap > 0) {
+                                  <span style="font-size: 0.8em; color: #e74c3c; font-weight: bold;">⚠️ 不足: {{ gap }}%</span>
+                                } @else if (gap < 0) {
+                                  <span style="font-size: 0.8em; color: #27ae60; font-weight: bold;">✓ 過剰: {{ Math.abs(gap) }}%</span>
+                                } @else {
+                                  <span style="font-size: 0.8em; color: #f39c12; font-weight: bold;">= 均衡</span>
+                                }
+                              </div>
+                            </div>
+                          }
+                        </div>
+
+                        <!-- ギャップサマリー -->
+                        <div style="margin-top: 20px; padding: 15px; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); border-radius: 8px; border-left: 4px solid #667eea;">
+                          <h5 style="margin: 0 0 10px 0; color: #2c3e50; font-size: 0.95em;">📊 ギャップ分析サマリー</h5>
+                          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; font-size: 0.85em;">
+                            <div style="background: white; padding: 10px; border-radius: 4px;">
+                              <p style="margin: 0 0 4px 0; color: #666;">配置人数</p>
+                              <p style="margin: 0; font-weight: bold; color: #667eea; font-size: 1.1em;">{{ getSkillGapData(dept).employeeCount }}名</p>
+                            </div>
+                            <div style="background: white; padding: 10px; border-radius: 4px;">
+                              <p style="margin: 0 0 4px 0; color: #666;">最大ギャップ</p>
+                              @let gapData = getSkillGapData(dept);
+                              @let gaps = [
+                                Math.abs(gapData.ideal.salesForce - gapData.actual.salesForce),
+                                Math.abs(gapData.ideal.managementForce - gapData.actual.managementForce),
+                                Math.abs(gapData.ideal.explorationForce - gapData.actual.explorationForce),
+                                Math.abs(gapData.ideal.developmentForce - gapData.actual.developmentForce)
+                              ];
+                              <p style="margin: 0; font-weight: bold; color: #e74c3c; font-size: 1.1em;">{{ Math.max(...gaps) }}%</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    } @else {
+                      <div style="padding: 20px; background: #f9f9f9; border-radius: 8px; border: 1px dashed #ddd; text-align: center; color: #999;">
+                        <p style="margin: 0; font-size: 0.9em;">スキルギャップを計算するには、この部署に配置されている社員が必要です</p>
+                      </div>
+                    }
+                  </div>
+
                   <button (click)="startEdit(dept.id)" class="btn-edit" style="margin-top: 15px; padding: 8px 16px; background-color: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;">編集する</button>
                   <button (click)="deleteDepartment(dept.id)" class="btn-delete" style="margin-top: 15px; margin-left: 10px; padding: 8px 16px; background-color: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer;">削除する</button>
                 </div>
@@ -1162,7 +1247,7 @@
       <p><strong>希望部署:</strong> {{ selectedEmployeeForModal.desiredDept || '未設定' }}</p>
 
       <div style="background: #f8fafc; padding: 15px; border-left: 4px solid #3498db; margin-top: 20px;">
-        <h4 style="margin: 0 0 10px 0; color: #2c3e50;">💡 システムによる配置理由</h4>
+        <h4 style="margin: 0 0 10px 0; color: #2c3e50;">💡 配置理由</h4>
         <p style="margin: 0; font-size: 0.95em; color: #555;">
           この部署の求める要件に対し、本人の「{{ selectedEmployeeForModal.tags?.[0] || '総合的なスキル' }}」が高く評価されています。
           組織の利益最大化に貢献できると判断されました。

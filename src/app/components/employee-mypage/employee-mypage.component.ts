@@ -16,21 +16,31 @@ export class EmployeeMyPageComponent implements OnInit {
   profile = signal<any>(null);
   allocations = signal<any[]>([]);
   consultations = signal<any[]>([]);
-  activeTab = signal('profile');
+
   editing = signal(false);
   loading = signal(false);
   error = signal('');
   success = signal('');
 
+  // フォーム用シグナル
   score = signal(0);
   desiredDept = signal('');
   workLifeBalance = signal('');
 
+  // 相談用シグナル
   consultationTitle = signal('');
   consultationDescription = signal('');
   showConsultationForm = signal(false);
 
+  // 面談予約用カレンダーのプレースホルダー
+  showReservation = signal(false);
+
+  // タブ管理
+  activeTab = signal<'profile' | 'allocations' | 'consultation'>('profile');
+
+  // スキルギャップデータ
   allocationSkillGapData = signal<any>(null);
+
   Math = Math;
 
   constructor(
@@ -72,6 +82,10 @@ export class EmployeeMyPageComponent implements OnInit {
       next: (data) => this.consultations.set(data),
       error: (err) => this.error.set(err.error?.error || '相談履歴の読み込みに失敗しました')
     });
+  }
+
+  toggleEdit() {
+    this.editing.set(!this.editing());
   }
 
   saveProfile() {
@@ -134,17 +148,7 @@ export class EmployeeMyPageComponent implements OnInit {
     this.allocationSkillGapData.set(this.getAllocationSkillGapData());
   }
 
-  getAverageGap(gapData: any): number {
-    if (!gapData) return 0;
-    const gaps = [
-      Math.abs(gapData.ideal.salesForce - gapData.actual.salesForce),
-      Math.abs(gapData.ideal.managementForce - gapData.actual.managementForce),
-      Math.abs(gapData.ideal.explorationForce - gapData.actual.explorationForce),
-      Math.abs(gapData.ideal.developmentForce - gapData.actual.developmentForce)
-    ];
-    return Math.round(gaps.reduce((a: number, b: number) => a + b, 0) / gaps.length);
-  }
-
+  // 配属先とのスキルギャップ計算
   getAllocationSkillGapData(): any {
     const allocationsList = this.allocations();
     if (!allocationsList || allocationsList.length === 0) return null;
@@ -171,31 +175,10 @@ export class EmployeeMyPageComponent implements OnInit {
     };
 
     const emp = this.profile() || {};
-    const empSkills = emp.skills || emp.user?.skills || {};
-
-    let aS = 0, aM = 0, aE = 0, aD = 0;
-
-    if (typeof empSkills === 'string') {
-      try {
-        const parsed = JSON.parse(empSkills);
-        aS = Number(parsed.salesForce) || 0;
-        aM = Number(parsed.managementForce) || 0;
-        aE = Number(parsed.explorationForce) || 0;
-        aD = Number(parsed.developmentForce) || 0;
-      } catch (e) {}
-    } else if (typeof empSkills === 'object') {
-      aS = Number(empSkills.salesForce) || 0;
-      aM = Number(empSkills.managementForce) || 0;
-      aE = Number(empSkills.explorationForce) || 0;
-      aD = Number(empSkills.developmentForce) || 0;
-    }
-
-    if (aS === 0 && aM === 0 && aE === 0 && aD === 0) {
-      aS = Number(emp.salesForce) || 0;
-      aM = Number(emp.managementForce) || 0;
-      aE = Number(emp.explorationForce) || 0;
-      aD = Number(emp.developmentForce) || 0;
-    }
+    let aS = Number(emp.salesForce) || 0;
+    let aM = Number(emp.managementForce) || 0;
+    let aE = Number(emp.explorationForce) || 0;
+    let aD = Number(emp.developmentForce) || 0;
 
     const totalActual = aS + aM + aE + aD;
     const actual = {
@@ -206,5 +189,15 @@ export class EmployeeMyPageComponent implements OnInit {
     };
 
     return { deptName: dept.name, ideal, actual };
+  }
+
+  getAverageGap(gapData: any): number {
+    const gaps = [
+      Math.abs(gapData.ideal.salesForce - gapData.actual.salesForce),
+      Math.abs(gapData.ideal.managementForce - gapData.actual.managementForce),
+      Math.abs(gapData.ideal.explorationForce - gapData.actual.explorationForce),
+      Math.abs(gapData.ideal.developmentForce - gapData.actual.developmentForce)
+    ];
+    return Math.round(gaps.reduce((a, b) => a + b, 0) / gaps.length);
   }
 }

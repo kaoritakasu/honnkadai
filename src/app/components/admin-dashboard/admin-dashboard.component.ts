@@ -22,6 +22,7 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   Array = Array;
+  Math = Math;
   dashboard = signal<any>(null);
   departments = signal<any[]>([]);
   employees = signal<any[]>([]);
@@ -496,25 +497,43 @@ export class AdminDashboardComponent implements OnInit {
 
     const lines = this.pasteDataText.trim().split(/\r?\n/);
     const parsedEmployees = [];
+    let headerMap: { [key: string]: number } = {};
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
       if (!line) continue;
 
-      const cols = line.split(/[\t,]/);
+      // カンマまたはタブで分割して前後の空白を除去
+      const cols = line.split(/[\t,]/).map(c => c.trim());
 
-      if (i === 0 && (cols[0].includes('社員') || isNaN(Number(cols[1])))) {
-        continue;
+      // ヘッダーマップが空で、文字（社員、営業など）が含まれる行があればヘッダーとして解析
+      if (Object.keys(headerMap).length === 0 && cols.some(c => isNaN(Number(c)) && (c.includes('社員') || c.includes('営業') || c.includes('人件費')))) {
+        cols.forEach((col, index) => {
+          if (col.includes('社員')) headerMap['社員番号'] = index;
+          else if (col.includes('営業')) headerMap['営業力'] = index;
+          else if (col.includes('管理')) headerMap['管理力'] = index;
+          else if (col.includes('開拓')) headerMap['開拓力'] = index;
+          else if (col.includes('育成')) headerMap['育成力'] = index;
+          else if (col.includes('人件費') || col.includes('コスト')) headerMap['人件費'] = index;
+        });
+        continue; // ヘッダー行はデータとして読み込まない
       }
 
-      if (cols.length >= 6) {
+      // ヘッダーが見つからなかった場合（いきなり数値から始まった場合）のデフォルト順
+      if (Object.keys(headerMap).length === 0) {
+        headerMap = { '社員番号': 0, '営業力': 1, '管理力': 2, '開拓力': 3, '育成力': 4, '人件費': 5 };
+      }
+
+      // データ行の処理（空行や列不足をスキップ）
+      const empNoIdx = headerMap['社員番号'];
+      if (empNoIdx !== undefined && cols[empNoIdx] && cols.length > 1) {
         parsedEmployees.push({
-          employeeNumber: cols[0].trim(),
-          salesForce: Number(cols[1]) || 0,
-          managementForce: Number(cols[2]) || 0,
-          explorationForce: Number(cols[3]) || 0,
-          developmentForce: Number(cols[4]) || 0,
-          laborCost: Number(cols[5]) || 0
+          employeeNumber: cols[empNoIdx],
+          salesForce: Number(cols[headerMap['営業力']]) || 0,
+          managementForce: Number(cols[headerMap['管理力']]) || 0,
+          explorationForce: Number(cols[headerMap['開拓力']]) || 0,
+          developmentForce: Number(cols[headerMap['育成力']]) || 0,
+          laborCost: Number(cols[headerMap['人件費']]) || 0
         });
       }
     }
@@ -523,6 +542,8 @@ export class AdminDashboardComponent implements OnInit {
       alert('有効なデータが読み込めませんでした。フォーマットを確認してください。');
       return;
     }
+
+    console.log('送信するデータ件数:', parsedEmployees.length, parsedEmployees[0]);
 
     this.loading.set(true);
 
@@ -1344,36 +1365,24 @@ export class AdminDashboardComponent implements OnInit {
     const matchedDept = this.departments().find(d => String(d.name).trim() === deptName);
     const deptId = matchedDept ? String(matchedDept.id) : '';
 
-    // バックエンド側から返される departmentSkillStats を最優先で使用
-    if (this.dashboard()?.departmentSkillStats && Array.isArray(this.dashboard().departmentSkillStats)) {
-      const skillStat = this.dashboard().departmentSkillStats.find((stat: any) => {
-        if (deptId && stat.departmentId === deptId) return true;
-        if (deptName && stat.departmentName === deptName) return true;
-        const nameMatch = stat.departmentName === deptName || stat.departmentName.includes(deptName) || deptName.includes(stat.departmentName);
-        const partialMatch = stat.departmentName.replace(/部|課|室|グループ|チーム/g, '') === deptName.replace(/部|課|室|グループ|チーム/g, '');
-        return nameMatch || partialMatch;
-      });
-
-      if (skillStat && skillStat.employeeCount > 0) {
-        const averages = skillStat.averageSkills;
-        const maxSkill = Math.max(averages.salesForce, averages.managementForce, averages.explorationForce, averages.developmentForce);
-        const averageSkill = Math.round((averages.salesForce + averages.managementForce + averages.explorationForce + averages.developmentForce) / 4);
-        return { ...averages, employeeCount: skillStat.employeeCount, averageSkill, maxSkill };
-      }
-    }
-
     let targetEmployees: any[] = [];
-    let currentData = this.simulationResults();
+    let currentData: any = null;
 
-    // シミュレーションデータがない場合は最新の履歴を採用
-    if (!currentData && this.dashboard()?.simulationHistory?.length > 0) {
+    // シミュレーション履歴を最優先で使用
+    if (this.dashboard()?.simulationHistory?.length > 0) {
       const latestHistory = this.dashboard().simulationHistory[0];
       try {
         const historyResults = latestHistory.results || latestHistory.data || latestHistory.details;
         currentData = typeof historyResults === 'string' ? JSON.parse(historyResults) : historyResults;
       } catch (e) {
         console.warn('Failed to parse simulation history results:', e);
+        currentData = null;
       }
+    }
+
+    // シミュレーション履歴がない場合は現在のシミュレーション結果を使用
+    if (!currentData) {
+      currentData = this.simulationResults();
     }
 
     // シミュレーションデータから抽出
@@ -1495,5 +1504,42 @@ export class AdminDashboardComponent implements OnInit {
     if (!candidates || candidates.length === 0) return [];
     if (!leader) return candidates;
     return candidates.filter(c => c.employeeNumber !== leader.employeeNumber);
+  }
+
+  getSkillGapData(dept: any): any {
+    const averages = this.getDepartmentSkillAverages(dept.name);
+
+    let wS = Number(dept.weightSales) || 0;
+    let wM = Number(dept.weightManagement) || 0;
+    let wE = Number(dept.weightExploration) || 0;
+    let wD = Number(dept.weightDevelopment) || 0;
+
+    // 全て0の場合は均等とみなす
+    if (wS + wM + wE + wD === 0) {
+      wS = wM = wE = wD = 1;
+    }
+    const totalWeight = wS + wM + wE + wD;
+
+    const ideal = {
+      salesForce: Math.round((wS / totalWeight) * 100),
+      managementForce: Math.round((wM / totalWeight) * 100),
+      explorationForce: Math.round((wE / totalWeight) * 100),
+      developmentForce: Math.round((wD / totalWeight) * 100)
+    };
+
+    const aS = averages.salesForce || 0;
+    const aM = averages.managementForce || 0;
+    const aE = averages.explorationForce || 0;
+    const aD = averages.developmentForce || 0;
+    const totalActual = aS + aM + aE + aD;
+
+    const actual = {
+      salesForce: totalActual > 0 ? Math.round((aS / totalActual) * 100) : 0,
+      managementForce: totalActual > 0 ? Math.round((aM / totalActual) * 100) : 0,
+      explorationForce: totalActual > 0 ? Math.round((aE / totalActual) * 100) : 0,
+      developmentForce: totalActual > 0 ? Math.round((aD / totalActual) * 100) : 0
+    };
+
+    return { ideal, actual, employeeCount: averages.employeeCount };
   }
 }
