@@ -46,12 +46,27 @@ router.get('/dashboard', authenticate, isAdmin, async (req: AuthRequest, res: Re
       };
 
       for (const alloc of deptAllocations) {
-        const emp = alloc.employee;
+        const emp = alloc.employee as any;
         if (emp) {
-          skillStats.salesForce += Number(emp.salesForce) || 0;
-          skillStats.managementForce += Number(emp.managementForce) || 0;
-          skillStats.explorationForce += Number(emp.explorationForce) || 0;
-          skillStats.developmentForce += Number(emp.developmentForce) || 0;
+          // skills フィールドから値を抽出
+          let empSkills: any = {};
+          if (emp.skills && typeof emp.skills === 'string' && emp.skills.trim()) {
+            try { empSkills = JSON.parse(emp.skills); } catch (e) {}
+          } else if (emp.skills && typeof emp.skills === 'object') {
+            empSkills = emp.skills;
+          }
+
+          // スキルが設定されていない場合は、スコアを4で割った値をデフォルトとして使用
+          const defaultSkillValue = Number(emp.score) / 4 || 0;
+          const s = empSkills.salesForce !== undefined ? Number(empSkills.salesForce) : defaultSkillValue;
+          const m = empSkills.managementForce !== undefined ? Number(empSkills.managementForce) : defaultSkillValue;
+          const e = empSkills.explorationForce !== undefined ? Number(empSkills.explorationForce) : defaultSkillValue;
+          const d = empSkills.developmentForce !== undefined ? Number(empSkills.developmentForce) : defaultSkillValue;
+
+          skillStats.salesForce += s;
+          skillStats.managementForce += m;
+          skillStats.explorationForce += e;
+          skillStats.developmentForce += d;
         }
       }
 
