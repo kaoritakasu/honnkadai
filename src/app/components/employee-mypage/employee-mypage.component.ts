@@ -13,12 +13,6 @@ import { AuthService } from '../../services/auth.service';
   styleUrl: './employee-mypage.component.scss'
 })
 export class EmployeeMyPageComponent implements OnInit {
-  private toLocalDateString(date: Date): string {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-  }
   profile = signal<any>(null);
   allocations = signal<any[]>([]);
   consultations = signal<any[]>([]);
@@ -28,28 +22,14 @@ export class EmployeeMyPageComponent implements OnInit {
   error = signal('');
   success = signal('');
 
-  // Form data
   score = signal(0);
   desiredDept = signal('');
-  skills = signal<string[]>([]);
-  careerGoals = signal('');
-  skillInput = signal('');
+  workLifeBalance = signal('');
 
-  // Consultation form
   consultationTitle = signal('');
   consultationDescription = signal('');
   showConsultationForm = signal(false);
-  // カレンダー・面談予約用
-  availabilityRules = signal<any[]>([]);
-  myReservations = signal<any[]>([]);
-  calendarDays = signal<any[]>([]);
-  currentMonth = signal(new Date());
-  selectedDate = signal<Date | null>(null);
-  reservationTimeSlot = signal('');
-  reservationReason = signal('');
-  showReservationModal = signal(false);
 
-  // スキルギャップ表示用
   allocationSkillGapData = signal<any>(null);
   Math = Math;
 
@@ -70,11 +50,10 @@ export class EmployeeMyPageComponent implements OnInit {
       next: (data) => {
         this.profile.set(data);
         this.score.set(data.score || 0);
-        this.desiredDept.set(data.desiredDept || '');
-        this.skills.set(data.skills || []);
-        this.careerGoals.set(data.careerGoals || '');
+        this.desiredDept.set(data.desiredDept || data.careerDesire || '');
+        this.workLifeBalance.set(data.workLifeBalance || '');
       },
-      error: (error) => this.error.set(error.error?.error || 'Failed to load profile')
+      error: (err) => this.error.set(err.error?.error || 'プロフィールの読み込みに失敗しました')
     });
   }
 
@@ -84,14 +63,14 @@ export class EmployeeMyPageComponent implements OnInit {
         this.allocations.set(data);
         this.calculateAllocationSkillGap();
       },
-      error: (error) => this.error.set(error.error?.error || 'Failed to load allocations')
+      error: (err) => this.error.set(err.error?.error || '配置情報の読み込みに失敗しました')
     });
   }
 
   loadConsultations() {
     this.apiService.getMyConsultations().subscribe({
       next: (data) => this.consultations.set(data),
-      error: (error) => this.error.set(error.error?.error || 'Failed to load consultations')
+      error: (err) => this.error.set(err.error?.error || '相談履歴の読み込みに失敗しました')
     });
   }
 
@@ -100,38 +79,27 @@ export class EmployeeMyPageComponent implements OnInit {
     this.apiService.updateMyProfile({
       score: this.score(),
       desiredDept: this.desiredDept(),
-      skills: this.skills(),
-      careerGoals: this.careerGoals()
+      workLifeBalance: this.workLifeBalance()
     }).subscribe({
       next: () => {
-        this.success.set('Profile updated successfully');
+        this.success.set('プロフィールを更新しました');
         this.editing.set(false);
         this.loading.set(false);
         this.loadProfile();
         setTimeout(() => this.success.set(''), 3000);
       },
-      error: (error) => {
-        this.error.set(error.error?.error || 'Failed to update profile');
+      error: (err) => {
+        this.error.set(err.error?.error || '更新に失敗しました');
         this.loading.set(false);
+        setTimeout(() => this.error.set(''), 3000);
       }
     });
   }
 
-  addSkill() {
-    if (this.skillInput().trim()) {
-      const newSkills = [...this.skills(), this.skillInput().trim()];
-      this.skills.set(newSkills);
-      this.skillInput.set('');
-    }
-  }
-
-  removeSkill(skill: string) {
-    this.skills.set(this.skills().filter(s => s !== skill));
-  }
-
   submitConsultation() {
     if (!this.consultationTitle().trim() || !this.consultationDescription().trim()) {
-      this.error.set('Please fill in all fields');
+      this.error.set('タイトルと内容を入力してください');
+      setTimeout(() => this.error.set(''), 3000);
       return;
     }
 
@@ -141,7 +109,7 @@ export class EmployeeMyPageComponent implements OnInit {
       this.consultationDescription()
     ).subscribe({
       next: () => {
-        this.success.set('Consultation request submitted');
+        this.success.set('人事相談を送信しました');
         this.consultationTitle.set('');
         this.consultationDescription.set('');
         this.showConsultationForm.set(false);
@@ -149,9 +117,10 @@ export class EmployeeMyPageComponent implements OnInit {
         this.loadConsultations();
         setTimeout(() => this.success.set(''), 3000);
       },
-      error: (error) => {
-        this.error.set(error.error?.error || 'Failed to submit consultation');
+      error: (err) => {
+        this.error.set(err.error?.error || '送信に失敗しました');
         this.loading.set(false);
+        setTimeout(() => this.error.set(''), 3000);
       }
     });
   }
@@ -184,13 +153,11 @@ export class EmployeeMyPageComponent implements OnInit {
     const dept = allocation.department;
     if (!dept) return null;
 
-    // 部署の重みを取得
     let wS = Number(dept.weightSales) || 0;
     let wM = Number(dept.weightManagement) || 0;
     let wE = Number(dept.weightExploration) || 0;
     let wD = Number(dept.weightDevelopment) || 0;
 
-    // 全て0の場合は均等とみなす
     if (wS + wM + wE + wD === 0) {
       wS = wM = wE = wD = 1;
     }
@@ -203,13 +170,11 @@ export class EmployeeMyPageComponent implements OnInit {
       developmentForce: Math.round((wD / totalWeight) * 100)
     };
 
-    // 本人の実際のスキル（profile情報から）
     const emp = this.profile() || {};
     const empSkills = emp.skills || emp.user?.skills || {};
 
     let aS = 0, aM = 0, aE = 0, aD = 0;
 
-    // スキルデータを様々な形式から抽出
     if (typeof empSkills === 'string') {
       try {
         const parsed = JSON.parse(empSkills);
@@ -225,7 +190,6 @@ export class EmployeeMyPageComponent implements OnInit {
       aD = Number(empSkills.developmentForce) || 0;
     }
 
-    // emp直下にもスキル情報がないか確認
     if (aS === 0 && aM === 0 && aE === 0 && aD === 0) {
       aS = Number(emp.salesForce) || 0;
       aM = Number(emp.managementForce) || 0;

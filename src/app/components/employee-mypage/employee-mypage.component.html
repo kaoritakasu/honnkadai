@@ -1,7 +1,7 @@
 <div class="employee-container">
   <header class="employee-header">
-    <h1>My Page</h1>
-    <button (click)="logout()" class="logout-btn">Logout</button>
+    <h1>マイページ</h1>
+    <button (click)="logout()" class="logout-btn">ログアウト</button>
   </header>
 
   @if (error()) {
@@ -17,19 +17,19 @@
       (click)="activeTab.set('profile')"
       [class.active]="activeTab() === 'profile'"
     >
-      My Profile
+      プロフィール
     </button>
     <button
       (click)="activeTab.set('allocations')"
       [class.active]="activeTab() === 'allocations'"
     >
-      Allocations
+      配置情報
     </button>
     <button
       (click)="activeTab.set('consultation')"
       [class.active]="activeTab() === 'consultation'"
     >
-      Consultation
+      人事相談
     </button>
   </div>
 
@@ -37,15 +37,15 @@
     @if (activeTab() === 'profile' && profile()) {
       <div class="profile-section">
         <div class="profile-header">
-          <h2>My Profile</h2>
+          <h2>マイプロフィール</h2>
           @if (!editing()) {
-            <button (click)="editing.set(true)" class="btn-edit">Edit Profile</button>
+            <button (click)="editing.set(true)" class="btn-edit">編集する</button>
           } @else {
             <div class="button-group">
               <button (click)="saveProfile()" [disabled]="loading()" class="btn-save">
-                {{ loading() ? 'Saving...' : 'Save' }}
+                {{ loading() ? '保存中...' : '保存' }}
               </button>
-              <button (click)="editing.set(false)" class="btn-cancel">Cancel</button>
+              <button (click)="editing.set(false)" class="btn-cancel">キャンセル</button>
             </div>
           }
         </div>
@@ -53,19 +53,19 @@
         <div class="profile-card">
           <div class="profile-info">
             <div class="info-row">
-              <label>Name</label>
+              <label>名前</label>
               <span>{{ profile().user.name }}</span>
             </div>
             <div class="info-row">
-              <label>Email</label>
+              <label>メール</label>
               <span>{{ profile().user.email }}</span>
             </div>
             <div class="info-row">
-              <label>Current Department</label>
+              <label>現在の部署</label>
               <span>{{ profile().currentDept || '-' }}</span>
             </div>
             <div class="info-row">
-              <label>Status</label>
+              <label>ステータス</label>
               <span class="status-badge">{{ profile().status }}</span>
             </div>
           </div>
@@ -74,84 +74,55 @@
         @if (editing()) {
           <div class="edit-form">
             <div class="form-group">
-              <label for="score">Performance Score (0-100)</label>
+              <label for="score">適性スコア (0-100)</label>
               <input
                 id="score"
                 type="number"
-                [(ngModel)]="score"
+                [ngModel]="score()"
+                (ngModelChange)="score.set($event)"
                 min="0"
                 max="100"
               />
             </div>
 
             <div class="form-group">
-              <label for="desiredDept">Desired Department</label>
+              <label for="desiredDept">希望配置先部署</label>
               <input
                 id="desiredDept"
                 type="text"
-                [(ngModel)]="desiredDept"
-                placeholder="e.g., Engineering, Sales"
+                [ngModel]="desiredDept()"
+                (ngModelChange)="desiredDept.set($event)"
+                placeholder="例: 営業部, 開発部"
               />
             </div>
 
             <div class="form-group">
-              <label for="careerGoals">Career Goals</label>
+              <label for="workLifeBalance">ワークライフバランスについて</label>
               <textarea
-                id="careerGoals"
-                [(ngModel)]="careerGoals"
+                id="workLifeBalance"
+                [ngModel]="workLifeBalance()"
+                (ngModelChange)="workLifeBalance.set($event)"
                 rows="3"
-                placeholder="Share your career aspirations"
+                placeholder="勤務時間や勤務地について希望があればご記入ください"
               ></textarea>
-            </div>
-
-            <div class="form-group">
-              <label>Skills</label>
-              <div class="skill-input-group">
-                <input
-                  type="text"
-                  [(ngModel)]="skillInput"
-                  placeholder="Enter a skill and click Add"
-                  (keyup.enter)="addSkill()"
-                />
-                <button (click)="addSkill()" type="button">Add</button>
-              </div>
-              <div class="skills-list">
-                @for (skill of skills(); track skill) {
-                  <span class="skill-tag">
-                    {{ skill }}
-                    <button (click)="removeSkill(skill)" type="button" class="remove-skill">×</button>
-                  </span>
-                }
-              </div>
             </div>
           </div>
         } @else {
           <div class="profile-details">
             <div class="detail-card">
-              <h3>Performance</h3>
+              <h3>適性スコア</h3>
               <p class="detail-value">{{ profile().score || 0 }} / 100</p>
             </div>
 
             <div class="detail-card">
-              <h3>Desired Department</h3>
-              <p class="detail-value">{{ profile().desiredDept || 'Not specified' }}</p>
+              <h3>希望配置先部署</h3>
+              <p class="detail-value">{{ profile().desiredDept || profile().careerDesire || '未指定' }}</p>
             </div>
 
             <div class="detail-card">
-              <h3>Career Goals</h3>
-              <p class="detail-text">{{ profile().careerGoals || 'Not specified' }}</p>
+              <h3>ワークライフバランス</h3>
+              <p class="detail-text">{{ profile().workLifeBalance || '未指定' }}</p>
             </div>
-
-            @if (profile().skills && profile().skills.length > 0) {
-              <div class="detail-card">
-                <h3>Skills</h3>
-                <div class="skills-display">
-                  @for (skill of profile().skills; track skill) {
-                    <span class="skill-badge">{{ skill }}</span>
-                  }
-                </div>
-              </div>
-            }
           </div>
         }
       </div>
@@ -159,10 +130,10 @@
 
     @if (activeTab() === 'allocations') {
       <div class="allocations-section">
-        <h2>My Allocations & Feedback</h2>
+        <h2>配置情報とフィードバック</h2>
 
         @if (allocations().length === 0) {
-          <p class="no-data">No allocations yet.</p>
+          <p class="no-data">配置情報はまだありません</p>
         } @else {
           <div class="allocations-grid">
             @for (alloc of allocations(); track alloc.id) {
@@ -176,14 +147,14 @@
 
                 @if (alloc.reason) {
                   <div class="allocation-detail">
-                    <h4>Allocation Reason</h4>
+                    <h4>配置の理由</h4>
                     <p>{{ alloc.reason }}</p>
                   </div>
                 }
 
                 @if (alloc.recommendedLearning) {
                   <div class="allocation-detail">
-                    <h4>Recommended Learning</h4>
+                    <h4>推奨学習内容</h4>
                     <p>{{ alloc.recommendedLearning }}</p>
                   </div>
                 }
@@ -191,7 +162,7 @@
                 @if (alloc.feedback) {
                   <div class="feedback-status">
                     <span class="feedback-label">
-                      Feedback: {{ alloc.feedback.viewedAt ? 'Viewed' : 'Pending' }}
+                      フィードバック: {{ alloc.feedback.viewedAt ? '確認済み' : '保留中' }}
                     </span>
                     @if (alloc.feedback.viewedAt) {
                       <span class="feedback-date">{{ alloc.feedback.viewedAt | date: 'short' }}</span>
@@ -206,11 +177,11 @@
           @if (allocationSkillGapData()) {
             <div class="skill-gap-section">
               <h3 style="margin: 30px 0 20px 0; display: flex; align-items: center; gap: 8px; color: #2c3e50;">
-                📈 Skill Gap Analysis for {{ allocationSkillGapData().deptName }}
+                📈 スキルギャップ分析 - {{ allocationSkillGapData().deptName }}
               </h3>
 
               <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 25px;">
-                @for (skill of [{name: 'Sales', key: 'salesForce', emoji: '💼', color: '#f39c12'}, {name: 'Management', key: 'managementForce', emoji: '👔', color: '#3498db'}, {name: 'Exploration', key: 'explorationForce', emoji: '🚀', color: '#e74c3c'}, {name: 'Development', key: 'developmentForce', emoji: '🎓', color: '#27ae60'}]; track skill.key) {
+                @for (skill of [{name: '営業力', key: 'salesForce', emoji: '💼', color: '#f39c12'}, {name: '管理力', key: 'managementForce', emoji: '👔', color: '#3498db'}, {name: '開拓力', key: 'explorationForce', emoji: '🚀', color: '#e74c3c'}, {name: '育成力', key: 'developmentForce', emoji: '🎓', color: '#27ae60'}]; track skill.key) {
                   @let gapData = allocationSkillGapData();
                   @let idealValue = gapData.ideal[skill.key];
                   @let actualValue = gapData.actual[skill.key];
@@ -222,7 +193,7 @@
                     <!-- 理想値（要件）のバー -->
                     <div style="margin-bottom: 15px;">
                       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                        <span style="font-size: 0.85em; color: #666; font-weight: 500;">📋 Required</span>
+                        <span style="font-size: 0.85em; color: #666; font-weight: 500;">📋 要件比率</span>
                         <span style="font-weight: bold; color: #555; font-size: 0.9em;">{{ idealValue }}%</span>
                       </div>
                       <div style="width: 100%; height: 20px; background-color: #e8e8e8; border-radius: 4px; overflow: hidden;">
@@ -233,7 +204,7 @@
                     <!-- 実際の値（本人のスキル）のバー -->
                     <div>
                       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                        <span style="font-size: 0.85em; color: #666; font-weight: 500;">📊 Your Skills</span>
+                        <span style="font-size: 0.85em; color: #666; font-weight: 500;">📊 あなたのスキル</span>
                         <span style="font-weight: bold; color: #555; font-size: 0.9em;">{{ actualValue }}%</span>
                       </div>
                       <div style="width: 100%; height: 20px; background-color: #e8e8e8; border-radius: 4px; overflow: hidden;">
@@ -245,11 +216,11 @@
                     @let gap = idealValue - actualValue;
                     <div style="margin-top: 10px; padding: 8px; background: white; border-radius: 4px; text-align: center; border: 1px solid #ddd;">
                       @if (gap > 0) {
-                        <span style="font-size: 0.8em; color: #e74c3c; font-weight: bold;">⚠️ Gap: {{ gap }}%</span>
+                        <span style="font-size: 0.8em; color: #e74c3c; font-weight: bold;">⚠️ 不足: {{ gap }}%</span>
                       } @else if (gap < 0) {
-                        <span style="font-size: 0.8em; color: #27ae60; font-weight: bold;">✓ Surplus: {{ Math.abs(gap) }}%</span>
+                        <span style="font-size: 0.8em; color: #27ae60; font-weight: bold;">✓ 過剰: {{ Math.abs(gap) }}%</span>
                       } @else {
-                        <span style="font-size: 0.8em; color: #f39c12; font-weight: bold;">= Balanced</span>
+                        <span style="font-size: 0.8em; color: #f39c12; font-weight: bold;">= 均衡</span>
                       }
                     </div>
                   </div>
@@ -258,11 +229,11 @@
 
               <!-- ギャップサマリー -->
               <div style="margin-top: 20px; padding: 15px; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); border-radius: 8px; border-left: 4px solid #667eea;">
-                <h4 style="margin: 0 0 10px 0; color: #2c3e50; font-size: 0.95em;">📊 Gap Analysis Summary</h4>
+                <h4 style="margin: 0 0 10px 0; color: #2c3e50; font-size: 0.95em;">📊 ギャップ分析サマリー</h4>
                 @let gapData = allocationSkillGapData();
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; font-size: 0.85em;">
                   <div style="background: white; padding: 10px; border-radius: 4px;">
-                    <p style="margin: 0 0 4px 0; color: #666;">Max Gap</p>
+                    <p style="margin: 0 0 4px 0; color: #666;">最大ギャップ</p>
                     <p style="margin: 0; font-weight: bold; color: #e74c3c; font-size: 1.1em;">
                       {{ Math.max(
                         Math.abs(gapData.ideal.salesForce - gapData.actual.salesForce),
@@ -273,7 +244,7 @@
                     </p>
                   </div>
                   <div style="background: white; padding: 10px; border-radius: 4px;">
-                    <p style="margin: 0 0 4px 0; color: #666;">Avg Gap</p>
+                    <p style="margin: 0 0 4px 0; color: #666;">平均ギャップ</p>
                     <p style="margin: 0; font-weight: bold; color: #667eea; font-size: 1.1em;">{{ getAverageGap(gapData) }}%</p>
                   </div>
                 </div>
@@ -286,41 +257,43 @@
 
     @if (activeTab() === 'consultation') {
       <div class="consultation-section">
-        <h2>HR Consultation</h2>
+        <h2>人事相談</h2>
 
         @if (!showConsultationForm()) {
           <button (click)="showConsultationForm.set(true)" class="btn-new-consultation">
-            Request Consultation
+            相談を申し込む
           </button>
         } @else {
           <div class="consultation-form">
-            <h3>New Consultation Request</h3>
+            <h3>新しい相談申し込み</h3>
             <div class="form-group">
-              <label for="title">Title</label>
+              <label for="title">タイトル</label>
               <input
                 id="title"
                 type="text"
-                [(ngModel)]="consultationTitle"
-                placeholder="e.g., Career Development Discussion"
+                [ngModel]="consultationTitle()"
+                (ngModelChange)="consultationTitle.set($event)"
+                placeholder="例: キャリア開発について"
               />
             </div>
 
             <div class="form-group">
-              <label for="description">Description</label>
+              <label for="description">内容</label>
               <textarea
                 id="description"
-                [(ngModel)]="consultationDescription"
+                [ngModel]="consultationDescription()"
+                (ngModelChange)="consultationDescription.set($event)"
                 rows="4"
-                placeholder="Describe your inquiry or request..."
+                placeholder="相談内容についてご記入ください"
               ></textarea>
             </div>
 
             <div class="button-group">
               <button (click)="submitConsultation()" [disabled]="loading()" class="btn-submit">
-                {{ loading() ? 'Submitting...' : 'Submit Request' }}
+                {{ loading() ? '送信中...' : '送信' }}
               </button>
               <button (click)="showConsultationForm.set(false)" class="btn-cancel">
-                Cancel
+                キャンセル
               </button>
             </div>
           </div>
@@ -328,19 +301,19 @@
 
         @if (consultations().length > 0) {
           <div class="consultations-list">
-            <h3>Your Requests</h3>
+            <h3>相談履歴</h3>
             @for (cons of consultations(); track cons.id) {
               <div class="consultation-item">
                 <div class="consultation-header">
                   <h4>{{ cons.title }}</h4>
                   <span [class]="'status-badge ' + cons.status.toLowerCase()">
-                    {{ cons.status }}
+                    {{ cons.status === 'pending' ? '未返信' : (cons.status === 'replied' ? '返信済み' : cons.status) }}
                   </span>
                 </div>
                 <p class="consultation-description">{{ cons.description }}</p>
                 @if (cons.response) {
                   <div class="consultation-response">
-                    <h5>HR Response</h5>
+                    <h5>人事からの返信</h5>
                     <p>{{ cons.response }}</p>
                   </div>
                 }
