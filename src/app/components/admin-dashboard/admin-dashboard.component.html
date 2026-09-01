@@ -445,10 +445,6 @@
               </button>
             </div>
           </div>
-
-          <button (click)="runMultiDepartmentSimulation()" [disabled]="loading() || selectedDepartments().length === 0" style="margin-top: 15px;">
-            {{ loading() ? 'シミュレーション実行中...' : 'シミュレーションを実行' }}
-          </button>
         </div>
 
         <div class="paste-data-form" style="margin-top: 20px; padding: 20px; background: #fff; border-radius: 8px; border: 1px solid #e0e0e0;">
@@ -469,8 +465,19 @@
             </button>
           </div>
 
+          <!-- ビューモード切り替えボタン -->
+          <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+            <button (click)="viewMode = 'tree'" [style.background]="viewMode === 'tree' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : '#ffffff'" [style.color]="viewMode === 'tree' ? 'white' : '#333'" [style.border]="viewMode === 'tree' ? '2px solid #667eea' : '2px solid #ddd'" style="padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+              🌳 ツリー表示
+            </button>
+            <button (click)="viewMode = 'dnd'" [style.background]="viewMode === 'dnd' ? 'linear-gradient(135deg, #f39c12 0%, #e67e22 100%)' : '#ffffff'" [style.color]="viewMode === 'dnd' ? 'white' : '#333'" [style.border]="viewMode === 'dnd' ? '2px solid #f39c12' : '2px solid #ddd'" style="padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+              ✋ ドラッグ&ドロップ
+            </button>
+          </div>
+
           <!-- ツリー状の配置案ビュー -->
-          <div style="background-color: #fff; padding: 15px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 20px;">
+          @if (viewMode === 'tree') {
+            <div style="background-color: #fff; padding: 15px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 20px;">
             <h4 style="margin: 0 0 15px 0; color: #2c3e50; display: flex; align-items: center; gap: 8px;">
               🏢 組織図：配置案
             </h4>
@@ -533,6 +540,7 @@
               </li>
             </ul>
           </div>
+          }
 
           @if (simulationSummary()) {
             <div class="company-summary-card" style="margin-bottom: 20px; padding: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px;">
@@ -568,7 +576,8 @@
 
           <p style="font-size: 0.8em; color: #7f8c8d; margin-bottom: 10px; text-align: right;">※本数値はシミュレーションによる予測値であり、実際の業績を保証するものではありません</p>
 
-          <div class="adjustment-controls" style="margin-bottom: 20px; padding: 15px; background-color: #f0f4ff; border-radius: 8px; border-left: 4px solid #667eea;">
+          @if (viewMode === 'dnd') {
+            <div class="adjustment-controls" style="margin-bottom: 20px; padding: 15px; background-color: #f0f4ff; border-radius: 8px; border-left: 4px solid #667eea;">
             <h4 style="margin: 0 0 10px 0;">人員配置の微調整</h4>
             <p style="margin: 0 0 15px 0; color: #666;">ドラッグ&ドロップで人員を異動させるか、下のボタンで新しい人材を追加できます</p>
             <button (click)="addNewCandidate()" style="margin-right: 10px; padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer;">＋ 新しい人材を追加</button>
@@ -654,6 +663,7 @@
               }
             }
           </div>
+          }
 
           @if (newCandidates.length > 0) {
             <div style="margin-bottom: 30px; padding: 20px; background-color: #fffbf0; border: 2px dashed #ffa500; border-radius: 8px;">

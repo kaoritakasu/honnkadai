@@ -26,27 +26,26 @@ interface PenaltyRule {
 }
 
 const calculateMatchScore = (employee: any, department: any): number => {
-  let score = 0;
-  const employeeScore = employee.score || 0;
+  // CSVから読み込んだ4つの能力値
+  const sales = employee.salesForce || 0;
+  const management = employee.managementForce || 0;
+  const exploration = employee.explorationForce || 0;
+  const development = employee.developmentForce || 0;
 
-  if (employeeScore >= (department.requiredScore || 0)) {
-    score += 50;
-  } else {
-    score += Math.max(0, (employeeScore / (department.requiredScore || 1)) * 50);
-  }
+  // 事業部側に設定されている各能力の重み（未設定の場合は0）
+  const weightSales = department.weightSales || 0;
+  const weightManagement = department.weightManagement || 0;
+  const weightExploration = department.weightExploration || 0;
+  const weightDevelopment = department.weightDevelopment || 0;
 
-  const requiredSkills = department.requiredSkills || [];
-  const employeeSkills = employee.skills || [];
-  if (requiredSkills.length > 0) {
-    const matchedSkills = requiredSkills.filter((skill: string) =>
-      employeeSkills.includes(skill)
-    ).length;
-    score += (matchedSkills / requiredSkills.length) * 50;
-  } else {
-    score += 50;
-  }
+  // 【課題仕様】社員貢献度 = 営業力×w + 管理力×w + 開拓力×w + 育成力×w
+  const score =
+    (sales * weightSales) +
+    (management * weightManagement) +
+    (exploration * weightExploration) +
+    (development * weightDevelopment);
 
-  return Math.round(score);
+  return score;
 };
 
 // 充足率に基づいて不足補正ファクターを計算（shortageRate < 100%時）
@@ -171,6 +170,22 @@ const calculateDeltaProfit = (
   return newState.profit - currentState.profit;
 };
 
+// 社員を部署に追加した場合の売上変化（Delta Revenue）を計算
+const calculateDeltaRevenue = (
+  department: any,
+  currentAllocatedEmployees: any[],
+  employeeToAdd: any
+): number => {
+  const currentState = calculateDepartmentState(
+    department,
+    currentAllocatedEmployees
+  );
+  const newAllocatedEmployees = [...currentAllocatedEmployees, employeeToAdd];
+  const newState = calculateDepartmentState(department, newAllocatedEmployees);
+
+  return newState.finalRevenue - currentState.finalRevenue;
+};
+
 // 【新】2段階配置アルゴリズム
 const calculateTwoPhaseAllocation = (
   allEmployees: any[],
@@ -179,7 +194,7 @@ const calculateTwoPhaseAllocation = (
 ): Map<string, any[]> => {
   const allocations = new Map<string, any[]>();
   departments.forEach(dept => allocations.set(dept.id, []));
-  const allocatedEmployeeIds = new Set<number>();
+  const allocatedEmployeeKeys = new Set<string>();
 
   // フェーズ1: 最低配置人数の確実な確保
   const employeesByDepartment: { [deptId: string]: any[] } = {};
@@ -190,7 +205,7 @@ const calculateTwoPhaseAllocation = (
 
     // この部門への適性スコアでソート
     const empScores = allEmployees
-      .filter(emp => !allocatedEmployeeIds.has(emp.id))
+      .filter(emp => !allocatedEmployeeKeys.has(emp.employeeNumber || String(emp.id)))
       .map(emp => ({
         employee: emp,
         matchScore: calculateMatchScore(emp, dept)
@@ -202,21 +217,21 @@ const calculateTwoPhaseAllocation = (
       const deptAllocations = allocations.get(deptId) || [];
       deptAllocations.push(empScores[i].employee);
       allocations.set(deptId, deptAllocations);
-      allocatedEmployeeIds.add(empScores[i].employee.id);
+      allocatedEmployeeKeys.add(empScores[i].employee.employeeNumber || String(empScores[i].employee.id));
     }
   }
 
   // フェーズ2: 残り人員の戦略的最適化（限界効用で配置）
   let improved = true;
-  while (improved && allocatedEmployeeIds.size < allEmployees.length) {
+  while (improved && allocatedEmployeeKeys.size < allEmployees.length) {
     improved = false;
     let bestDeltaScore = -Infinity;
-    let bestEmployeeId: number | null = null;
+    let bestEmployeeKey: string | null = null;
     let bestDepartmentId: string | null = null;
 
     // 未配置の全社員を検討
     for (const emp of allEmployees) {
-      if (allocatedEmployeeIds.has(emp.id)) continue;
+      if (allocatedEmployeeKeys.has(emp.employeeNumber || String(emp.id))) continue;
 
       // 各部門への追加配置での限界効用を計算
       for (const dept of departments) {
@@ -226,22 +241,35 @@ const calculateTwoPhaseAllocation = (
         // 最適人数未満の場合のみ候補として検討
         if (currentAllocations.length >= optimalHeadcount) continue;
 
-        // シミュレーションモードに応じたスコア計算
-        let deltaScore = 0;
+       // シミュレーションモードに応じた限界効用（スコア）計算
+        let deltaScore = -999999;
+        const deptName = dept.name || '';
 
-        if (simulationMode === 'task2' || simulationMode === 'sales_focus') {
-          // 営業・開拓特化：売上への貢献度
-          deltaScore = (emp.salesForce || 0) + (emp.explorationForce || 0);
-        } else if (simulationMode === 'task3' || simulationMode === 'tech_focus') {
-          // 育成・技術投資：育成力と管理力
-          deltaScore = (emp.developmentForce || 0) + (emp.managementForce || 0);
-        } else if (simulationMode === 'task4' || simulationMode === 'management_focus') {
-          // 管理体制強化：管理力
-          deltaScore = (emp.managementForce || 0);
+        if (simulationMode === 'task1' || simulationMode === 'additional') {
+          // 課題1・追加課題：全社売上最大化
+          deltaScore = calculateDeltaRevenue(dept, currentAllocations, emp);
+          
+        } else if (simulationMode === 'task2') {
+          // 課題2：A事業部（飽和）の利益最大化
+          if (deptName.includes('A') || deptName.includes('飽和')) {
+            deltaScore = calculateDeltaProfit(dept, currentAllocations, emp);
+          }
+          
+        } else if (simulationMode === 'task3') {
+          // 課題3：B事業部（成長）の売上最大化
+          if (deptName.includes('B') || deptName.includes('成長')) {
+            deltaScore = calculateDeltaRevenue(dept, currentAllocations, emp);
+          }
+          
+        } else if (simulationMode === 'task4') {
+          // 課題4：C事業部（新規）の売上最大化
+          if (deptName.includes('C') || deptName.includes('新規')) {
+            deltaScore = calculateDeltaRevenue(dept, currentAllocations, emp);
+          }
+          
         } else {
-          // デフォルト（全社バランス）：全能力の平均
-          deltaScore = ((emp.salesForce || 0) + (emp.managementForce || 0) +
-                       (emp.explorationForce || 0) + (emp.developmentForce || 0)) / 4;
+          // デフォルト（全社バランス）：利益への貢献度
+          deltaScore = calculateDeltaProfit(dept, currentAllocations, emp);
         }
 
         // 部門の重み付けを考慮
@@ -251,25 +279,25 @@ const calculateTwoPhaseAllocation = (
 
         if (deltaScore > bestDeltaScore) {
           bestDeltaScore = deltaScore;
-          bestEmployeeId = emp.id;
+          bestEmployeeKey = emp.employeeNumber || String(emp.id);
           bestDepartmentId = dept.id;
         }
       }
     }
 
-    if (bestEmployeeId && bestDepartmentId) {
-      const emp = allEmployees.find(e => e.id === bestEmployeeId);
+    if (bestEmployeeKey && bestDepartmentId) {
+      const emp = allEmployees.find(e => (e.employeeNumber || String(e.id)) === bestEmployeeKey);
       const deptAllocations = allocations.get(bestDepartmentId) || [];
       deptAllocations.push(emp!);
       allocations.set(bestDepartmentId, deptAllocations);
-      allocatedEmployeeIds.add(bestEmployeeId);
+      allocatedEmployeeKeys.add(bestEmployeeKey);
       improved = true;
     }
   }
 
   // 強制割り当てフェーズ: 残りの未配置社員を配置
   for (const emp of allEmployees) {
-    if (allocatedEmployeeIds.has(emp.id)) {
+    if (!allocatedEmployeeKeys.has(emp.employeeNumber || String(emp.id))) {
       // 最低配置人数に達していない部門へ優先割り当て
       let targetDept: string | null = null;
       for (const dept of departments) {
@@ -297,7 +325,7 @@ const calculateTwoPhaseAllocation = (
         const deptAllocations = allocations.get(targetDept) || [];
         deptAllocations.push(emp);
         allocations.set(targetDept, deptAllocations);
-        allocatedEmployeeIds.add(emp.id);
+        allocatedEmployeeKeys.add(emp.employeeNumber || String(emp.id));
       }
     }
   }

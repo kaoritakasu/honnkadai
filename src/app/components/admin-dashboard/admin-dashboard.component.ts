@@ -46,6 +46,7 @@ export class AdminDashboardComponent implements OnInit {
   employeeSortKey: string = 'employeeNumber';
   simulationSortKey: string = 'employeeNumber';
   simulationMode: 'balanced' | 'sales_focus' | 'tech_focus' | 'management_focus' = 'balanced';
+  viewMode: 'tree' | 'dnd' = 'dnd';
   
   // 人事権限判定
   isHRUser: boolean = false;
@@ -547,49 +548,65 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   runPastedDataSimulation() {
-    if (!this.pasteDataText.trim()) {
-      this.error.set('Please paste data');
+    if (!this.pasteDataText || this.pasteDataText.trim() === '') {
+      alert('データを入力してください。');
       return;
     }
 
-    const parsed = this.parsePastedData();
-    if (!parsed || parsed.length === 0) {
-      this.error.set('Invalid data format');
-      return;
-    }
+    const lines = this.pasteDataText.trim().split(/\r?\n/);
+    const parsedEmployees = [];
 
-    const convertedData = parsed.map((emp: any) => {
-      const data: any = {
-        employeeId: typeof emp.employeeId === 'string' ? parseInt(emp.employeeId.replace(/\D/g, '')) || 0 : emp.employeeId,
-        salesForce: emp.salesForce,
-        managementForce: emp.managementForce,
-        explorationForce: emp.explorationForce,
-        developmentForce: emp.developmentForce,
-        laborCost: emp.laborCost
-      };
-      if (emp.employeeNumber) {
-        data.employeeNumber = emp.employeeNumber;
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+
+      const cols = line.split(/[\t,]/);
+
+      if (i === 0 && (cols[0].includes('社員') || isNaN(Number(cols[1])))) {
+        continue;
       }
-      return data;
-    });
+
+      if (cols.length >= 6) {
+        parsedEmployees.push({
+          employeeNumber: cols[0].trim(),
+          salesForce: Number(cols[1]) || 0,
+          managementForce: Number(cols[2]) || 0,
+          explorationForce: Number(cols[3]) || 0,
+          developmentForce: Number(cols[4]) || 0,
+          laborCost: Number(cols[5]) || 0
+        });
+      }
+    }
+
+    if (parsedEmployees.length === 0) {
+      alert('有効なデータが読み込めませんでした。フォーマットを確認してください。');
+      return;
+    }
+
+    console.log('送信するデータ件数:', parsedEmployees.length, parsedEmployees[0]);
 
     this.loading.set(true);
-    this.apiService.simulateBatchAllocation(convertedData, this.lastYearTotalRevenue, this.simulationMode).subscribe({
-      next: (data: any) => {
-        if (data && data.results && Array.isArray(data.results)) {
-          const enrichedResults = this.enrichWithMyPageData(data.results);
+
+    this.apiService.simulateBatchAllocation(
+      parsedEmployees,
+      this.lastYearTotalRevenue,
+      this.simulationMode
+    ).subscribe({
+      next: (res) => {
+        if (res && res.results && Array.isArray(res.results)) {
+          const enrichedResults = this.enrichWithMyPageData(res.results);
           const sortedResults = this.sortResultsByEmployeeNumber(enrichedResults.map((result: any) => ({
             ...result,
             cost: result.totalCost
           })));
           this.simulationResults.set(sortedResults);
           this.simulationSummary.set({
-            totalCompanyRevenue: data.totalCompanyRevenue,
-            totalCompanyCost: data.totalCompanyCost,
-            totalCompanyProfit: data.totalCompanyProfit
+            totalCompanyRevenue: res.totalCompanyRevenue,
+            totalCompanyCost: res.totalCompanyCost,
+            totalCompanyProfit: res.totalCompanyProfit
           });
         } else {
-          const enrichedData = this.enrichWithMyPageData(data);
+          const enrichedData = this.enrichWithMyPageData(res);
           const sortedData = this.sortResultsByEmployeeNumber(enrichedData);
           this.simulationResults.set(sortedData);
           this.simulationSummary.set(null);
@@ -597,9 +614,10 @@ export class AdminDashboardComponent implements OnInit {
         this.loading.set(false);
         this.pasteDataText = '';
       },
-      error: (error: any) => {
-        this.error.set(error.error?.error || 'Simulation failed');
+      error: (err) => {
+        console.error('API Error:', err);
         this.loading.set(false);
+        alert('シミュレーションの実行に失敗しました。');
       }
     });
   }
@@ -769,6 +787,20 @@ export class AdminDashboardComponent implements OnInit {
           this.error.set('再計算に失敗しました');
         }
       });
+    }
+  }
+
+  onDrop(event: CdkDragDrop<any[]>) {
+    if (event.previousContainer === event.container) {
+      moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+    } else {
+      transferArrayItem(
+        event.previousContainer.data,
+        event.container.data,
+        event.previousIndex,
+        event.currentIndex,
+      );
+      // ※ここで再計算API（recalculate）を呼ぶ処理を後で追加可能
     }
   }
 
