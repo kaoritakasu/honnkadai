@@ -260,20 +260,21 @@
               <div style="margin-top: 20px; padding: 15px; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); border-radius: 8px; border-left: 4px solid #667eea;">
                 <h4 style="margin: 0 0 10px 0; color: #2c3e50; font-size: 0.95em;">📊 Gap Analysis Summary</h4>
                 @let gapData = allocationSkillGapData();
-                @let gaps = [
-                  Math.abs(gapData.ideal.salesForce - gapData.actual.salesForce),
-                  Math.abs(gapData.ideal.managementForce - gapData.actual.managementForce),
-                  Math.abs(gapData.ideal.explorationForce - gapData.actual.explorationForce),
-                  Math.abs(gapData.ideal.developmentForce - gapData.actual.developmentForce)
-                ];
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; font-size: 0.85em;">
                   <div style="background: white; padding: 10px; border-radius: 4px;">
                     <p style="margin: 0 0 4px 0; color: #666;">Max Gap</p>
-                    <p style="margin: 0; font-weight: bold; color: #e74c3c; font-size: 1.1em;">{{ Math.max(...gaps) }}%</p>
+                    <p style="margin: 0; font-weight: bold; color: #e74c3c; font-size: 1.1em;">
+                      {{ Math.max(
+                        Math.abs(gapData.ideal.salesForce - gapData.actual.salesForce),
+                        Math.abs(gapData.ideal.managementForce - gapData.actual.managementForce),
+                        Math.abs(gapData.ideal.explorationForce - gapData.actual.explorationForce),
+                        Math.abs(gapData.ideal.developmentForce - gapData.actual.developmentForce)
+                      ) }}%
+                    </p>
                   </div>
                   <div style="background: white; padding: 10px; border-radius: 4px;">
                     <p style="margin: 0 0 4px 0; color: #666;">Avg Gap</p>
-                    <p style="margin: 0; font-weight: bold; color: #667eea; font-size: 1.1em;">{{ Math.round(gaps.reduce((a: number, b: number) => a + b, 0) / gaps.length) }}%</p>
+                    <p style="margin: 0; font-weight: bold; color: #667eea; font-size: 1.1em;">{{ getAverageGap(gapData) }}%</p>
                   </div>
                 </div>
               </div>

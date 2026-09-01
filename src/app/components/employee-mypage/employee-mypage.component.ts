@@ -165,6 +165,17 @@ export class EmployeeMyPageComponent implements OnInit {
     this.allocationSkillGapData.set(this.getAllocationSkillGapData());
   }
 
+  getAverageGap(gapData: any): number {
+    if (!gapData) return 0;
+    const gaps = [
+      Math.abs(gapData.ideal.salesForce - gapData.actual.salesForce),
+      Math.abs(gapData.ideal.managementForce - gapData.actual.managementForce),
+      Math.abs(gapData.ideal.explorationForce - gapData.actual.explorationForce),
+      Math.abs(gapData.ideal.developmentForce - gapData.actual.developmentForce)
+    ];
+    return Math.round(gaps.reduce((a: number, b: number) => a + b, 0) / gaps.length);
+  }
+
   getAllocationSkillGapData(): any {
     const allocationsList = this.allocations();
     if (!allocationsList || allocationsList.length === 0) return null;
