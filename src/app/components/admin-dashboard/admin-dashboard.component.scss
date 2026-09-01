@@ -374,3 +374,15 @@ textarea.input-field {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
 }
+
+/* =========================================
+   input type="number" のスピンボタン（上下矢印）を非表示にする
+   ========================================= */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}

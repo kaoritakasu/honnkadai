@@ -1,4 +1,4 @@
-import { Component, signal, OnInit } from '@angular/core';
+import { Component, signal, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -34,7 +34,12 @@ export class AdminDashboardComponent implements OnInit {
   error = signal('');
   newDepartmentName: string = '';
   editingDeptId: string | null = null;
-  lastYearTotalRevenue: number = 0;
+  lastYearTotalRevenueOku: number = 58; // 入力用のプロパティ（単位：億円）
+
+  // API送信や計算用には、自動的に1億を掛けた数値を返す
+  get lastYearTotalRevenue(): number {
+    return this.lastYearTotalRevenueOku * 100000000;
+  }
   adjustedAllocations: Map<string, string> = new Map();
   newCandidates: any[] = [];
   dropListIds: string[] = [];
@@ -120,13 +125,21 @@ export class AdminDashboardComponent implements OnInit {
     this.loadDashboard();
     this.loadDepartments();
     this.loadEmployees();
-    
+
     if (this.isHRUser) {
       this.loadAllReservations();
       this.generateCalendarDays();
       this.loadAvailabilityRules();
       this.loadAvailabilityExceptions();
       this.loadConsultations();
+    }
+  }
+
+  // トラックパッドやマウスホイールでの意図しない数値変更を防ぐ
+  @HostListener('wheel', ['$event'])
+  onWheel(event: Event) {
+    if (event.target instanceof HTMLInputElement && event.target.type === 'number') {
+      event.target.blur(); // スクロール時にフォーカスを外して値の変動を防止
     }
   }
 
