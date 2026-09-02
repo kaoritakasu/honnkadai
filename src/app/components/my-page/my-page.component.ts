@@ -34,6 +34,7 @@ export class MyPageComponent implements OnInit {
   isSubmittingConsultation: boolean = false;
   allocations = signal<any[]>([]);
   skillGapData = signal<any>(null);
+  profileData: any = null;
   simulationSkillGapData: any = null;
   desiredDeptData: any = null;
 
@@ -102,35 +103,18 @@ export class MyPageComponent implements OnInit {
   }
 
   loadAssignmentDetails() {
-    if (this.user?.id) {
-      this.apiService.getAssignmentDetails(this.user.id).subscribe(
-        (data: any) => {
-          this.assignmentDetails = data;
-          this.cdr.detectChanges();
-        },
-        () => {
-          this.assignmentDetails = null;
-          this.cdr.detectChanges();
-        }
-      );
-
-      // DBから「希望部署」「WLB」のデータを取得して画面に復元する
-      this.apiService.getPreferences(this.user.id).subscribe(
-        (data: any) => {
-          if (data) {
-            this.desiredDept = data.desiredDept || data.careerDesire || data.careerGoals || '';
-            this.workLifeBalance = data.workLifeBalance || '';
-            this.user.salesForce = data.salesForce || 0;
-            this.user.managementForce = data.managementForce || 0;
-            this.user.explorationForce = data.explorationForce || 0;
-            this.user.developmentForce = data.developmentForce || 0;
-            this.buildSkillGapData();
-            this.cdr.detectChanges();
-          }
-        },
-        (err: any) => console.error('Error loading preferences:', err)
-      );
-    }
+    if (!this.user) return;
+    this.apiService.getMyProfile().subscribe({
+      next: (data: any) => {
+        this.profileData = data;
+        this.desiredDept = data.desiredDept || data.careerDesire || '';
+        this.workLifeBalance = data.workLifeBalance || '';
+        this.buildSkillGapData();
+      },
+      error: (err: any) => {
+        console.error('Error loading profile:', err);
+      }
+    });
   }
 
   loadDepartments() {
@@ -144,56 +128,53 @@ export class MyPageComponent implements OnInit {
   }
 
   buildSkillGapData() {
-    if (!this.allocations().length || !this.departments.length || !this.user) {
+    const allocs = this.allocations ? this.allocations() : [];
+
+    if (!allocs || allocs.length === 0 || !this.departments || this.departments.length === 0) {
       this.skillGapData.set(null);
       return;
     }
 
-    const currentAllocation = this.allocations()[0];
-    const dept = this.departments.find(d => d.id === currentAllocation.departmentId);
-    if (!dept) return;
+    const currentAllocation = allocs[0];
+    const dept = this.departments.find((d: any) => d.id === currentAllocation.departmentId);
+    if (!dept) {
+      this.skillGapData.set(null);
+      return;
+    }
 
-    // 部署の要件（重み）を100点満点の割合に変換
+    // 重みから目標値を計算（最高の重みを基準に100点）
     const wS = Number(dept.weightSales) || 0;
     const wM = Number(dept.weightManagement) || 0;
     const wE = Number(dept.weightExploration) || 0;
     const wD = Number(dept.weightDevelopment) || 0;
-    const totalWeight = wS + wM + wE + wD;
+    const maxWeight = Math.max(wS, wM, wE, wD);
 
-    const ideal = totalWeight > 0 ? {
-      salesForce: Math.round((wS / totalWeight) * 100),
-      managementForce: Math.round((wM / totalWeight) * 100),
-      explorationForce: Math.round((wE / totalWeight) * 100),
-      developmentForce: Math.round((wD / totalWeight) * 100)
+    const ideal = maxWeight > 0 ? {
+      salesForce: Math.round((wS / maxWeight) * 100),
+      managementForce: Math.round((wM / maxWeight) * 100),
+      explorationForce: Math.round((wE / maxWeight) * 100),
+      developmentForce: Math.round((wD / maxWeight) * 100)
     } : { salesForce: 0, managementForce: 0, explorationForce: 0, developmentForce: 0 };
 
-    // 個人のスキル値は this.profile() から取得する（this.userではない！）
-    const profileData = this.profile();
-    const actual = {
-      salesForce: Number(profileData?.salesForce) || 0,
-      managementForce: Number(profileData?.managementForce) || 0,
-      explorationForce: Number(profileData?.explorationForce) || 0,
-      developmentForce: Number(profileData?.developmentForce) || 0
-    };
+    // 現在のスキル値：シミュレーション結果を優先、なければプロフィール
+    let actual = { salesForce: 0, managementForce: 0, explorationForce: 0, developmentForce: 0 };
+
+    if (this.simulationSkillGapData && this.simulationSkillGapData.actual) {
+      actual = this.simulationSkillGapData.actual;
+    } else if (this.profileData) {
+      actual = {
+        salesForce: Number(this.profileData.salesForce) || 0,
+        managementForce: Number(this.profileData.managementForce) || 0,
+        explorationForce: Number(this.profileData.explorationForce) || 0,
+        developmentForce: Number(this.profileData.developmentForce) || 0
+      };
+    }
 
     this.skillGapData.set({
       deptName: dept.name,
       ideal,
       actual
     });
-  }
-
-  profile() {
-    if (!this.user) {
-      return { salesForce: 0, managementForce: 0, explorationForce: 0, developmentForce: 0 };
-    }
-
-    return {
-      salesForce: this.user.salesForce || 0,
-      managementForce: this.user.managementForce || 0,
-      explorationForce: this.user.explorationForce || 0,
-      developmentForce: this.user.developmentForce || 0
-    };
   }
 
   private getUserSkills(): any {
@@ -278,6 +259,7 @@ export class MyPageComponent implements OnInit {
     this.apiService.getMyAllocations().subscribe({
       next: (data: any[]) => {
         this.allocations.set(data);
+        this.buildSkillGapData();
         this.cdr.detectChanges();
       },
       error: (err: any) => {
@@ -615,6 +597,7 @@ export class MyPageComponent implements OnInit {
     this.apiService.getMyLatestSimulation().subscribe({
       next: (data) => {
         this.simulationSkillGapData = this.calculateSimulationSkillGap(data);
+        this.buildSkillGapData();
         this.cdr.detectChanges();
       },
       error: (err) => {
@@ -662,14 +645,14 @@ export class MyPageComponent implements OnInit {
     const wM = Number(dept.weightManagement) || 0;
     const wE = Number(dept.weightExploration) || 0;
     const wD = Number(dept.weightDevelopment) || 0;
-    const totalWeight = wS + wM + wE + wD;
+    const maxWeight = Math.max(wS, wM, wE, wD);
 
-    const ideal = totalWeight > 0 ? {
-      salesForce: Math.round((wS / totalWeight) * 100),
-      managementForce: Math.round((wM / totalWeight) * 100),
-      explorationForce: Math.round((wE / totalWeight) * 100),
-      developmentForce: Math.round((wD / totalWeight) * 100)
-    } : null;
+    const ideal = maxWeight > 0 ? {
+      salesForce: Math.round((wS / maxWeight) * 100),
+      managementForce: Math.round((wM / maxWeight) * 100),
+      explorationForce: Math.round((wE / maxWeight) * 100),
+      developmentForce: Math.round((wD / maxWeight) * 100)
+    } : { salesForce: 0, managementForce: 0, explorationForce: 0, developmentForce: 0 };
 
     return {
       deptName: deptName,
