@@ -43,6 +43,9 @@ async function main() {
       }
     });
 
+    // Helper to generate random skill value (30-100)
+    const randomSkill = () => Math.floor(Math.random() * 71) + 30;
+
     // Create employee record
     await prisma.employee.create({
       data: {
@@ -50,7 +53,12 @@ async function main() {
         userId: employeeUser.id,
         score: 80,
         desiredDept: 'Sales',
-        currentDept: 'Engineering'
+        currentDept: 'Engineering',
+        salesForce: randomSkill(),
+        managementForce: randomSkill(),
+        explorationForce: randomSkill(),
+        developmentForce: randomSkill(),
+        laborCost: 5
       }
     });
 
@@ -79,7 +87,12 @@ async function main() {
           userId: user.id,
           score: emp.score,
           desiredDept: emp.dept,
-          currentDept: emp.dept
+          currentDept: emp.dept,
+          salesForce: randomSkill(),
+          managementForce: randomSkill(),
+          explorationForce: randomSkill(),
+          developmentForce: randomSkill(),
+          laborCost: 4 + Math.random() * 2
         }
       });
     }
@@ -93,7 +106,15 @@ async function main() {
         requiredSkills: 'Communication, Negotiation',
         requiredScore: 70,
         expectedRevenue: 5000000,
-        description: 'Sales department'
+        description: 'Sales department',
+        weightSales: 40,
+        weightManagement: 20,
+        weightExploration: 30,
+        weightDevelopment: 10,
+        optimalHeadcount: 10,
+        minHeadcount: 3,
+        baseRevenue: 100000,
+        growthFactor: 1.2
       }
     });
 
@@ -103,7 +124,33 @@ async function main() {
         requiredSkills: 'Programming, Problem Solving',
         requiredScore: 75,
         expectedRevenue: 3000000,
-        description: 'Engineering department'
+        description: 'Engineering department',
+        weightSales: 10,
+        weightManagement: 20,
+        weightExploration: 30,
+        weightDevelopment: 40,
+        optimalHeadcount: 8,
+        minHeadcount: 2,
+        baseRevenue: 80000,
+        growthFactor: 1.5
+      }
+    });
+
+    await prisma.department.create({
+      data: {
+        name: 'Marketing',
+        requiredSkills: 'Market Analysis, Communication',
+        requiredScore: 70,
+        expectedRevenue: 4000000,
+        description: 'Marketing department',
+        weightSales: 30,
+        weightManagement: 25,
+        weightExploration: 35,
+        weightDevelopment: 10,
+        optimalHeadcount: 6,
+        minHeadcount: 2,
+        baseRevenue: 70000,
+        growthFactor: 1.3
       }
     });
 

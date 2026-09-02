@@ -1,8 +1,9 @@
-import express, { Response } from 'express';
+import express, { Response, Router } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticate, AuthRequest, isAdmin } from '../middleware/auth';
 
-const router = express.Router();
+
+const router: Router = express.Router();
 const prisma = new PrismaClient();
 
 interface SimulationRequest {
@@ -986,6 +987,9 @@ router.get('/my-latest-simulation', authenticate, async (req: AuthRequest, res: 
       return res.status(404).json({ error: 'Employee not found' });
     }
 
+    console.log('=== /my-latest-simulation DEBUG LOG ===');
+    console.log('Employee found:', { id: employee.id, employeeNumber: employee.employeeNumber });
+
     // Get the latest simulation result
     const latestSimulation = await prisma.simulationResult.findFirst({
       orderBy: { createdAt: 'desc' },
@@ -1009,16 +1013,38 @@ router.get('/my-latest-simulation', authenticate, async (req: AuthRequest, res: 
       results = JSON.parse(results);
     }
 
+    console.log('Latest simulation created at:', latestSimulation.createdAt);
+
     // Find employee in the simulation results
     let employeeData = null;
     let departmentInfo: any = null;
     if (Array.isArray(results)) {
       for (const dept of results) {
         if (dept && typeof dept === 'object' && dept.candidates && Array.isArray(dept.candidates)) {
-          const found = dept.candidates.find((c: any) =>
-            c.employeeNumber === employee.employeeNumber ||
-            c.employeeId === employee.id
-          );
+          console.log(`Checking department: ${dept.departmentName}, candidates count: ${dept.candidates.length}`);
+
+          // Try to find by employeeNumber first, then by id, with normalization
+          let found = dept.candidates.find((c: any) => {
+            const dbNum = String(employee.employeeNumber || '').trim();
+            const candNum = String(c.employeeNumber || '').trim();
+            return dbNum && candNum && dbNum === candNum;
+          });
+
+          // If not found by employeeNumber, try by id
+          if (!found) {
+            found = dept.candidates.find((c: any) => {
+              return (c.employeeId && c.employeeId === employee.id) ||
+                     (c.id && c.id === employee.id);
+            });
+          }
+
+          // If still not found and we have only one candidate, use it (fallback for single allocation)
+          if (!found && dept.candidates.length === 1) {
+            found = dept.candidates[0];
+          }
+
+          console.log(`Found employee in ${dept.departmentName}:`, found ? 'YES' : 'NO');
+
           if (found) {
             // Try to get department info from database for complete data
             const deptId = (dept as any).departmentId;

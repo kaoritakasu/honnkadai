@@ -105,13 +105,13 @@
             </p>
           </div>
 
-          <!-- スキルギャップ表示：シミュレーション履歴がある場合優先、なければ現在の配置情報から表示 -->
+          <!-- スキルギャップ表示：最新シミュレーションデータのみを表示 -->
           @if (simulationSkillGapData(); as simGap) {
             <div style="background: white; color: #333; padding: 20px; border-radius: 8px;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <div>
-                  <p style="margin: 0 0 5px 0; font-size: 0.95em; font-weight: bold; color: #2c3e50;">🎯 シミュレーション履歴からのスキル分析</p>
-                  <p style="margin: 0; font-size: 0.75em; color: #999;">{{ simGap.simulationDate | date:'short' }}のシミュレーション</p>
+                  <p style="margin: 0 0 5px 0; font-size: 0.95em; font-weight: bold; color: #2c3e50;">🎯 最新シミュレーション - スキル分析</p>
+                  <p style="margin: 0; font-size: 0.75em; color: #999;">{{ simGap.simulationDate | date:'short' }}のシミュレーション結果</p>
                 </div>
                 @if (simGap.ideal) {
                   <span style="font-size: 0.8em; background: #f0f4ff; color: #667eea; padding: 4px 8px; border-radius: 12px; font-weight: bold;">平均ギャップ: {{ getAverageGap(simGap) }}%</span>
@@ -128,7 +128,7 @@
                   </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px;">
                   @for (skill of [
                     {name: '営業力', key: 'salesForce', color: '#3498db'},
                     {name: '管理力', key: 'managementForce', color: '#9b59b6'},
@@ -138,7 +138,7 @@
                     <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border: 1px solid #eee;">
                       <div style="display: flex; justify-content: space-between; font-size: 0.85em; margin-bottom: 8px;">
                         <span style="font-weight: bold; color: #333;">{{ skill.name }}</span>
-                        <span style="color: #666;">あなた: {{ simGap.actual[skill.key] }}% / 理想: {{ simGap.ideal[skill.key] }}%</span>
+                        <span style="color: #666;">現在: {{ simGap.actual[skill.key] }}% / 目標: {{ simGap.ideal[skill.key] }}%</span>
                       </div>
                       <div style="position: relative; width: 100%; height: 16px; background: #e0e0e0; border-radius: 4px; overflow: hidden; margin-bottom: 8px;">
                         <div [style.width.%]="simGap.actual[skill.key]" [style.background]="skill.color" style="height: 100%; border-radius: 4px; transition: width 0.5s ease;"></div>
@@ -147,7 +147,7 @@
                       @if (simGap.actual[skill.key] >= simGap.ideal[skill.key]) {
                         <p style="margin: 0; font-size: 0.75em; color: #27ae60; font-weight: bold; text-align: right;">✓ 基準クリア（強み）</p>
                       } @else {
-                        <p style="margin: 0; font-size: 0.75em; color: #e74c3c; font-weight: bold; text-align: right;">△ あと {{ simGap.ideal[skill.key] - simGap.actual[skill.key] }}% 不足（今後の課題）</p>
+                        <p style="margin: 0; font-size: 0.75em; color: #e74c3c; font-weight: bold; text-align: right;">△ 不足分: {{ simGap.ideal[skill.key] - simGap.actual[skill.key] }}%</p>
                       }
                     </div>
                   }
@@ -156,46 +156,10 @@
                 <p style="margin: 0; font-size: 0.9em; color: #666;">部署のスキル要件情報がまだ設定されていません。</p>
               }
             </div>
-          } @else if (allocationSkillGapData(); as allocGap) {
-            <div style="background: white; color: #333; padding: 20px; border-radius: 8px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <p style="margin: 0; font-size: 0.95em; font-weight: bold; color: #2c3e50;">🎯 部署の求めるスキル要件とあなたの現状（強み・課題）</p>
-                <span style="font-size: 0.8em; background: #f0f4ff; color: #667eea; padding: 4px 8px; border-radius: 12px; font-weight: bold;">平均ギャップ: {{ getAverageGap(allocGap) }}%</span>
-              </div>
-
-              <div style="display: flex; gap: 15px; margin-bottom: 15px; font-size: 0.8em; color: #555;">
-                <div style="display: flex; align-items: center; gap: 6px;">
-                  <div style="width: 14px; height: 14px; background: #3498db; border-radius: 3px;"></div> あなたの現在のスキル割合
-                </div>
-                <div style="display: flex; align-items: center; gap: 6px;">
-                  <div style="width: 3px; height: 14px; background: #e74c3c;"></div> 配属先の理想ライン
-                </div>
-              </div>
-
-              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                @for (skill of [
-                  {name: '営業力', key: 'salesForce', color: '#3498db'},
-                  {name: '管理力', key: 'managementForce', color: '#9b59b6'},
-                  {name: '開拓力', key: 'explorationForce', color: '#e67e22'},
-                  {name: '育成力', key: 'developmentForce', color: '#2ecc71'}
-                ]; track skill.key) {
-                  <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border: 1px solid #eee;">
-                    <div style="display: flex; justify-content: space-between; font-size: 0.85em; margin-bottom: 8px;">
-                      <span style="font-weight: bold; color: #333;">{{ skill.name }}</span>
-                      <span style="color: #666;">あなた: {{ allocGap.actual[skill.key] }}% / 理想: {{ allocGap.ideal[skill.key] }}%</span>
-                    </div>
-                    <div style="position: relative; width: 100%; height: 16px; background: #e0e0e0; border-radius: 4px; overflow: hidden; margin-bottom: 8px;">
-                      <div [style.width.%]="allocGap.actual[skill.key]" [style.background]="skill.color" style="height: 100%; border-radius: 4px; transition: width 0.5s ease;"></div>
-                      <div [style.left.%]="allocGap.ideal[skill.key]" style="position: absolute; top: 0; bottom: 0; width: 3px; background: #e74c3c; z-index: 10; box-shadow: 0 0 4px rgba(231,76,60,0.5);"></div>
-                    </div>
-                    @if (allocGap.actual[skill.key] >= allocGap.ideal[skill.key]) {
-                      <p style="margin: 0; font-size: 0.75em; color: #27ae60; font-weight: bold; text-align: right;">✓ 基準クリア（強み）</p>
-                    } @else {
-                      <p style="margin: 0; font-size: 0.75em; color: #e74c3c; font-weight: bold; text-align: right;">△ あと {{ allocGap.ideal[skill.key] - allocGap.actual[skill.key] }}% 不足（今後の課題）</p>
-                    }
-                  </div>
-                }
-              </div>
+          } @else {
+            <div style="background: #fef5e7; border-left: 4px solid #f39c12; padding: 15px; border-radius: 4px; color: #d68910;">
+              <p style="margin: 0; font-weight: bold; font-size: 0.95em;">⚠️ 最新のシミュレーションデータがありません</p>
+              <p style="margin: 5px 0 0 0; font-size: 0.85em;">管理者がシミュレーションを実行・保存すると、ここに最新の配置結果とスキルギャップ分析が表示されます。</p>
             </div>
           }
         </section>
