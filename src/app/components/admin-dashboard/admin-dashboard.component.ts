@@ -113,6 +113,12 @@ export class AdminDashboardComponent implements OnInit {
   // --- 部署アコーディオン ---
   expandedDeptIds: { [key: string]: boolean } = {};
 
+  // --- 追加採用シミュレーション用 ---
+  autoHireCount: number = 10;
+  isSimulatingHiring: boolean = false;
+  hiringSimulationResult: any = null;
+  pendingNewHires: any[] | null = null;
+
   constructor(
     private apiService: ApiService,
     private authService: AuthService,
@@ -780,19 +786,18 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   addNewCandidate() {
-    const newEmployee = {
+    this.newCandidates.push({
       employeeId: 'NEW_' + Date.now(),
-      employeeName: '新規人材',
-      score: 50,
-      matchScore: 0,
+      employeeNumber: 'NEW',
+      employeeName: '',
+      salesForce: 50,
+      managementForce: 50,
+      explorationForce: 50,
+      developmentForce: 50,
+      laborCost: 5.0,
       departmentId: '',
-      departmentName: '',
-      isNew: true,
-      skills: [],
-      desiredDept: '',
-      isOldData: false
-    };
-    this.newCandidates.push(newEmployee);
+      isNew: true
+    });
   }
 
   removeCandidate(index: number) {
@@ -1610,4 +1615,143 @@ export class AdminDashboardComponent implements OnInit {
 
     return { ideal, actual, employeeCount: averages.employeeCount };
   }
+
+  generateOptimalCandidates(count: number) {
+    const mode = this.simulationMode;
+    const newCandidates = [];
+    for (let i = 0; i < count; i++) {
+      // モード（経営戦略）に合わせて、システムが最適なベース値を算出
+      let s = 70, m = 70, e = 70, d = 70, c = 8.0;
+      if (mode === 'balanced') { s = 85; m = 85; e = 85; d = 85; c = 10.0; }
+      else if (mode === 'management_focus') { s = 90; m = 90; e = 30; d = 30; c = 9.0; }
+      else if (mode === 'sales_focus') { s = 95; m = 40; e = 85; d = 20; c = 10.0; }
+      else if (mode === 'tech_focus') { s = 40; m = 50; e = 95; d = 90; c = 9.5; }
+
+      // 完全に同じ数値にならないよう、±5の揺らぎ（乱数）を持たせる
+      const randomize = (val: number) => Math.min(100, Math.max(0, val + Math.floor(Math.random() * 11) - 5));
+
+      newCandidates.push({
+        employeeId: `NEW_${Date.now()}_${i}`,
+        employeeNumber: `NEW${String(Date.now() + i).slice(-4)}`,
+        employeeName: `新規採用候補${i + 1}`,
+        salesForce: randomize(s),
+        managementForce: randomize(m),
+        explorationForce: randomize(e),
+        developmentForce: randomize(d),
+        laborCost: c,
+        isNew: true,
+        tags: [],
+        desiredDept: '',
+        workLifeBalance: ''
+      });
+    }
+    return newCandidates;
+  }
+
+  generateAndReviewCandidates() {
+    if (this.autoHireCount < 1) return;
+    this.pendingNewHires = this.generateOptimalCandidates(this.autoHireCount);
+    this.hiringSimulationResult = null;
+  }
+
+  runAutoHiringSimulation() {
+    if (!this.pendingNewHires || this.pendingNewHires.length === 0) return;
+    this.isSimulatingHiring = true;
+
+    let baseData: any[] = [];
+    const currentResults = this.simulationResults();
+
+    if (currentResults && currentResults.length > 0) {
+      baseData = currentResults.flatMap((dept: any) => dept.candidates);
+    } else if (this.employees && this.employees().length > 0) {
+      baseData = [...this.employees()];
+    } else {
+      alert('ベースとなる社員データがありません。先に通常シミュレーションを実行してください。');
+      this.isSimulatingHiring = false;
+      return;
+    }
+
+    const combinedData = [...baseData, ...this.pendingNewHires];
+
+    this.apiService.simulateBatchAllocation(combinedData, this.getTotalCompanyRevenue(), this.simulationMode).subscribe({
+      next: (data: any) => {
+        this.isSimulatingHiring = false;
+        if (data && data.results) {
+          this.hiringSimulationResult = {
+            before: {
+              revenue: this.getTotalCompanyRevenue(),
+              cost: this.getTotalCompanyCost(),
+              profit: this.getTotalCompanyProfit()
+            },
+            after: {
+              revenue: data.totalCompanyRevenue,
+              cost: data.totalCompanyCost,
+              profit: data.totalCompanyProfit
+            },
+            results: data.results
+          };
+        }
+      },
+      error: (err: any) => {
+        console.error(err);
+        this.isSimulatingHiring = false;
+        alert('自動採用シミュレーションに失敗しました。');
+      }
+    });
+  }
+
+  private getTotalCompanyRevenue(): number {
+    if (this.simulationSummary()?.totalCompanyRevenue) {
+      return this.simulationSummary().totalCompanyRevenue;
+    }
+    if (Array.isArray(this.simulationResults())) {
+      return this.simulationResults().reduce((sum: number, r: any) => sum + (r.finalRevenue || 0), 0);
+    }
+    return 0;
+  }
+
+  private getTotalCompanyCost(): number {
+    if (this.simulationSummary()?.totalCompanyCost) {
+      return this.simulationSummary().totalCompanyCost;
+    }
+    if (Array.isArray(this.simulationResults())) {
+      return this.simulationResults().reduce((sum: number, r: any) => sum + (r.cost || 0), 0);
+    }
+    return 0;
+  }
+
+  private getTotalCompanyProfit(): number {
+    if (this.simulationSummary()?.totalCompanyProfit) {
+      return this.simulationSummary().totalCompanyProfit;
+    }
+    return this.getTotalCompanyRevenue() - this.getTotalCompanyCost();
+  }
+
+  applyHiringSimulationResult() {
+    if (!this.hiringSimulationResult) return;
+    const res = this.hiringSimulationResult.results;
+    const enrichedResults = this.enrichWithMyPageData(res);
+    const sortedResults = this.sortResultsByEmployeeNumber(
+      enrichedResults.map((r: any) => ({
+        ...r,
+        candidates: (r.candidates || []).sort((a: any, b: any) => {
+          return String(a.employeeNumber || '').localeCompare(String(b.employeeNumber || ''));
+        })
+      }))
+    );
+
+    this.simulationResults.set(sortedResults);
+    this.simulationSummary.set({
+      totalCompanyRevenue: this.hiringSimulationResult.after.revenue,
+      totalCompanyCost: this.hiringSimulationResult.after.cost,
+      totalCompanyProfit: this.hiringSimulationResult.after.profit
+    });
+    this.updateDropListIds();
+
+    alert('新しい配置案をツリー図に反映しました！「新規採用候補」がどの部署に最適配置されたか確認できます。');
+    this.hiringSimulationResult = null;
+    this.pendingNewHires = null;
+  }
+
+
 }

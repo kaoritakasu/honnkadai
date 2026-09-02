@@ -496,7 +496,7 @@
             <p style="margin: 0 0 15px 0; font-size: 0.9em; color: #666;">シミュレーションに適用する経営戦略を選択してください。選択した戦略に応じてアルゴリズムの重み付けが動的に変わります。</p>
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
-              <!-- ⚖️ 全社バランス重視 -->
+              <!-- ⚖️ 全社売上最大化 -->
               <button
                 class="btn-strategy"
                 (click)="simulationMode = 'balanced'"
@@ -505,34 +505,8 @@
                 [style.border]="simulationMode === 'balanced' ? '2px solid #667eea' : '2px solid #ddd'"
                 style="padding: 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: left; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"
               >
-                <p style="margin: 0 0 4px 0; font-weight: bold; font-size: 1em;">⚖️ 全社バランス重視</p>
+                <p style="margin: 0 0 4px 0; font-weight: bold; font-size: 1em;">⚖️ 全社売上最大化</p>
                 <p style="margin: 0; font-size: 0.85em; opacity: 0.8;">すべてのスキルを均等に評価</p>
-              </button>
-
-              <!-- 🚀 営業・開拓特化 -->
-              <button
-                class="btn-strategy"
-                (click)="simulationMode = 'sales_focus'"
-                [style.background]="simulationMode === 'sales_focus' ? 'linear-gradient(135deg, #f39c12 0%, #e67e22 100%)' : '#ffffff'"
-                [style.color]="simulationMode === 'sales_focus' ? 'white' : '#333'"
-                [style.border]="simulationMode === 'sales_focus' ? '2px solid #f39c12' : '2px solid #ddd'"
-                style="padding: 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: left; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"
-              >
-                <p style="margin: 0 0 4px 0; font-weight: bold; font-size: 1em;">🚀 営業・開拓特化</p>
-                <p style="margin: 0; font-size: 0.85em; opacity: 0.8;">短期売上拡大を最優先</p>
-              </button>
-
-              <!-- 🎓 育成・技術投資 -->
-              <button
-                class="btn-strategy"
-                (click)="simulationMode = 'tech_focus'"
-                [style.background]="simulationMode === 'tech_focus' ? 'linear-gradient(135deg, #27ae60 0%, #16a085 100%)' : '#ffffff'"
-                [style.color]="simulationMode === 'tech_focus' ? 'white' : '#333'"
-                [style.border]="simulationMode === 'tech_focus' ? '2px solid #27ae60' : '2px solid #ddd'"
-                style="padding: 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: left; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"
-              >
-                <p style="margin: 0 0 4px 0; font-weight: bold; font-size: 1em;">🎓 育成・技術投資</p>
-                <p style="margin: 0; font-size: 0.85em; opacity: 0.8;">中長期成長基盤を構築</p>
               </button>
 
               <!-- 👔 管理体制強化 -->
@@ -545,11 +519,40 @@
                 style="padding: 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: left; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"
               >
                 <p style="margin: 0 0 4px 0; font-weight: bold; font-size: 1em;">👔 管理体制強化</p>
-                <p style="margin: 0; font-size: 0.85em; opacity: 0.8;">組織安定・リスク管理を重視</p>
+                <p style="margin: 0; font-size: 0.85em; opacity: 0.8;">飽和事業の売上最大化</p>
               </button>
+
+              <!-- 🚀 営業・開拓特化 -->
+              <button
+                class="btn-strategy"
+                (click)="simulationMode = 'sales_focus'"
+                [style.background]="simulationMode === 'sales_focus' ? 'linear-gradient(135deg, #f39c12 0%, #e67e22 100%)' : '#ffffff'"
+                [style.color]="simulationMode === 'sales_focus' ? 'white' : '#333'"
+                [style.border]="simulationMode === 'sales_focus' ? '2px solid #f39c12' : '2px solid #ddd'"
+                style="padding: 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: left; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"
+              >
+                <p style="margin: 0 0 4px 0; font-weight: bold; font-size: 1em;">🚀 営業・開拓特化</p>
+                <p style="margin: 0; font-size: 0.85em; opacity: 0.8;">成長事業の利益最大化</p>
+              </button>
+
+              <!-- 🎓 育成・技術投資 -->
+              <button
+                class="btn-strategy"
+                (click)="simulationMode = 'tech_focus'"
+                [style.background]="simulationMode === 'tech_focus' ? 'linear-gradient(135deg, #27ae60 0%, #16a085 100%)' : '#ffffff'"
+                [style.color]="simulationMode === 'tech_focus' ? 'white' : '#333'"
+                [style.border]="simulationMode === 'tech_focus' ? '2px solid #27ae60' : '2px solid #ddd'"
+                style="padding: 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: left; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"
+              >
+                <p style="margin: 0 0 4px 0; font-weight: bold; font-size: 1em;">🎓 育成・技術投資</p>
+                <p style="margin: 0; font-size: 0.85em; opacity: 0.8;">新規事業の売上最大化</p>
+              </button>
+
+
             </div>
           </div>
         </div>
+
 
         <div class="paste-data-form" style="margin-top: 20px; padding: 20px; background: #fff; border-radius: 8px; border: 1px solid #e0e0e0;">
           <h3 style="margin-top: 0; display: flex; align-items: center; gap: 8px;">📋 データの直接読み込み（コピペ）</h3>
@@ -758,6 +761,96 @@
             <div class="adjustment-controls" style="margin-bottom: 20px; padding: 15px; background-color: #f0f4ff; border-radius: 8px; border-left: 4px solid #667eea;">
             <h4 style="margin: 0 0 10px 0;">人員配置の微調整</h4>
             <p style="margin: 0 0 15px 0; color: #666;">ドラッグ&ドロップで人員を異動させるか、下のボタンで新しい人材を追加できます</p>
+
+          <!-- ============================================== -->
+          <!-- 📈 システム自動算出による追加採用シミュレーション -->
+          <!-- ============================================== -->
+          <div style="margin-bottom: 25px; padding: 20px; background: linear-gradient(135deg, #f0f4ff 0%, #e6efff 100%); border-left: 4px solid #3498db; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 15px;">
+              <div style="flex: 1; min-width: 300px;">
+                <h4 style="margin: 0 0 8px 0; color: #2c3e50; font-size: 1.05em;">📈 追加採用シミュレーション (システム自動算出)</h4>
+                <p style="margin: 0; font-size: 0.9em; color: #555; line-height: 1.4;">
+                  現在の経営戦略に最適な能力値を持つ人材モデルを自動生成します。確認後、シミュレーションを実行してください。
+                </p>
+              </div>
+              <div style="display: flex; gap: 10px; align-items: center; background: white; padding: 10px 15px; border-radius: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <label style="font-weight: bold; color: #333; font-size: 0.9em; margin: 0;">採用:</label>
+                <input type="number" [(ngModel)]="autoHireCount" min="1" max="50" style="width: 60px; padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em;">
+                <span style="color: #666; font-weight: bold; font-size: 0.9em; margin-right: 5px;">名</span>
+                <button (click)="generateAndReviewCandidates()" style="padding: 8px 20px; background: #3498db; color: white; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 0.9em; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                  ✨ 候補者を生成
+                </button>
+              </div>
+            </div>
+
+            <!-- ワンクッション目：候補者の確認・微調整 -->
+            @if (pendingNewHires) {
+              <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #ddd; margin-top: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f0f4ff; padding-bottom: 8px; margin-bottom: 15px;">
+                  <h5 style="margin: 0; font-size: 1em; color: #2c3e50;">👤 ① システムが算出した新規採用候補 (スキル微調整可能)</h5>
+                </div>
+
+                <div style="max-height: 250px; overflow-y: auto; margin-bottom: 15px; background: #fdfafb; padding: 10px; border-radius: 8px; border: 1px solid #e8daef;">
+                  <div style="display: grid; gap: 8px;">
+                    @for (emp of pendingNewHires; track emp.employeeNumber) {
+                      <div style="display: flex; gap: 8px; align-items: center; font-size: 0.85em; background: white; padding: 8px; border-radius: 4px; border: 1px solid #ddd; overflow-x: auto;">
+                        <div style="font-weight: bold; min-width: 90px; color: #2c3e50;">{{ emp.employeeName }}</div>
+                        <label style="white-space: nowrap; color: #555;">営: <input type="number" [(ngModel)]="emp.salesForce" style="width: 45px; padding: 4px; border: 1px solid #ccc; border-radius: 4px;"></label>
+                        <label style="white-space: nowrap; color: #555;">管: <input type="number" [(ngModel)]="emp.managementForce" style="width: 45px; padding: 4px; border: 1px solid #ccc; border-radius: 4px;"></label>
+                        <label style="white-space: nowrap; color: #555;">開: <input type="number" [(ngModel)]="emp.explorationForce" style="width: 45px; padding: 4px; border: 1px solid #ccc; border-radius: 4px;"></label>
+                        <label style="white-space: nowrap; color: #555;">育: <input type="number" [(ngModel)]="emp.developmentForce" style="width: 45px; padding: 4px; border: 1px solid #ccc; border-radius: 4px;"></label>
+                        <label style="white-space: nowrap; color: #555;">ｺｽﾄ: <input type="number" step="0.1" [(ngModel)]="emp.laborCost" style="width: 50px; padding: 4px; border: 1px solid #ccc; border-radius: 4px;"></label>
+                      </div>
+                    }
+                  </div>
+                </div>
+
+                <div style="text-align: right;">
+                  <button (click)="runAutoHiringSimulation()" [disabled]="isSimulatingHiring" style="padding: 10px 20px; background: #f39c12; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(243, 156, 18, 0.3);" [style.opacity]="isSimulatingHiring ? '0.7' : '1'">
+                    {{ isSimulatingHiring ? '計算中...' : '▶️ ② このメンバーでシミュレーションを実行' }}
+                  </button>
+                </div>
+              </div>
+            }
+
+            <!-- 2クッション目：シミュレーション結果 -->
+            @if (hiringSimulationResult) {
+              <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #ddd; margin-top: 15px;">
+                <h5 style="margin: 0 0 15px 0; font-size: 1em; color: #2c3e50; border-bottom: 2px solid #f0f4ff; padding-bottom: 8px;">📊 ③ 採用前後（Before → After）の比較</h5>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; text-align: center; margin-bottom: 15px;">
+                  <!-- 売上 -->
+                  <div style="padding: 12px; background: #f8f9fa; border-radius: 8px; border: 1px solid #eee;">
+                    <div style="font-size: 0.85em; color: #666; margin-bottom: 5px; font-weight: bold;">全社売上</div>
+                    <div style="font-size: 1em; color: #999; text-decoration: line-through;">{{ hiringSimulationResult.before.revenue | number:'1.0-1' }} 億円</div>
+                    <div style="font-size: 1.4em; font-weight: bold; color: #27ae60; margin: 5px 0;">{{ hiringSimulationResult.after.revenue | number:'1.0-1' }} 億円</div>
+                    <div style="font-size: 0.85em; font-weight: bold; color: #27ae60; background: #e8f8f5; display: inline-block; padding: 2px 8px; border-radius: 12px;">+{{ (hiringSimulationResult.after.revenue - hiringSimulationResult.before.revenue) | number:'1.0-1' }} 億</div>
+                  </div>
+                  <!-- コスト -->
+                  <div style="padding: 12px; background: #f8f9fa; border-radius: 8px; border: 1px solid #eee;">
+                    <div style="font-size: 0.85em; color: #666; margin-bottom: 5px; font-weight: bold;">全社コスト</div>
+                    <div style="font-size: 1em; color: #999; text-decoration: line-through;">{{ hiringSimulationResult.before.cost | number:'1.0-1' }} 億円</div>
+                    <div style="font-size: 1.4em; font-weight: bold; color: #e74c3c; margin: 5px 0;">{{ hiringSimulationResult.after.cost | number:'1.0-1' }} 億円</div>
+                    <div style="font-size: 0.85em; font-weight: bold; color: #e74c3c; background: #fadbd8; display: inline-block; padding: 2px 8px; border-radius: 12px;">+{{ (hiringSimulationResult.after.cost - hiringSimulationResult.before.cost) | number:'1.0-1' }} 億</div>
+                  </div>
+                  <!-- 利益 -->
+                  <div style="padding: 12px; background: #fff9e6; border: 2px solid #f39c12; border-radius: 8px; box-shadow: 0 4px 6px rgba(243, 156, 18, 0.1);">
+                    <div style="font-size: 0.9em; color: #b9770e; font-weight: bold; margin-bottom: 5px;">全社利益 (売上 - コスト)</div>
+                    <div style="font-size: 1em; color: #999; text-decoration: line-through;">{{ hiringSimulationResult.before.profit | number:'1.0-1' }} 億円</div>
+                    <div style="font-size: 1.5em; font-weight: bold; color: #d35400; margin: 5px 0;">{{ hiringSimulationResult.after.profit | number:'1.0-1' }} 億円</div>
+                    <div style="font-size: 0.9em; font-weight: bold; color: #d35400; background: #fdebd0; display: inline-block; padding: 2px 8px; border-radius: 12px;">+{{ (hiringSimulationResult.after.profit - hiringSimulationResult.before.profit) | number:'1.0-1' }} 億</div>
+                  </div>
+                </div>
+
+                <div style="text-align: right; border-top: 1px dashed #ccc; padding-top: 15px;">
+                  <button (click)="applyHiringSimulationResult()" style="padding: 10px 20px; background: #27ae60; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(39, 174, 96, 0.3);">
+                    ✅ ④ この配置案を下の組織ツリーに反映する
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+
             <button (click)="addNewCandidate()" style="margin-right: 10px; padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer;">＋ 新しい人材を追加</button>
             @if (adjustedAllocations.size > 0 || newCandidates.length > 0) {
               <button (click)="resetAdjustments()" style="padding: 10px 20px; background: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer;">調整をリセット</button>
@@ -850,7 +943,13 @@
                 @for (cand of newCandidates; track cand.employeeId; let i = $index) {
                   <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #ffa500;">
                     <input type="text" [(ngModel)]="cand.employeeName" placeholder="人材名" style="width: 100%; padding: 5px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px;" />
-                    <label style="display: block; margin-bottom: 10px;">スコア: <input type="number" [(ngModel)]="cand.score" style="width: 60px; padding: 5px; border: 1px solid #ddd; border-radius: 4px;" /></label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; font-size: 0.9em;">
+                      <label style="display: block; font-weight: bold; color: #555;">営: <input type="number" [(ngModel)]="cand.salesForce" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;" /></label>
+                      <label style="display: block; font-weight: bold; color: #555;">管: <input type="number" [(ngModel)]="cand.managementForce" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;" /></label>
+                      <label style="display: block; font-weight: bold; color: #555;">開: <input type="number" [(ngModel)]="cand.explorationForce" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;" /></label>
+                      <label style="display: block; font-weight: bold; color: #555;">育: <input type="number" [(ngModel)]="cand.developmentForce" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;" /></label>
+                      <label style="display: block; font-weight: bold; color: #555; grid-column: span 2;">人件費: <input type="number" step="0.1" [(ngModel)]="cand.laborCost" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;" /></label>
+                    </div>
                     <label style="display: block; margin-bottom: 10px;">
                       配置先:
                       <select [(ngModel)]="cand.departmentId" (change)="updateCandidateDepartment(cand, cand.departmentId)" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px;">
