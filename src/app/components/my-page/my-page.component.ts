@@ -34,6 +34,7 @@ export class MyPageComponent implements OnInit {
   isSubmittingConsultation: boolean = false;
   allocations = signal<any[]>([]);
   skillGapData = signal<any[]>([]);
+  simulationSkillGapData = signal<any>(null);
   desiredDeptData: any = null;
 
   // Interview reservation fields
@@ -82,6 +83,7 @@ export class MyPageComponent implements OnInit {
     this.loadAvailabilityRules();
     this.loadAvailabilityExceptions();
     this.loadMyConsultations();
+    this.loadSimulationSkillGap();
     this.generateCalendarDays();
   }
 
@@ -575,5 +577,62 @@ export class MyPageComponent implements OnInit {
     if (!date) return null;
     const dateStr = this.toLocalDateString(date);
     return this.availabilityExceptions().find(exc => this.toLocalDateString(new Date(exc.date)) === dateStr);
+  }
+
+  loadSimulationSkillGap() {
+    this.apiService.getMyLatestSimulation().subscribe({
+      next: (data) => {
+        this.simulationSkillGapData.set(this.calculateSimulationSkillGap(data));
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.log('No simulation history available');
+        this.simulationSkillGapData.set(null);
+      }
+    });
+  }
+
+  calculateSimulationSkillGap(simulationResult: any): any {
+    if (!simulationResult || !simulationResult.employeeData) {
+      return null;
+    }
+
+    const empData = simulationResult.employeeData;
+    const deptName = empData.department?.name || '';
+
+    const aS = Number(empData.salesForce) || 0;
+    const aM = Number(empData.managementForce) || 0;
+    const aE = Number(empData.explorationForce) || 0;
+    const aD = Number(empData.developmentForce) || 0;
+    const totalActual = aS + aM + aE + aD;
+
+    const actual = {
+      salesForce: totalActual > 0 ? Math.round((aS / totalActual) * 100) : 0,
+      managementForce: totalActual > 0 ? Math.round((aM / totalActual) * 100) : 0,
+      explorationForce: totalActual > 0 ? Math.round((aE / totalActual) * 100) : 0,
+      developmentForce: totalActual > 0 ? Math.round((aD / totalActual) * 100) : 0
+    };
+
+    const dept = empData.department || {};
+    const wS = Number(dept.weightSales) || 0;
+    const wM = Number(dept.weightManagement) || 0;
+    const wE = Number(dept.weightExploration) || 0;
+    const wD = Number(dept.weightDevelopment) || 0;
+    const totalWeight = wS + wM + wE + wD;
+
+    const ideal = totalWeight > 0 ? {
+      salesForce: Math.round((wS / totalWeight) * 100),
+      managementForce: Math.round((wM / totalWeight) * 100),
+      explorationForce: Math.round((wE / totalWeight) * 100),
+      developmentForce: Math.round((wD / totalWeight) * 100)
+    } : null;
+
+    return {
+      deptName: deptName,
+      ideal: ideal,
+      actual: actual,
+      isFromSimulation: true,
+      simulationDate: simulationResult.createdAt
+    };
   }
 }
