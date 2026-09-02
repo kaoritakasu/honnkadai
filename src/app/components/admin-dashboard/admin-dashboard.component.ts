@@ -95,8 +95,7 @@ export class AdminDashboardComponent implements OnInit {
   exceptionError = signal('');
 
   // --- ポップアップ用ステート ---
-  selectedEmployeeForModal: any = null;
-  showEmployeeModal = false;
+  selectedEmployeeNode = signal<any>(null);
 
   // --- 通知ドロップダウン ---
   showNotificationMenu = false;
@@ -917,10 +916,11 @@ export class AdminDashboardComponent implements OnInit {
     const enrichedResults = resultsArray.map((result: any) => ({
       ...result,
       candidates: (result.candidates || []).map((cand: any) => {
-        const dbEmp = dbEmployees.find((e: any) =>
-          (cand.employeeId && e.employeeId === cand.employeeId) ||
-          (cand.employeeNumber && e.employeeNumber === cand.employeeNumber)
-        );
+        const candEmpNumber = String(cand.employeeNumber || cand.employeeId || '').trim();
+        const dbEmp = dbEmployees.find((e: any) => {
+          const dbEmpNumber = String(e.employeeNumber || e.employeeId || '').trim();
+          return candEmpNumber && dbEmpNumber && candEmpNumber === dbEmpNumber;
+        });
 
         const s = Number(cand.salesForce) || 0;
         const m = Number(cand.managementForce) || 0;
@@ -946,9 +946,11 @@ export class AdminDashboardComponent implements OnInit {
           newTags.unshift(topSkill);
         }
 
+        const dbEmpName = dbEmp?.employeeName || dbEmp?.name || dbEmp?.user?.name || '';
+
         return {
           ...cand,
-          employeeName: cand.employeeName || dbEmp?.employeeName || dbEmp?.name || dbEmp?.user?.name || cand.employeeNumber || '名前未設定',
+          employeeName: dbEmpName || cand.employeeName || cand.employeeNumber || '名前未設定',
           desiredDept: dbEmp?.desiredDept || cand.desiredDept || '',
           workLifeBalance: dbEmp?.workLifeBalance || cand.workLifeBalance || '',
           tags: newTags
@@ -987,13 +989,11 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   openEmployeeModal(emp: any) {
-    this.selectedEmployeeForModal = emp;
-    this.showEmployeeModal = true;
+    this.selectedEmployeeNode.set(emp);
   }
 
   closeEmployeeModal() {
-    this.showEmployeeModal = false;
-    this.selectedEmployeeForModal = null;
+    this.selectedEmployeeNode.set(null);
   }
 
   saveSimulation() {

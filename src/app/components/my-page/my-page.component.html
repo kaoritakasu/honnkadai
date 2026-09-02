@@ -127,10 +127,10 @@
                     </span>
                     <div style="display: flex; gap: 15px; font-size: 0.85em;">
                       <span style="color: #667eea;">
-                        <strong>現在:</strong> {{ simulationSkillGapData().actual[skillType] }}%
+                        <strong>現在:</strong> {{ simulationSkillGapData().actual[skillType] }}点
                       </span>
                       <span style="color: #999;">
-                        <strong>目標:</strong> {{ simulationSkillGapData().ideal[skillType] }}%
+                        <strong>目標:</strong> {{ simulationSkillGapData().ideal[skillType] }}点
                       </span>
                       @if (simulationSkillGapData().actual[skillType] >= simulationSkillGapData().ideal[skillType]) {
                         <span style="color: #4caf50;">
@@ -138,7 +138,7 @@
                         </span>
                       } @else {
                         <span style="color: #f44336;">
-                          <strong>ギャップ:</strong> {{ simulationSkillGapData().ideal[skillType] - simulationSkillGapData().actual[skillType] }}%
+                          <strong>ギャップ:</strong> {{ simulationSkillGapData().ideal[skillType] - simulationSkillGapData().actual[skillType] }}点
                         </span>
                       }
                     </div>
@@ -157,23 +157,10 @@
                     </div>
 
                     <!-- ラベル -->
-                    <div style="position: absolute; top: 4px; left: 8px; font-size: 0.75em; font-weight: bold; color: #666;">現在のスキル</div>
-                    <div style="position: absolute; bottom: 4px; left: 8px; font-size: 0.75em; font-weight: bold; color: #999;">目標スキル</div>
+                    <div style="position: absolute; top: 4px; left: 8px; font-size: 0.75em; font-weight: bold; color: #999;">目標スキル</div>
+                    <div style="position: absolute; bottom: 4px; left: 8px; font-size: 0.75em; font-weight: bold; color: #666;">現在のスキル</div>
                   </div>
 
-                  <!-- プログレス表示 -->
-                  <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8em; color: #999;">
-                    <span>
-                      @if (simulationSkillGapData().actual[skillType] >= simulationSkillGapData().ideal[skillType]) {
-                        このスキルは目標値に達しています！
-                      } @else {
-                        ギャップを埋めるために{{ simulationSkillGapData().ideal[skillType] - simulationSkillGapData().actual[skillType] }}%のスキル向上が必要です
-                      }
-                    </span>
-                    <span style="color: #667eea; font-weight: bold;">
-                      達成率: {{ simulationSkillGapData().actual[skillType] }}%
-                    </span>
-                  </div>
                 </div>
               }
             </div>

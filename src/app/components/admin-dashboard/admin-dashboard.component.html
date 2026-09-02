@@ -220,6 +220,12 @@
                   <button (click)="addPenaltyRule(dept)" class="btn-add-rule" style="margin-top: 10px; padding: 8px 16px; background-color: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; display: block;">＋ ペナルティ条件を追加</button>
                 </div>
 
+                <!-- ボタングループ（編集・削除）を別セクションに移動 -->
+                <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 25px; margin-bottom: 20px; padding: 20px 0; border-top: 1px solid #eee; border-bottom: 1px solid #eee;">
+                  <button (click)="startEdit(dept.id)" class="btn-edit" style="padding: 8px 16px; background-color: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;">編集する</button>
+                  <button (click)="deleteDepartment(dept.id)" class="btn-delete" style="padding: 8px 16px; background-color: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer;">削除する</button>
+                </div>
+
                 <!-- 独立した行として更新・キャンセルボタンを右下に配置 -->
                 <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 25px; padding-top: 20px; border-top: 1px dashed #ccc; width: 100%;">
                   <button (click)="cancelEdit()" class="btn-cancel" style="padding: 10px 20px; background-color: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s;">キャンセル</button>
@@ -264,6 +270,12 @@
                     } @else {
                       <p style="margin: 0; color: #999;">ペナルティ条件は設定されていません</p>
                     }
+                  </div>
+
+                  <!-- 編集・削除ボタングループ -->
+                  <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px; margin-bottom: 20px; padding: 16px 0; border-top: 1px solid #eee; border-bottom: 1px solid #eee;">
+                    <button (click)="startEdit(dept.id)" class="btn-edit" style="padding: 8px 16px; background-color: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500;">編集する</button>
+                    <button (click)="deleteDepartment(dept.id)" class="btn-delete" style="padding: 8px 16px; background-color: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500;">削除する</button>
                   </div>
 
                   <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
@@ -395,9 +407,6 @@
                       </div>
                     }
                   </div>
-
-                  <button (click)="startEdit(dept.id)" class="btn-edit" style="margin-top: 15px; padding: 8px 16px; background-color: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;">編集する</button>
-                  <button (click)="deleteDepartment(dept.id)" class="btn-delete" style="margin-top: 15px; margin-left: 10px; padding: 8px 16px; background-color: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer;">削除する</button>
                 </div>
               }
                 </div> <!-- 修正点2: この div で @if (expandedDeptIds) 内の背景白エリアを正しく閉じる -->
@@ -604,67 +613,54 @@
                 🌳 ロジックツリー型 組織図
               </div>
               
-              <div style="display: flex; align-items: center; min-width: 900px; padding: 20px 0;">
-                
+              <div class="flex items-stretch min-w-[900px]">
+
                 <!-- 第1階層: 会社全体 -->
-                <div style="background: #2c3e50; color: white; padding: 15px 25px; border-radius: 30px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 2; flex-shrink: 0;">
+                <div class="flex items-center relative pr-8" style="background: #2c3e50; color: white; padding: 15px 25px; border-radius: 30px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1); flex-shrink: 0;" style="--tw-content: attr(data-after);">
+                  <div style="pointer-events: none; position: absolute; right: 0; top: 50%; width: 32px; height: 1px; background: #95a5a6; transform: translateY(-50%);"></div>
                   🏢 会社全体<br><span style="font-size: 0.8em; font-weight: normal; opacity: 0.8;">(総計: 100名)</span>
                 </div>
 
-                <div style="width: 40px; height: 2px; background: #95a5a6; flex-shrink: 0;"></div>
-
-                <!-- 第2階層: 事業部 -->
-                <div style="display: flex; flex-direction: column; gap: 40px; position: relative;">
-                  <!-- 事業部を繋ぐ縦線 -->
-                  <div style="position: absolute; left: 0; top: 15%; bottom: 15%; width: 2px; background: #95a5a6; z-index: 1;"></div>
-
+                <!-- 第2階層: 事業部グループ -->
+                <div class="flex flex-col justify-center border-l-2 border-gray-400 pl-8 py-4 space-y-4">
                   @for (dept of simulationResults(); track dept.departmentId) {
-                    <div style="display: flex; align-items: center; position: relative; z-index: 2;">
-                      <div style="width: 40px; height: 2px; background: #95a5a6; flex-shrink: 0;"></div>
-
+                    <div class="flex items-stretch">
                       <!-- 事業部ノード -->
-                      <div style="background: #3498db; color: white; padding: 12px 24px; border-radius: 25px; font-weight: bold; box-shadow: 0 3px 6px rgba(0,0,0,0.1); min-width: 160px; text-align: center; flex-shrink: 0;">
+                      <div class="flex items-center relative pr-8" style="background: #3498db; color: white; padding: 12px 24px; border-radius: 25px; font-weight: bold; box-shadow: 0 3px 6px rgba(0,0,0,0.1); min-width: 160px; text-align: center; flex-shrink: 0;">
+                        <div style="pointer-events: none; position: absolute; right: 0; top: 50%; width: 32px; height: 1px; background: #95a5a6; transform: translateY(-50%);"></div>
                         📁 {{ dept.departmentName || dept.department?.name }}<br>
                         <span style="font-size: 0.8em; font-weight: normal; opacity: 0.8;">({{ dept.candidates?.length || 0 }}名)</span>
                       </div>
 
-                      <div style="width: 40px; height: 2px; background: #95a5a6; flex-shrink: 0;"></div>
-
-                      <!-- 第3階層: リーダーとメンバー -->
-                      <div style="display: flex; flex-direction: column; gap: 15px; position: relative;">
-                        <!-- リーダーとメンバーを繋ぐ縦線 -->
-                        <div style="position: absolute; left: 0; top: 25%; bottom: 25%; width: 2px; background: #95a5a6; z-index: 1;"></div>
-
+                      <!-- 第3階層: リーダーとメンバーグループ -->
+                      <div class="flex flex-col justify-center border-l-2 border-gray-300 pl-8 py-4 space-y-4 flex-1">
                         <!-- リーダーノード -->
-                        <div style="display: flex; align-items: center; position: relative; z-index: 2;">
-                          <div style="width: 30px; height: 2px; background: #95a5a6; flex-shrink: 0;"></div>
-                          <div style="background: #fff9e6; border: 2px solid #f39c12; color: #2c3e50; padding: 10px 20px; border-radius: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); min-width: 250px;">
-                            <div style="color: #d35400; font-size: 0.8em; font-weight: bold; margin-bottom: 4px;">👑 部門リーダー (管理・育成重視)</div>
-                            @if (getDepartmentLeader(dept.candidates); as leader) {
-                              <div style="font-weight: bold;">👤 {{ leader.employeeNumber }} {{ leader.employeeName || 'Unknown' }}</div>
+                        <div class="flex items-center">
+                          @if (getDepartmentLeader(dept.candidates); as leader) {
+                            <div class="cursor-pointer transition-all duration-200 hover:bg-yellow-100 hover:shadow-lg hover:scale-105 active:scale-95" style="background: #fff9e6; border: 2px solid #f39c12; color: #2c3e50; padding: 10px 20px; border-radius: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); min-width: 250px;" (click)="openEmployeeModal(leader)">
+                              <div style="color: #d35400; font-size: 0.8em; font-weight: bold; margin-bottom: 4px;">👑 部門リーダー (管理・育成重視)</div>
+                              <div style="font-weight: bold;">👤 {{ leader.employeeNumber }} {{ getDisplayName(leader) }}</div>
                               <div style="font-size: 0.85em; color: #666; margin-top: 4px;">
                                 営:{{ leader.salesForce }} | <strong style="color:#d35400;">管:{{ leader.managementForce }}</strong> | 開:{{ leader.explorationForce }} | <strong style="color:#d35400;">育:{{ leader.developmentForce }}</strong>
                               </div>
-                            }
-                          </div>
+                            </div>
+                          }
                         </div>
 
                         <!-- メンバーノード -->
-                        <div style="display: flex; align-items: center; position: relative; z-index: 2;">
-                          <div style="width: 30px; height: 2px; background: #95a5a6; flex-shrink: 0;"></div>
+                        <div class="flex items-center">
                           <div style="background: white; border: 1px solid #bdc3c7; padding: 15px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); width: 380px;">
                             <div style="font-size: 0.85em; font-weight: bold; color: #7f8c8d; margin-bottom: 8px;">👥 所属メンバー</div>
                             <!-- スクロール可能な領域にメンバーを敷き詰める -->
                             <div style="display: flex; flex-wrap: wrap; gap: 6px; max-height: 120px; overflow-y: auto; padding-right: 5px;">
                               @for (emp of getDepartmentMembers(dept.candidates, getDepartmentLeader(dept.candidates)); track emp.employeeNumber) {
-                                <div style="background: #f1f2f6; border: 1px solid #dfe4ea; padding: 4px 8px; border-radius: 6px; font-size: 0.8em; color: #2c3e50; white-space: nowrap;">
+                                <div class="cursor-pointer transition-all duration-200 hover:bg-blue-200 hover:border-blue-500 hover:shadow-md hover:scale-110 active:scale-95" style="background: #f1f2f6; border: 1px solid #dfe4ea; padding: 4px 8px; border-radius: 6px; font-size: 0.8em; color: #2c3e50; white-space: nowrap;" (click)="openEmployeeModal(emp)" title="{{ getDisplayName(emp) }}">
                                   👤 {{ emp.employeeNumber }}
                                 </div>
                               }
                             </div>
                           </div>
                         </div>
-
                       </div>
                     </div>
                   }
@@ -747,7 +743,7 @@
                   <div style="flex: 1 1 auto; min-width: 0; min-height: 0; overflow-x: hidden; background-color: white; border-radius: 4px; padding: 5px; border: 1px dashed #ddd; display: flex; flex-direction: column; gap: 4px;">
                     @if (Array.isArray(result.candidates) && result.candidates.length > 0) {
                       @for (emp of result.candidates; track emp.employeeId) {
-                        <div class="employee-card" cdkDrag [cdkDragData]="emp" [style.display]="isMatch(emp, activeFilters[result.departmentId]) ? 'flex' : 'none'" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 6px; border-radius: 4px; cursor: move; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex-direction: column;" (click)="openEmployeeModal(emp)">
+                        <div class="employee-card transition-all duration-150 hover:shadow-xl hover:scale-105 cursor-pointer" cdkDrag [cdkDragData]="emp" [style.display]="isMatch(emp, activeFilters[result.departmentId]) ? 'flex' : 'none'" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 6px; border-radius: 4px; cursor: move; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex-direction: column;" (click)="openEmployeeModal(emp)">
                           <p style="margin: 0; font-weight: bold; font-size: 0.95em; line-height: 1.4; white-space: normal; word-break: break-all;">
                             {{ emp.employeeNumber ? emp.employeeNumber + ' ' : '' }}{{ getDisplayName(emp) }}
                             @if (currentUserRole === 'ADMIN' && emp.isExecutiveCandidate) { <span title="幹部候補" style="margin-left: 4px;">👑</span> }
@@ -1229,39 +1225,6 @@
 <!-- 各種モーダル -->
 <!-- ============================================== -->
 
-<!-- 社員詳細ポップアップ（モーダル） -->
-@if (showEmployeeModal && selectedEmployeeForModal) {
-<div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000;" (click)="closeEmployeeModal()">
-  <div style="background: white; padding: 25px; border-radius: 8px; width: 90%; max-width: 500px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);" (click)="$event.stopPropagation()">
-    <h3 style="margin-top: 0; border-bottom: 2px solid #667eea; padding-bottom: 10px;">
-      {{ selectedEmployeeForModal.employeeNumber }} {{ getDisplayName(selectedEmployeeForModal) }}
-    </h3>
-
-    <div style="margin: 15px 0; line-height: 1.6;">
-      <p><strong>現在の評価タグ:</strong>
-        @for (tag of selectedEmployeeForModal.tags; track tag) {
-          <span style="background: #e2e8f0; padding: 2px 8px; border-radius: 12px; font-size: 0.85em; margin-right: 5px;">{{ tag }}</span>
-        }
-      </p>
-      <p><strong>幹部候補:</strong> {{ selectedEmployeeForModal.isExecutiveCandidate ? '✅ 対象' : '対象外' }}</p>
-      <p><strong>希望部署:</strong> {{ selectedEmployeeForModal.desiredDept || '未設定' }}</p>
-
-      <div style="background: #f8fafc; padding: 15px; border-left: 4px solid #3498db; margin-top: 20px;">
-        <h4 style="margin: 0 0 10px 0; color: #2c3e50;">💡 配置理由</h4>
-        <p style="margin: 0; font-size: 0.95em; color: #555;">
-          この部署の求める要件に対し、本人の「{{ selectedEmployeeForModal.tags?.[0] || '総合的なスキル' }}」が高く評価されています。
-          組織の利益最大化に貢献できると判断されました。
-        </p>
-      </div>
-    </div>
-
-    <div style="text-align: right; margin-top: 20px;">
-      <button (click)="closeEmployeeModal()" style="padding: 8px 16px; background: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer;">閉じる</button>
-    </div>
-  </div>
-</div>
-}
-
 <!-- 面談予約詳細モーダル (人事用) -->
 @if (showReservationDetailModal && selectedReservationDetail) {
 <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000;" (click)="closeReservationDetail()">
@@ -1353,4 +1316,87 @@
     </div>
   </div>
 </div>
+}
+
+<!-- 社員詳細モーダル -->
+@if (selectedEmployeeNode(); as emp) {
+  <div style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1002;" (click)="closeEmployeeModal()">
+    <div style="background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 600px; box-shadow: 0 8px 32px rgba(0,0,0,0.15); max-height: 90vh; overflow-y: auto;" (click)="$event.stopPropagation()">
+      <!-- ヘッダー -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #667eea; padding-bottom: 15px;">
+        <h2 style="margin: 0; color: #2c3e50; font-size: 1.5em;">👤 社員詳細</h2>
+        <button class="hover:text-red-500 transition-colors" (click)="closeEmployeeModal()" style="background: none; border: none; font-size: 1.5em; cursor: pointer; color: #666;">✖</button>
+      </div>
+
+      <!-- 社員情報 -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
+        <!-- 左カラム：基本情報 -->
+        <div>
+          <div style="margin-bottom: 15px;">
+            <label style="display: block; font-size: 0.85em; color: #999; margin-bottom: 4px; font-weight: bold;">社員名</label>
+            <p style="margin: 0; font-size: 1.1em; color: #2c3e50; font-weight: bold;">{{ emp.employeeName || 'N/A' }}</p>
+          </div>
+
+          <div style="margin-bottom: 15px;">
+            <label style="display: block; font-size: 0.85em; color: #999; margin-bottom: 4px; font-weight: bold;">社員番号</label>
+            <p style="margin: 0; font-size: 1.1em; color: #2c3e50; font-weight: bold;">{{ emp.employeeNumber || 'N/A' }}</p>
+          </div>
+
+          <div style="margin-bottom: 15px;">
+            <label style="display: block; font-size: 0.85em; color: #999; margin-bottom: 4px; font-weight: bold;">現在の部署</label>
+            <p style="margin: 0; font-size: 1em; color: #555;">{{ emp.currentDept || 'N/A' }}</p>
+          </div>
+
+          <div>
+            <label style="display: block; font-size: 0.85em; color: #999; margin-bottom: 4px; font-weight: bold;">希望部署</label>
+            <p style="margin: 0; font-size: 1em; color: #555;">{{ emp.desiredDept || 'N/A' }}</p>
+          </div>
+        </div>
+
+        <!-- 右カラム：スキル情報 -->
+        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #667eea;">
+          <p style="margin: 0 0 15px 0; font-weight: bold; color: #2c3e50;">📊 スキル値</p>
+
+          @for (skill of [{name: '営業力', key: 'salesForce', emoji: '💼'}, {name: '管理力', key: 'managementForce', emoji: '👔'}, {name: '開拓力', key: 'explorationForce', emoji: '🚀'}, {name: '育成力', key: 'developmentForce', emoji: '🎓'}]; track skill.key) {
+            @let skillValue = emp[skill.key] || 0;
+            <div style="margin-bottom: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <span style="font-weight: 600; color: #333; font-size: 0.9em;">{{ skill.emoji }} {{ skill.name }}</span>
+                <span style="font-weight: bold; color: #667eea; font-size: 0.9em;">{{ skillValue }}/100</span>
+              </div>
+              <div style="width: 100%; height: 18px; background-color: #e8e8e8; border-radius: 4px; overflow: hidden;">
+                <div [style.width.%]="skillValue" style="height: 100%; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); transition: width 0.3s ease;"></div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- 追加情報 -->
+      @if (emp.tags && emp.tags.length > 0) {
+        <div style="margin-bottom: 20px; padding: 15px; background: #f0f4ff; border-radius: 8px; border-left: 4px solid #667eea;">
+          <p style="margin: 0 0 10px 0; font-weight: bold; color: #2c3e50;">🏷️ タグ</p>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+            @for (tag of emp.tags; track tag) {
+              <span style="background-color: #667eea; color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.85em; font-weight: bold;">{{ tag }}</span>
+            }
+          </div>
+        </div>
+      }
+
+      @if (emp.workLifeBalance) {
+        <div style="margin-bottom: 20px; padding: 15px; background: #f0fdf4; border-radius: 8px; border-left: 4px solid #27ae60;">
+          <p style="margin: 0 0 10px 0; font-weight: bold; color: #2c3e50;">💬 ワークライフバランス</p>
+          <p style="margin: 0; color: #555; white-space: pre-wrap; line-height: 1.6;">{{ emp.workLifeBalance }}</p>
+        </div>
+      }
+
+      <!-- 閉じるボタン -->
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px; padding-top: 20px; border-top: 1px solid #eee;">
+        <button (click)="closeEmployeeModal()" class="hover:bg-gray-700 transition-all" style="padding: 10px 25px; background-color: #95a5a6; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
+          閉じる
+        </button>
+      </div>
+    </div>
+  </div>
 }

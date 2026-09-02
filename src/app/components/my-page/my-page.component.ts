@@ -600,32 +600,20 @@ export class MyPageComponent implements OnInit {
     const empData = simulationResult.employeeData;
     const deptName = empData.department?.name || '';
 
-    const aS = Number(empData.salesForce) || 0;
-    const aM = Number(empData.managementForce) || 0;
-    const aE = Number(empData.explorationForce) || 0;
-    const aD = Number(empData.developmentForce) || 0;
-    const totalActual = aS + aM + aE + aD;
-
     const actual = {
-      salesForce: totalActual > 0 ? Math.round((aS / totalActual) * 100) : 0,
-      managementForce: totalActual > 0 ? Math.round((aM / totalActual) * 100) : 0,
-      explorationForce: totalActual > 0 ? Math.round((aE / totalActual) * 100) : 0,
-      developmentForce: totalActual > 0 ? Math.round((aD / totalActual) * 100) : 0
+      salesForce: Number(empData.salesForce) || 0,
+      managementForce: Number(empData.managementForce) || 0,
+      explorationForce: Number(empData.explorationForce) || 0,
+      developmentForce: Number(empData.developmentForce) || 0
     };
 
     const dept = empData.department || {};
-    const wS = Number(dept.weightSales) || 0;
-    const wM = Number(dept.weightManagement) || 0;
-    const wE = Number(dept.weightExploration) || 0;
-    const wD = Number(dept.weightDevelopment) || 0;
-    const totalWeight = wS + wM + wE + wD;
-
-    const ideal = totalWeight > 0 ? {
-      salesForce: Math.round((wS / totalWeight) * 100),
-      managementForce: Math.round((wM / totalWeight) * 100),
-      explorationForce: Math.round((wE / totalWeight) * 100),
-      developmentForce: Math.round((wD / totalWeight) * 100)
-    } : null;
+    const ideal = {
+      salesForce: Math.min(Math.round((Number(dept.weightSales) || 0) * 200), 100),
+      managementForce: Math.min(Math.round((Number(dept.weightManagement) || 0) * 200), 100),
+      explorationForce: Math.min(Math.round((Number(dept.weightExploration) || 0) * 200), 100),
+      developmentForce: Math.min(Math.round((Number(dept.weightDevelopment) || 0) * 200), 100)
+    };
 
     return {
       deptName: deptName,
