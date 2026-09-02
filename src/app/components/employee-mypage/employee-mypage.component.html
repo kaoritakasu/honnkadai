@@ -94,75 +94,104 @@
     <!-- TAB: 配置結果 -->
     @if (activeTab() === 'allocations') {
       @if (allocations().length > 0) {
-        <section style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 25px; border-radius: 8px; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-          <h3 style="margin: 0 0 10px 0; font-size: 1.3em;">🎉 あなたの新しい配置が決定しました</h3>
-          <p style="font-size: 1.4em; font-weight: bold; margin: 0 0 20px 0;">配属先: {{ allocations()[0].department?.name || '未定' }}</p>
-          
-          <div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-            <h4 style="margin: 0 0 10px 0; font-size: 1em;">💡 AIによる配置理由</h4>
-            <p style="margin: 0; line-height: 1.6; font-size: 0.95em;">
-              {{ allocations()[0].reason || 'あなたのスキルと適性が高く評価され、この部署での活躍が期待されています！' }}
-            </p>
-          </div>
+        <!-- 内示確認画面（未開封時） -->
+        @if (!isNoticeRevealed()) {
+          <section style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); padding: 40px 25px; border-radius: 8px; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center;">
+            <div style="max-width: 600px; margin: 0 auto;">
+              <div style="font-size: 3em; margin-bottom: 20px;">📬</div>
+              <h2 style="margin: 0 0 15px 0; font-size: 1.8em; font-weight: bold;">【重要】次期異動の内示について</h2>
+              <p style="margin: 0 0 30px 0; font-size: 1.1em; line-height: 1.6;">
+                あなたへの新しい配置案が決定しました。<br>
+                以下のボタンを押して、内示内容を確認してください。
+              </p>
+              <button (click)="revealNotice()" style="padding: 15px 40px; background: white; color: #e74c3c; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 1.05em; margin-bottom: 15px;">
+                ✓ 内示内容を確認する
+              </button>
+              <p style="margin: 0; font-size: 0.9em; color: rgba(255,255,255,0.9);">
+                ※ 確認後、必ず人事との面談予約を行ってください。
+              </p>
+            </div>
+          </section>
+        } @else {
+          <!-- 配置詳細情報（開封後） -->
+          <section style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 25px; border-radius: 8px; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+            <h3 style="margin: 0 0 10px 0; font-size: 1.3em;">🎉 あなたの新しい配置が決定しました</h3>
+            <p style="font-size: 1.4em; font-weight: bold; margin: 0 0 20px 0;">配属先: {{ allocations()[0].department?.name || '未定' }}</p>
 
-          <!-- スキルギャップ表示：最新シミュレーションデータのみを表示 -->
-          @if (simulationSkillGapData(); as simGap) {
-            <div style="background: white; color: #333; padding: 20px; border-radius: 8px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <div>
-                  <p style="margin: 0 0 5px 0; font-size: 0.95em; font-weight: bold; color: #2c3e50;">🎯 最新シミュレーション - スキル分析</p>
-                  <p style="margin: 0; font-size: 0.75em; color: #999;">{{ simGap.simulationDate | date:'short' }}のシミュレーション結果</p>
-                </div>
-                @if (simGap.ideal) {
-                  <span style="font-size: 0.8em; background: #f0f4ff; color: #667eea; padding: 4px 8px; border-radius: 12px; font-weight: bold;">平均ギャップ: {{ getAverageGap(simGap) }}%</span>
-                }
-              </div>
+            <div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+              <h4 style="margin: 0 0 10px 0; font-size: 1em;">💡 AIによる配置理由</h4>
+              <p style="margin: 0; line-height: 1.6; font-size: 0.95em;">
+                {{ allocations()[0].reason || 'あなたのスキルと適性が高く評価され、この部署での活躍が期待されています！' }}
+              </p>
+            </div>
 
-              @if (simGap.ideal) {
-                <div style="display: flex; gap: 15px; margin-bottom: 15px; font-size: 0.8em; color: #555;">
-                  <div style="display: flex; align-items: center; gap: 6px;">
-                    <div style="width: 14px; height: 14px; background: #3498db; border-radius: 3px;"></div> あなたの現在のスキル割合
+            <!-- スキルギャップ表示：最新シミュレーションデータのみを表示 -->
+            @if (simulationSkillGapData(); as simGap) {
+              <div style="background: white; color: #333; padding: 20px; border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                  <div>
+                    <p style="margin: 0 0 5px 0; font-size: 0.95em; font-weight: bold; color: #2c3e50;">🎯 最新シミュレーション - スキル分析</p>
+                    <p style="margin: 0; font-size: 0.75em; color: #999;">{{ simGap.simulationDate | date:'short' }}のシミュレーション結果</p>
                   </div>
-                  <div style="display: flex; align-items: center; gap: 6px;">
-                    <div style="width: 3px; height: 14px; background: #e74c3c;"></div> 配属先の理想ライン
-                  </div>
-                </div>
-
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px;">
-                  @for (skill of [
-                    {name: '営業力', key: 'salesForce', color: '#3498db'},
-                    {name: '管理力', key: 'managementForce', color: '#9b59b6'},
-                    {name: '開拓力', key: 'explorationForce', color: '#e67e22'},
-                    {name: '育成力', key: 'developmentForce', color: '#2ecc71'}
-                  ]; track skill.key) {
-                    <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border: 1px solid #eee;">
-                      <div style="display: flex; justify-content: space-between; font-size: 0.85em; margin-bottom: 8px;">
-                        <span style="font-weight: bold; color: #333;">{{ skill.name }}</span>
-                        <span style="color: #666;">現在: {{ simGap.actual[skill.key] }}% / 目標: {{ simGap.ideal[skill.key] }}%</span>
-                      </div>
-                      <div style="position: relative; width: 100%; height: 16px; background: #e0e0e0; border-radius: 4px; overflow: hidden; margin-bottom: 8px;">
-                        <div [style.width.%]="simGap.actual[skill.key]" [style.background]="skill.color" style="height: 100%; border-radius: 4px; transition: width 0.5s ease;"></div>
-                        <div [style.left.%]="simGap.ideal[skill.key]" style="position: absolute; top: 0; bottom: 0; width: 3px; background: #e74c3c; z-index: 10; box-shadow: 0 0 4px rgba(231,76,60,0.5);"></div>
-                      </div>
-                      @if (simGap.actual[skill.key] >= simGap.ideal[skill.key]) {
-                        <p style="margin: 0; font-size: 0.75em; color: #27ae60; font-weight: bold; text-align: right;">✓ 基準クリア（強み）</p>
-                      } @else {
-                        <p style="margin: 0; font-size: 0.75em; color: #e74c3c; font-weight: bold; text-align: right;">△ 不足分: {{ simGap.ideal[skill.key] - simGap.actual[skill.key] }}%</p>
-                      }
-                    </div>
+                  @if (simGap.ideal) {
+                    <span style="font-size: 0.8em; background: #f0f4ff; color: #667eea; padding: 4px 8px; border-radius: 12px; font-weight: bold;">平均ギャップ: {{ getAverageGap(simGap) }}%</span>
                   }
                 </div>
-              } @else {
-                <p style="margin: 0; font-size: 0.9em; color: #666;">部署のスキル要件情報がまだ設定されていません。</p>
-              }
+
+                @if (simGap.ideal) {
+                  <div style="display: flex; gap: 15px; margin-bottom: 15px; font-size: 0.8em; color: #555;">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                      <div style="width: 14px; height: 14px; background: #3498db; border-radius: 3px;"></div> あなたの現在のスキル割合
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                      <div style="width: 3px; height: 14px; background: #e74c3c;"></div> 配属先の理想ライン
+                    </div>
+                  </div>
+
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px;">
+                    @for (skill of [
+                      {name: '営業力', key: 'salesForce', color: '#3498db'},
+                      {name: '管理力', key: 'managementForce', color: '#9b59b6'},
+                      {name: '開拓力', key: 'explorationForce', color: '#e67e22'},
+                      {name: '育成力', key: 'developmentForce', color: '#2ecc71'}
+                    ]; track skill.key) {
+                      <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border: 1px solid #eee;">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.85em; margin-bottom: 8px;">
+                          <span style="font-weight: bold; color: #333;">{{ skill.name }}</span>
+                          <span style="color: #666;">現在: {{ simGap.actual[skill.key] }}% / 目標: {{ simGap.ideal[skill.key] }}%</span>
+                        </div>
+                        <div style="position: relative; width: 100%; height: 16px; background: #e0e0e0; border-radius: 4px; overflow: hidden; margin-bottom: 8px;">
+                          <div [style.width.%]="simGap.actual[skill.key]" [style.background]="skill.color" style="height: 100%; border-radius: 4px; transition: width 0.5s ease;"></div>
+                          <div [style.left.%]="simGap.ideal[skill.key]" style="position: absolute; top: 0; bottom: 0; width: 3px; background: #e74c3c; z-index: 10; box-shadow: 0 0 4px rgba(231,76,60,0.5);"></div>
+                        </div>
+                        @if (simGap.actual[skill.key] >= simGap.ideal[skill.key]) {
+                          <p style="margin: 0; font-size: 0.75em; color: #27ae60; font-weight: bold; text-align: right;">✓ 基準クリア（強み）</p>
+                        } @else {
+                          <p style="margin: 0; font-size: 0.75em; color: #e74c3c; font-weight: bold; text-align: right;">△ 不足分: {{ simGap.ideal[skill.key] - simGap.actual[skill.key] }}%</p>
+                        }
+                      </div>
+                    }
+                  </div>
+                } @else {
+                  <p style="margin: 0; font-size: 0.9em; color: #666;">部署のスキル要件情報がまだ設定されていません。</p>
+                }
+              </div>
+            } @else {
+              <div style="background: #fef5e7; border-left: 4px solid #f39c12; padding: 15px; border-radius: 4px; color: #d68910;">
+                <p style="margin: 0; font-weight: bold; font-size: 0.95em;">⚠️ 最新のシミュレーションデータがありません</p>
+                <p style="margin: 5px 0 0 0; font-size: 0.85em;">管理者がシミュレーションを実行・保存すると、ここに最新の配置結果とスキルギャップ分析が表示されます。</p>
+              </div>
+            }
+
+            <!-- 面談予約へのCTA -->
+            <div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 8px; margin-top: 20px; text-align: center;">
+              <p style="margin: 0 0 10px 0; font-weight: bold;">次のステップ：人事との面談予約</p>
+              <button (click)="goToReservation()" style="padding: 10px 30px; background: white; color: #667eea; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                📞 面談予約フォームへ
+              </button>
             </div>
-          } @else {
-            <div style="background: #fef5e7; border-left: 4px solid #f39c12; padding: 15px; border-radius: 4px; color: #d68910;">
-              <p style="margin: 0; font-weight: bold; font-size: 0.95em;">⚠️ 最新のシミュレーションデータがありません</p>
-              <p style="margin: 5px 0 0 0; font-size: 0.85em;">管理者がシミュレーションを実行・保存すると、ここに最新の配置結果とスキルギャップ分析が表示されます。</p>
-            </div>
-          }
-        </section>
+          </section>
+        }
       } @else {
         <div style="background: white; padding: 40px 25px; border-radius: 8px; text-align: center; border: 1px dashed #ccc; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
           <span style="font-size: 3em;">📋</span>

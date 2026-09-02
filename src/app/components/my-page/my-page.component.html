@@ -1,249 +1,314 @@
-<div class="my-page-container">
-  <div class="header">
+<div class="my-page-container" style="max-width: 1000px; margin: 0 auto; padding: 30px; font-family: sans-serif; background: #f4f7f6; min-height: 100vh;">
+
+  <!-- Header -->
+  <header style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 30px;">
     <div>
-      <h1>マイページ</h1>
-      <p class="user-info" *ngIf="user">{{ user.name }} さん</p>
+      <h1 style="margin: 0; font-size: 1.5em; font-weight: bold;">社員マイページ</h1>
+      <p style="margin: 5px 0 0 0; font-size: 0.9em; opacity: 0.9;">{{ user?.name || 'ゲスト' }} さん</p>
     </div>
-    <button (click)="logout()" class="logout-btn">ログアウト</button>
+    <button (click)="logout()" style="padding: 8px 16px; background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4); border-radius: 4px; cursor: pointer; font-weight: bold; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+      ログアウト
+    </button>
+  </header>
+
+  <!-- Messages -->
+  @if (error()) {
+    <div style="background: #fadbd8; border-left: 4px solid #e74c3c; padding: 15px; border-radius: 6px; color: #c0392b; margin-bottom: 20px; font-weight: bold;">
+      {{ error() }}
+    </div>
+  }
+  @if (success()) {
+    <div style="background: #d4edda; border-left: 4px solid #27ae60; padding: 15px; border-radius: 6px; color: #155724; margin-bottom: 20px; font-weight: bold;">
+      {{ success() }}
+    </div>
+  }
+
+  <!-- Tab Navigation -->
+  <div style="display: flex; gap: 15px; margin-bottom: 30px; background: white; padding: 10px 20px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
+    <button (click)="activeTab.set('profile')"
+            [style.background]="activeTab() === 'profile' ? '#667eea' : 'transparent'"
+            [style.color]="activeTab() === 'profile' ? 'white' : '#555'"
+            style="padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s;">
+      👤 プロフィール・希望
+    </button>
+    <button (click)="activeTab.set('allocations')"
+            [style.background]="activeTab() === 'allocations' ? '#667eea' : 'transparent'"
+            [style.color]="activeTab() === 'allocations' ? 'white' : '#555'"
+            style="padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; display: flex; align-items: center; gap: 8px;">
+      🏢 配置・内示
+      @if (simulationSkillGapData && !isNoticeRevealed) {
+        <span style="background: #e74c3c; color: white; border-radius: 12px; padding: 2px 8px; font-size: 0.75em;">未読</span>
+      }
+    </button>
+    <button (click)="activeTab.set('consultation')"
+            [style.background]="activeTab() === 'consultation' ? '#667eea' : 'transparent'"
+            [style.color]="activeTab() === 'consultation' ? 'white' : '#555'"
+            style="padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s;">
+      💬 相談・面談予約
+    </button>
   </div>
 
   <div class="content">
-    <!-- 配置結果通知カード -->
-    <!-- ▼▼ ここから追加：配置通知とAI理由 ▼▼ -->
-@if (allocations().length > 0) {
-  <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 8px; margin-bottom: 20px; color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-    <h3 style="margin-top: 0;">🎉 あなたの新しい配置が決定しました！</h3>
-    <p style="font-size: 1.2em; font-weight: bold;">配属先: {{ allocations()[0].department?.name || '未定' }}</p>
-    <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 8px; margin-top: 15px;">
-      <h4 style="margin-top: 0;">💡 システムによる配置理由</h4>
-      <p style="margin: 0; line-height: 1.5;">{{ allocations()[0].reason || 'あなたのスキルと適性が高く評価され、この部署での活躍が期待されています！' }}</p>
-    </div>
-  </div>
-} @else {
-  <div style="background: #e7f3ff; padding: 15px 20px; border-radius: 4px; margin-bottom: 20px; text-align: center; color: #333; border-left: 4px solid #667eea;">
-    <p style="margin: 0;">※現在、あなたへの新しい配置通知はありません。</p>
-  </div>
-}
-<!-- ▲▲ ここまで追加 ▲▲ -->
 
-    <!-- キャリア希望・働き方セクション -->
-    <section class="card">
-      <div class="section-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
-        <h2 style="margin: 0;">キャリア希望・働き方について</h2>
-       @if (!isEditing) {
-          <button (click)="toggleEdit()" style="padding: 8px 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            編集する
+    <!-- TAB: プロフィール -->
+    @if (activeTab() === 'profile') {
+      <section style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 30px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #f0f4ff; padding-bottom: 10px;">
+          <h2 style="margin: 0; font-size: 1.3em; color: #2c3e50;">🌟 キャリア希望・働き方</h2>
+          <button (click)="isEditing = !isEditing" style="padding: 8px 16px; background: #f8f9fa; color: #2c3e50; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; font-weight: bold;">
+            {{ isEditing ? 'キャンセル' : '✏️ 編集する' }}
           </button>
+        </div>
+
+        @if (isEditing) {
+          <div style="display: grid; gap: 20px;">
+            <div>
+              <label style="display: block; font-weight: bold; margin-bottom: 8px; color: #555;">希望部署</label>
+              <input type="text" [(ngModel)]="desiredDept" placeholder="例: B事業部" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 1em;">
+            </div>
+            <div>
+              <label style="display: block; font-weight: bold; margin-bottom: 8px; color: #555;">ワークライフバランスの希望</label>
+              <textarea [(ngModel)]="workLifeBalance" placeholder="リモートワーク希望、時短勤務など" style="width: 100%; min-height: 100px; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 1em; font-family: inherit; resize: vertical;"></textarea>
+            </div>
+            <div style="text-align: right;">
+              <button (click)="updatePreferences()" [disabled]="isSaving" style="padding: 10px 30px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;" [style.opacity]="isSaving ? '0.6' : '1'">
+                {{ isSaving ? '保存中...' : '保存する' }}
+              </button>
+            </div>
+          </div>
+        } @else {
+          <div style="display: grid; grid-template-columns: 1fr; gap: 20px;">
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #3498db;">
+              <p style="margin: 0 0 5px 0; font-weight: bold; color: #666; font-size: 0.85em;">希望部署</p>
+              <p style="margin: 0; font-size: 1.1em; color: #333; font-weight: bold;">{{ desiredDept || '未設定' }}</p>
+            </div>
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #27ae60;">
+              <p style="margin: 0 0 5px 0; font-weight: bold; color: #666; font-size: 0.85em;">ワークライフバランスの希望</p>
+              <p style="margin: 0; font-size: 1em; color: #333; white-space: pre-wrap;">{{ workLifeBalance || '未設定' }}</p>
+            </div>
+          </div>
         }
-        
-      </div>
+      </section>
 
-      @if (isEditing) {
-        <div class="form-group">
-          <label for="careerDesire">希望部署</label>
-          <select
-            id="careerDesire"
-            [(ngModel)]="desiredDept"
-            class="select-field">
-            <option value="">部署を選択してください</option>
-            <option *ngFor="let dept of departments" [value]="dept.name">
-              {{ dept.name }}
-            </option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="workLifeBalance">ワークライフバランス</label>
-          <textarea
-            id="workLifeBalance"
-            [(ngModel)]="workLifeBalance"
-            placeholder="希望する働き方についてお聞かせください"
-            class="textarea">
-          </textarea>
-        </div>
-        <div class="button-group">
-          <button
-            (click)="savePreferences()"
-            class="btn btn-primary"
-            [disabled]="isSaving">
-            {{ isSaving ? '保存中...' : '保存する' }}
-          </button>
-          <button
-            (click)="toggleEdit()"
-            class="btn btn-secondary"
-            [disabled]="isSaving">
-            キャンセル
-          </button>
-        </div>
-      } @else {
-        <div class="info-block" *ngIf="desiredDept">
-          <p class="label">希望部署</p>
-          <p class="value">{{ desiredDept }}</p>
-        </div>
-        <div class="info-block" *ngIf="workLifeBalance">
-          <p class="label">ワークライフバランス</p>
-          <p class="value">{{ workLifeBalance }}</p>
-        </div>
-        <div class="info-block" *ngIf="!desiredDept && !workLifeBalance">
-          <p class="label">未設定</p>
-          <p class="value">編集ボタンをクリックして希望条件を入力してください</p>
-        </div>
-      }
-    </section>
+      <!-- スキルギャップ (現在の配属先) -->
+      @if (skillGapData()) {
+        <section style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+          <h2 style="margin: 0 0 20px 0; color: #2c3e50; font-size: 1.3em; border-bottom: 2px solid #f0f4ff; padding-bottom: 10px;">📊 現在の所属部署とのスキルギャップ</h2>
+          <p style="margin: 0 0 20px 0; color: #666;">現在の所属部署（<strong>{{ skillGapData()?.deptName || '未設定' }}</strong>）で求められる要件と、あなたの現在のスキルの比較です。</p>
 
-    <!-- スキルギャップ分析セクション -->
-    <section class="card">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-        <h2 style="margin: 0;">📊 希望部署とのスキルギャップ分析</h2>
-        <button (click)="toggleSkillGap()" style="padding: 8px 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: opacity 0.2s; white-space: nowrap;">
-          {{ showSkillGap ? '閉じる' : '分析を見る' }}
-        </button>
-      </div>
-
-      @if (showSkillGap) {
-        @if (simulationSkillGapData()) {
-          <div style="margin-bottom: 20px;">
-            <p style="margin: 0 0 10px 0; color: #666; font-size: 0.95em;">
-              <strong>希望部署:</strong> <span style="color: #667eea; font-weight: bold; font-size: 1.1em;">{{ simulationSkillGapData().deptName }}</span>
-            </p>
-            <p style="margin: 0; font-size: 0.85em; color: #999;">
-              最新のシミュレーション結果に基づく、現在のスキル水準と目標スキル水準の比較です
-            </p>
+          <div style="margin-bottom: 20px; padding: 15px; background: #f0f4ff; border-radius: 8px; border-left: 4px solid #667eea;">
+            <p style="margin: 0; color: #333; font-weight: bold;">平均ギャップ: <span style="font-size: 1.3em; color: #667eea;">{{ getAverageGap(skillGapData()) }}</span>点</p>
           </div>
 
-          <!-- スキルギャップ表示 -->
-          @if (simulationSkillGapData().ideal && simulationSkillGapData().actual) {
-            <div style="display: flex; flex-direction: column; gap: 25px;">
-              @for (skillType of ['salesForce', 'managementForce', 'explorationForce', 'developmentForce']; track skillType) {
-                <div style="display: flex; flex-direction: column; gap: 8px;">
-                  <!-- スキル名と値 -->
-                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                    <span style="font-weight: bold; color: #2c3e50; font-size: 0.95em;">
-                      @switch (skillType) {
-                        @case ('salesForce') { 営業力 }
-                        @case ('managementForce') { 管理力 }
-                        @case ('explorationForce') { 開拓力 }
-                        @case ('developmentForce') { 育成力 }
-                      }
-                    </span>
-                    <div style="display: flex; gap: 15px; font-size: 0.85em;">
-                      <span style="color: #667eea;">
-                        <strong>現在:</strong> {{ simulationSkillGapData().actual[skillType] }}点
-                      </span>
-                      <span style="color: #999;">
-                        <strong>目標:</strong> {{ simulationSkillGapData().ideal[skillType] }}点
-                      </span>
-                      @if (simulationSkillGapData().actual[skillType] >= simulationSkillGapData().ideal[skillType]) {
-                        <span style="color: #4caf50;">
-                          <strong>達成済み ✓</strong>
-                        </span>
-                      } @else {
-                        <span style="color: #f44336;">
-                          <strong>ギャップ:</strong> {{ simulationSkillGapData().ideal[skillType] - simulationSkillGapData().actual[skillType] }}点
-                        </span>
-                      }
-                    </div>
-                  </div>
-
-                  <!-- 棒グラフ -->
-                  <div style="position: relative; height: 48px; background: #f5f5f5; border-radius: 6px; overflow: hidden; border: 1px solid #e0e0e0;">
-                    <!-- 目標値の背景（薄いグレー） -->
-                    <div style="position: absolute; top: 2px; left: 0; height: 20px; background: #d0d0d0; border-radius: 4px; transition: width 0.3s ease;"
-                      [style.width]="simulationSkillGapData().ideal[skillType] + '%'">
-                    </div>
-
-                    <!-- 現在値の棒（青） -->
-                    <div style="position: absolute; bottom: 2px; left: 0; height: 20px; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); border-radius: 4px; transition: width 0.3s ease; box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);"
-                      [style.width]="simulationSkillGapData().actual[skillType] + '%'">
-                    </div>
-
-                    <!-- ラベル -->
-                    <div style="position: absolute; top: 4px; left: 8px; font-size: 0.75em; font-weight: bold; color: #999;">目標スキル</div>
-                    <div style="position: absolute; bottom: 4px; left: 8px; font-size: 0.75em; font-weight: bold; color: #666;">現在のスキル</div>
-                  </div>
-
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+            <!-- 営業力 -->
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #eee;">
+              <div style="font-weight: bold; color: #333; margin-bottom: 12px;">営業力</div>
+              <div style="margin-bottom: 10px;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.85em; color: #666; margin-bottom: 4px;">
+                  <span>目標</span>
+                  <span>{{ skillGapData()?.ideal?.salesForce || 0 }}%</span>
                 </div>
-              }
+                <div style="width: 100%; height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden;">
+                  <div [style.width.%]="skillGapData()?.ideal?.salesForce || 0" style="height: 100%; background: #95a5a6; opacity: 0.7;"></div>
+                </div>
+              </div>
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.85em; color: #666; margin-bottom: 4px;">
+                  <span>現在</span>
+                  <span style="font-weight: bold; color: #667eea;">{{ skillGapData()?.actual?.salesForce || 0 }}%</span>
+                </div>
+                <div style="width: 100%; height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden;">
+                  <div [style.width.%]="skillGapData()?.actual?.salesForce || 0" style="height: 100%; background: #667eea;"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 管理力 -->
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #eee;">
+              <div style="font-weight: bold; color: #333; margin-bottom: 12px;">管理力</div>
+              <div style="margin-bottom: 10px;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.85em; color: #666; margin-bottom: 4px;">
+                  <span>目標</span>
+                  <span>{{ skillGapData()?.ideal?.managementForce || 0 }}%</span>
+                </div>
+                <div style="width: 100%; height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden;">
+                  <div [style.width.%]="skillGapData()?.ideal?.managementForce || 0" style="height: 100%; background: #95a5a6; opacity: 0.7;"></div>
+                </div>
+              </div>
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.85em; color: #666; margin-bottom: 4px;">
+                  <span>現在</span>
+                  <span style="font-weight: bold; color: #667eea;">{{ skillGapData()?.actual?.managementForce || 0 }}%</span>
+                </div>
+                <div style="width: 100%; height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden;">
+                  <div [style.width.%]="skillGapData()?.actual?.managementForce || 0" style="height: 100%; background: #667eea;"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 開拓力 -->
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #eee;">
+              <div style="font-weight: bold; color: #333; margin-bottom: 12px;">開拓力</div>
+              <div style="margin-bottom: 10px;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.85em; color: #666; margin-bottom: 4px;">
+                  <span>目標</span>
+                  <span>{{ skillGapData()?.ideal?.explorationForce || 0 }}%</span>
+                </div>
+                <div style="width: 100%; height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden;">
+                  <div [style.width.%]="skillGapData()?.ideal?.explorationForce || 0" style="height: 100%; background: #95a5a6; opacity: 0.7;"></div>
+                </div>
+              </div>
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.85em; color: #666; margin-bottom: 4px;">
+                  <span>現在</span>
+                  <span style="font-weight: bold; color: #667eea;">{{ skillGapData()?.actual?.explorationForce || 0 }}%</span>
+                </div>
+                <div style="width: 100%; height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden;">
+                  <div [style.width.%]="skillGapData()?.actual?.explorationForce || 0" style="height: 100%; background: #667eea;"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 育成力 -->
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #eee;">
+              <div style="font-weight: bold; color: #333; margin-bottom: 12px;">育成力</div>
+              <div style="margin-bottom: 10px;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.85em; color: #666; margin-bottom: 4px;">
+                  <span>目標</span>
+                  <span>{{ skillGapData()?.ideal?.developmentForce || 0 }}%</span>
+                </div>
+                <div style="width: 100%; height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden;">
+                  <div [style.width.%]="skillGapData()?.ideal?.developmentForce || 0" style="height: 100%; background: #95a5a6; opacity: 0.7;"></div>
+                </div>
+              </div>
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.85em; color: #666; margin-bottom: 4px;">
+                  <span>現在</span>
+                  <span style="font-weight: bold; color: #667eea;">{{ skillGapData()?.actual?.developmentForce || 0 }}%</span>
+                </div>
+                <div style="width: 100%; height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden;">
+                  <div [style.width.%]="skillGapData()?.actual?.developmentForce || 0" style="height: 100%; background: #667eea;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      }
+    }
+
+    <!-- TAB: 配置・内示 (ワークフロー) -->
+    @if (activeTab() === 'allocations') {
+      @if (simulationSkillGapData || allocations().length > 0) {
+        <div>
+          <!-- 未開封状態 -->
+          @if (!isNoticeRevealed) {
+            <div style="background: #fff3cd; border: 2px solid #ffeeba; border-left: 8px solid #f39c12; padding: 40px 30px; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.05); text-align: center; max-width: 600px; margin: 40px auto;">
+              <div style="font-size: 3em; margin-bottom: 15px;">📨</div>
+              <h2 style="margin: 0 0 15px 0; color: #d35400; font-size: 1.6em;">【重要】次期異動の内示について</h2>
+              <p style="margin: 0 0 30px 0; color: #856404; font-size: 1.1em; line-height: 1.6; text-align: left; background: rgba(255,255,255,0.5); padding: 15px; border-radius: 8px;">
+                あなたへの新しい配置案（内示）が人事部より通知されています。<br>
+                内容を確認し、必ず人事担当者との面談を予約してください。
+              </p>
+              <button (click)="revealNotice()" style="background: #f39c12; color: white; padding: 15px 40px; border: none; border-radius: 30px; font-weight: bold; font-size: 1.2em; cursor: pointer; box-shadow: 0 4px 15px rgba(243, 156, 18, 0.4); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                🔒 厳秘：内示内容を確認する
+              </button>
             </div>
           }
-        } @else {
-          <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #999; text-align: center; color: #666;">
-            <p style="margin: 0; font-size: 0.95em;">
-              最新のシミュレーションデータがありません
-            </p>
-            <p style="margin: 8px 0 0 0; font-size: 0.85em; color: #999;">
-              「キャリア希望・働き方について」セクションで希望部署を設定し、シミュレーションを実行してください
-            </p>
+          <!-- 開封済み状態 -->
+          @else {
+            <div style="background: white; border: 2px solid #667eea; padding: 30px; border-radius: 12px; box-shadow: 0 8px 20px rgba(102, 126, 234, 0.15);">
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f0f4ff; padding-bottom: 15px; margin-bottom: 25px;">
+                <h2 style="margin: 0; color: #2c3e50; font-size: 1.5em; display: flex; align-items: center; gap: 10px;">📄 次期配置案（内示）</h2>
+                <span style="background: #e74c3c; color: white; padding: 6px 16px; border-radius: 20px; font-size: 0.9em; font-weight: bold; box-shadow: 0 2px 4px rgba(231,76,60,0.3);">面談必須</span>
+              </div>
+
+              <div style="margin-bottom: 30px; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); padding: 30px; border-radius: 12px; text-align: center; border: 1px solid #e2e8f0;">
+                <p style="margin: 0 0 10px 0; color: #475569; font-weight: bold; font-size: 1.1em;">予定配属先</p>
+                <p style="margin: 0; font-size: 2.5em; color: #1e293b; font-weight: bold; text-shadow: 1px 1px 2px rgba(255,255,255,0.8);">{{ simulationSkillGapData?.deptName || allocations()[0]?.department?.name || '未定' }}</p>
+              </div>
+
+              <div style="margin-bottom: 30px;">
+                <h3 style="margin: 0 0 12px 0; color: #2c3e50; font-size: 1.2em; display: flex; align-items: center; gap: 8px;">💡 システムによる推薦理由</h3>
+                <div style="color: #166534; line-height: 1.7; background: #f0fdf4; padding: 20px; border-radius: 8px; border-left: 4px solid #27ae60; font-size: 1.05em;">
+                  <strong>{{ simulationSkillGapData?.deptName || allocations()[0]?.department?.name }}</strong> の求める要件に対し、あなたのスキルバランスが高く評価されました。<br>
+                  事業部の成長への大きな貢献と、あなた自身の今後のキャリアアップが期待されています。
+                </div>
+              </div>
+
+              <!-- 面談誘導アクション -->
+              <div style="background: #fff8f0; padding: 25px; border-radius: 12px; text-align: center; border: 2px dashed #f39c12;">
+                <p style="margin: 0 0 20px 0; color: #b9770e; font-weight: bold; font-size: 1.1em; line-height: 1.5;">
+                  この配置案について、人事担当者と面談を行って最終決定します。<br>以下のボタンから、速やかに面談枠を予約してください。
+                </p>
+                <button (click)="goToReservation()" style="background: #e67e22; color: white; padding: 15px 40px; border: none; border-radius: 30px; font-weight: bold; font-size: 1.2em; cursor: pointer; box-shadow: 0 4px 10px rgba(230, 126, 34, 0.3); transition: all 0.2s;" onmouseover="this.style.background='#d35400'" onmouseout="this.style.background='#e67e22'">
+                  📅 人事との面談を予約する
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div style="padding: 60px 20px; text-align: center; background: white; border-radius: 12px; border: 2px dashed #cbd5e1; color: #64748b;">
+          <div style="font-size: 3em; margin-bottom: 15px; opacity: 0.5;">📭</div>
+          <p style="margin: 0; font-size: 1.1em; font-weight: bold;">現在、新しい配置案（内示）の通知はありません。</p>
+          <p style="margin: 10px 0 0 0; font-size: 0.9em;">配置が決定次第、こちらの画面でお知らせします。</p>
+        </div>
+      }
+    }
+
+    <!-- TAB: 相談・面談予約 -->
+    @if (activeTab() === 'consultation') {
+      <!-- 面談予約セクション -->
+      <section style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 30px;">
+        <h2 style="margin: 0 0 20px 0; color: #2c3e50; font-size: 1.3em; border-bottom: 2px solid #f0f4ff; padding-bottom: 10px;">📅 人事との面談予約</h2>
+
+        @if (myReservations.length > 0) {
+          <div style="margin-bottom: 25px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 15px; border-radius: 8px;">
+            <h3 style="margin: 0 0 10px 0; font-size: 1em; color: #166534;">📝 あなたの予約済み面談</h3>
+            @for (res of myReservations; track res.id) {
+              <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 12px 15px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 10px;">
+                <div>
+                  <span style="font-weight: bold; color: #2c3e50; font-size: 1.1em; margin-right: 15px;">{{ res.date | date:'yyyy/MM/dd' }} {{ res.timeSlot }}</span>
+                  @if (res.status === 'RESERVED') {
+                    <span style="background: #e7f3ff; color: #3498db; padding: 2px 8px; border-radius: 12px; font-size: 0.8em; font-weight: bold;">予約完了</span>
+                  }
+                </div>
+                <button (click)="cancelReservation(res.id)" style="padding: 6px 12px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em; font-weight: bold;">キャンセル</button>
+              </div>
+            }
           </div>
         }
-      }
-    </section>
 
-    <!-- 配置・内示情報セクション -->
-    <section class="card" *ngIf="assignmentDetails">
-      <h2>配置・内示情報</h2>
-      <div class="info-block" *ngIf="assignmentDetails.department">
-        <p class="label">配置部門</p>
-        <p class="value">{{ assignmentDetails.department }}</p>
-      </div>
-      <div class="info-block" *ngIf="assignmentDetails.position">
-        <p class="label">配置予定職務</p>
-        <p class="value">{{ assignmentDetails.position }}</p>
-      </div>
-      <div class="info-block" *ngIf="assignmentDetails.reason">
-        <p class="label">配置理由</p>
-        <p class="value">{{ assignmentDetails.reason }}</p>
-      </div>
-      <div class="info-block" *ngIf="assignmentDetails.startDate">
-        <p class="label">配置予定日</p>
-        <p class="value">{{ assignmentDetails.startDate }}</p>
-      </div>
-    </section>
+        <p style="margin: 0 0 15px 0; color: #666;">カレンダーから希望日を選択してください。</p>
 
-    <!-- 人事面談予約セクション -->
-    <section class="card">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-        <h2 style="margin: 0;">人事との面談予約</h2>
-        <button (click)="toggleReservation()" style="padding: 8px 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: opacity 0.2s; white-space: nowrap;">
-          {{ showReservation ? '閉じる' : 'カレンダーを見る' }}
-        </button>
-      </div>
-
-      @if (showReservation) {
-        <!-- カレンダービュー -->
-        <div style="margin-bottom: 30px; background: #f8f9fa; padding: 20px; border-radius: 8px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <button (click)="previousMonth()" style="padding: 8px 12px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">← 前月</button>
+        <!-- カレンダー UI -->
+        <div style="border: 1px solid #eaeaea; border-radius: 8px; overflow: hidden;">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f8f9fa; border-bottom: 1px solid #eaeaea;">
+            <button (click)="previousMonth()" style="padding: 8px 15px; background: white; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-weight: bold;">← 前月</button>
             <h3 style="margin: 0; font-size: 1.2em; color: #2c3e50;">{{ getMonthYearDisplay() }}</h3>
-            <button (click)="nextMonth()" style="padding: 8px 12px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">次月 →</button>
+            <button (click)="nextMonth()" style="padding: 8px 15px; background: white; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-weight: bold;">次月 →</button>
           </div>
 
-          <!-- 曜日ヘッダー -->
-          <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #eaeaea; margin-bottom: 1px;">
+          <div style="display: grid; grid-template-columns: repeat(7, 1fr); background: #eaeaea; gap: 1px;">
             @for (day of ['日', '月', '火', '水', '木', '金', '土']; track day) {
-              <div style="background: #667eea; color: white; padding: 12px; text-align: center; font-weight: bold;">{{ day }}</div>
+              <div style="background: #f1f5f9; color: #475569; padding: 10px; text-align: center; font-weight: bold; font-size: 0.9em;">{{ day }}</div>
             }
           </div>
 
-          <!-- カレンダーセル -->
-          <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #eaeaea;">
+          <div style="display: grid; grid-template-columns: repeat(7, 1fr); background: #eaeaea; gap: 1px;">
             @for (week of calendarWeeks(); track $index) {
               @for (dayCell of week; track $index) {
-                <div [style.background]="dayCell && dayCell.dayOfMonth && !isDateDisabledForSelection(dayCell.date) ? '#ffffff' : dayCell && isDateDisabledForSelection(dayCell.date) ? '#fafafa' : '#f9f9f9'" [style.cursor]="dayCell && dayCell.dayOfMonth && !isDateDisabledForSelection(dayCell.date) ? 'pointer' : 'default'" (click)="dayCell && dayCell.dayOfMonth && !isDateDisabledForSelection(dayCell.date) && openReservationModal(dayCell.date)" style="padding: 10px; border: 1px solid #eee; min-height: 90px; overflow-y: auto; transition: background-color 0.2s;" [ngClass]="{'hover-cell': dayCell && dayCell.dayOfMonth && !isDateDisabledForSelection(dayCell.date)}">
+                <div [style.background]="isDateUnavailable(dayCell?.date) ? '#fdf2f2' : 'white'" [style.cursor]="dayCell && !isDateUnavailable(dayCell.date) ? 'pointer' : 'default'" (click)="dayCell && !isDateUnavailable(dayCell.date) ? openReservationModal(dayCell.date) : null" style="padding: 10px; min-height: 80px; position: relative; transition: background 0.2s;" onmouseover="if(this.style.cursor==='pointer') this.style.background='#f0f4ff'" onmouseout="if(this.style.cursor==='pointer') this.style.background='white'">
                   @if (dayCell) {
-                    <div style="font-weight: bold; color: #667eea; margin-bottom: 8px;">{{ dayCell.dayOfMonth }}</div>
-                    @if (getExceptionForDate(dayCell.date)) {
-                      <div style="padding: 6px; margin: 4px 0; border-left: 3px solid #e74c3c; border-radius: 4px; background: #fadbd8; font-size: 0.75em; color: #c0392b; font-weight: bold; text-align: center;">
-                        {{ getExceptionForDate(dayCell.date).type === 'UNAVAILABLE' ? '予約不可' : 'カスタム時間' }}
-                      </div>
-                    } @else if (getReservationsForDate(dayCell.date).length > 0) {
-                      @for (res of getReservationsForDate(dayCell.date); track res.id) {
-                        <div style="padding: 4px; margin: 4px 0; border-left: 3px solid #667eea; border-radius: 2px; background: #e7f3ff; font-size: 0.7em; line-height: 1.3; color: #2c3e50;">
-                          <p style="margin: 0; font-weight: bold;">{{ res.timeSlot }}</p>
-                          <p style="margin: 0; color: #666;">予約済み</p>
-                        </div>
-                      }
-                    } @else if (!isDateDisabledForSelection(dayCell.date)) {
-                      <p style="margin: 0; color: #ffffff; font-size: 0.75em; cursor: pointer; padding: 6px 8px; background: #667eea; border-radius: 4px; text-align: center; line-height: 1.6; font-weight: bold;">+ 予約</p>
+                    <div style="font-weight: bold; margin-bottom: 5px; color: #333;" [style.color]="dayCell.date.getDay() === 0 ? '#e74c3c' : (dayCell.date.getDay() === 6 ? '#3498db' : '#333')">
+                      {{ dayCell.dayOfMonth }}
+                    </div>
+
+                    @if (isDateUnavailable(dayCell.date)) {
+                      <div style="font-size: 0.75em; color: #e74c3c; text-align: center; margin-top: 10px; font-weight: bold;">✕ 不可</div>
+                    } @else {
+                      <div style="font-size: 0.8em; color: #3498db; text-align: center; margin-top: 10px; font-weight: bold; background: #e7f3ff; padding: 4px; border-radius: 4px;">＋ 予約可</div>
                     }
                   }
                 </div>
@@ -251,282 +316,103 @@
             }
           </div>
         </div>
+      </section>
 
-        <!-- 予約フォーム -->
-        @if (showReservationForm) {
-          <div style="background: #f8f9fa; padding: 15px; border-radius: 4px; margin-bottom: 15px; border-left: 4px solid #667eea;">
-            <h3 style="margin-top: 0;">面談を予約する</h3>
-            <div class="form-group">
-              <label for="interviewDate">面談日付</label>
-              <input
-                type="date"
-                id="interviewDate"
-                [(ngModel)]="selectedDate"
-                (change)="loadAvailableSlots()"
-                [min]="getMinDate()"
-                class="select-field">
+      <!-- 人事相談セクション -->
+      <section style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #f0f4ff; padding-bottom: 10px;">
+          <h2 style="margin: 0; color: #2c3e50; font-size: 1.3em;">💬 人事へのテキスト相談</h2>
+          <button (click)="showConsultationForm = !showConsultationForm" style="padding: 6px 16px; background: #9b59b6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+            {{ showConsultationForm ? '閉じる' : '＋ 新規相談を作成' }}
+          </button>
+        </div>
+
+        @if (showConsultationForm) {
+          <div style="background: #fdfafb; padding: 20px; border-radius: 8px; border: 1px solid #e8daef; margin-bottom: 20px;">
+            <div style="margin-bottom: 15px;">
+              <label style="display: block; font-weight: bold; margin-bottom: 5px; color: #555;">タイトル</label>
+              <input type="text" [(ngModel)]="consultationTitle" placeholder="例: 今後のキャリアパスについて" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
             </div>
-
-            @if (selectedDate && availableSlots.length > 0) {
-              <div class="form-group">
-                <label for="interviewTime">時間枠を選択</label>
-                <select
-                  id="interviewTime"
-                  [(ngModel)]="selectedTimeSlot"
-                  class="select-field">
-                  <option value="">時間を選択してください</option>
-                  @for (slot of availableSlots; track slot.timeSlot) {
-                    <option [value]="slot.timeSlot">{{ slot.timeSlot }}</option>
-                  }
-                </select>
-              </div>
-            } @else if (selectedDate && !isLoadingSlots) {
-              <div style="padding: 10px; background: #fff3cd; border-radius: 4px; color: #856404; margin-bottom: 15px;">
-                この日付には空き枠がありません
-              </div>
-            } @else if (isLoadingSlots) {
-              <div style="padding: 10px; text-align: center; color: #666;">読み込み中...</div>
-            }
-
-            <div class="form-group">
-              <label for="interviewReason">相談内容（任意）</label>
-              <textarea
-                id="interviewReason"
-                [(ngModel)]="interviewReason"
-                placeholder="事前に相談内容をお知らせいただけるとスムーズです"
-                class="textarea"
-                style="min-height: 80px;">
-              </textarea>
+            <div style="margin-bottom: 15px;">
+              <label style="display: block; font-weight: bold; margin-bottom: 5px; color: #555;">相談内容</label>
+              <textarea [(ngModel)]="consultationDescription" placeholder="詳細を入力してください..." style="width: 100%; min-height: 100px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-family: inherit; resize: vertical;"></textarea>
             </div>
-
-            <div style="display: flex; gap: 10px;">
-              <button
-                (click)="bookReservation()"
-                [disabled]="isBookingReservation || !selectedDate || !selectedTimeSlot"
-                class="btn btn-primary"
-                style="flex: 1;">
-                {{ isBookingReservation ? '予約中...' : '予約確定' }}
-              </button>
-              <button
-                (click)="showReservationForm = false; resetReservationForm();"
-                class="btn btn-secondary"
-                style="flex: 1;">
-                キャンセル
+            <div style="text-align: right;">
+              <button (click)="submitConsultation()" [disabled]="isSubmittingConsultation" style="padding: 10px 30px; background: #9b59b6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;" [style.opacity]="isSubmittingConsultation ? '0.6' : '1'">
+                {{ isSubmittingConsultation ? '送信中...' : '送信する' }}
               </button>
             </div>
           </div>
         }
 
-        <!-- 予約済みリスト -->
-        @if (myReservations.length > 0) {
-          <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #ddd;">
-            <h3 style="margin-top: 0; margin-bottom: 15px;">予約済みの面談</h3>
-            <div style="display: flex; flex-direction: column; gap: 10px;">
-              @for (reservation of myReservations; track reservation.id) {
-                @if (reservation.status !== 'CANCELLED') {
-                  <div style="background: #e7f3ff; padding: 12px; border-radius: 4px; border-left: 4px solid #2196F3;">
-                    <div style="display: flex; justify-content: space-between; align-items: start;">
-                      <div>
-                        <p style="margin: 0 0 5px 0; font-weight: bold;">{{ formatDate(reservation.date) }} {{ reservation.timeSlot }}</p>
-                        <p style="margin: 0; font-size: 0.9em; color: #555;">
-                          相談内容: {{ reservation.reason || '未記入' }}
-                        </p>
-                        <p style="margin: 5px 0 0 0; font-size: 0.85em; color: #999;">
-                          ステータス:
-                          @switch (reservation.status) {
-                            @case ('RESERVED') { <span style="color: #ff9800;">予約済み</span> }
-                            @case ('COMPLETED') { <span style="color: #4caf50;">完了</span> }
-                            @case ('CANCELLED') { <span style="color: #f44336;">キャンセル済み</span> }
-                          }
-                        </p>
-                      </div>
-                      @if (reservation.status === 'RESERVED') {
-                        <button
-                          (click)="cancelReservation(reservation.id)"
-                          style="padding: 6px 12px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em;">
-                          キャンセル
-                        </button>
-                      }
-                    </div>
+        <!-- 相談履歴 -->
+        <div>
+          <h3 style="margin: 0 0 15px 0; font-size: 1.05em; color: #555;">過去の相談履歴</h3>
+          @if (myConsultations().length === 0) {
+            <p style="color: #999; text-align: center; padding: 20px; background: #f9f9f9; border-radius: 4px;">相談履歴はありません</p>
+          } @else {
+            <div style="display: grid; gap: 15px;">
+              @for (consultation of myConsultations(); track consultation.id) {
+                <div style="border: 1px solid #eee; border-radius: 8px; padding: 15px; background: #fafafa;">
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <span style="font-weight: bold; color: #2c3e50;">{{ consultation.title || '無題' }}</span>
+                    <span style="font-size: 0.8em; color: #999;">{{ consultation.createdAt | date:'short' }}</span>
                   </div>
-                }
-              }
-            </div>
-          </div>
-        } @else if (!showReservationForm) {
-          <div style="text-align: center; color: #999; padding: 20px;">
-            <p>まだ面談予約がありません</p>
-          </div>
-        }
-      }
-    </section>
+                  <p style="margin: 0 0 10px 0; font-size: 0.9em; color: #333; line-height: 1.5; white-space: pre-wrap;">{{ consultation.description || consultation.inquiry }}</p>
 
-    <!-- 相談フォームセクション -->
-    <section class="card">
-      <h2>人事への相談</h2>
-      <div class="form-group">
-        <label for="inquiry">相談内容</label>
-        <textarea
-          id="inquiry"
-          [(ngModel)]="inquiry"
-          placeholder="配置や働き方について相談があれば入力してください"
-          class="textarea"
-          [disabled]="isSubmittingConsultation">
-        </textarea>
-      </div>
-      <button
-        (click)="submitConsultation()"
-        class="btn btn-primary"
-        [disabled]="isSubmittingConsultation || !inquiry.trim()">
-        {{ isSubmittingConsultation ? '送信中...' : '送信' }}
-      </button>
-    </section>
-
-    <!-- 相談履歴・返信確認セクション -->
-    <section class="card">
-      <h2>相談履歴・返信確認</h2>
-
-      @if (myConsultations().length === 0) {
-        <div style="padding: 30px; text-align: center; color: #999; background: #f8f9fa; border-radius: 4px; border: 1px dashed #ddd;">
-          <p style="margin: 0;">相談履歴はまだありません</p>
-        </div>
-      } @else {
-        <!-- フィルタタブ -->
-        <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ddd; padding-bottom: 10px;">
-          <button
-            (click)="consultationFilterStatus = 'all'"
-            [style.color]="consultationFilterStatus === 'all' ? '#667eea' : '#999'"
-            [style.fontWeight]="consultationFilterStatus === 'all' ? 'bold' : 'normal'"
-            [style.borderBottom]="consultationFilterStatus === 'all' ? '3px solid #667eea' : 'none'"
-            style="padding: 8px 16px; background: none; border: none; cursor: pointer; font-size: 0.95em; transition: all 0.2s;">
-            全て ({{ myConsultations().length }})
-          </button>
-          <button
-            (click)="consultationFilterStatus = 'pending'"
-            [style.color]="consultationFilterStatus === 'pending' ? '#667eea' : '#999'"
-            [style.fontWeight]="consultationFilterStatus === 'pending' ? 'bold' : 'normal'"
-            [style.borderBottom]="consultationFilterStatus === 'pending' ? '3px solid #667eea' : 'none'"
-            style="padding: 8px 16px; background: none; border: none; cursor: pointer; font-size: 0.95em; transition: all 0.2s;">
-            未返信 ({{ myConsultations().filter(c => c.status === 'pending').length }})
-          </button>
-          <button
-            (click)="consultationFilterStatus = 'replied'"
-            [style.color]="consultationFilterStatus === 'replied' ? '#667eea' : '#999'"
-            [style.fontWeight]="consultationFilterStatus === 'replied' ? 'bold' : 'normal'"
-            [style.borderBottom]="consultationFilterStatus === 'replied' ? '3px solid #667eea' : 'none'"
-            style="padding: 8px 16px; background: none; border: none; cursor: pointer; font-size: 0.95em; transition: all 0.2s;">
-            返信済み ({{ myConsultations().filter(c => c.status === 'replied').length }})
-          </button>
-        </div>
-
-        <!-- 相談リスト -->
-        <div style="display: flex; flex-direction: column; gap: 12px;">
-          @for (consultation of getFilteredConsultations(); track consultation.id) {
-            <div style="background: white; padding: 16px; border-radius: 8px; border: 1px solid #e0e0e0; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-              <!-- 相談ヘッダー -->
-              <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
-                <div style="flex: 1;">
-                  <h4 style="margin: 0 0 6px 0; color: #2c3e50; font-size: 0.95em;">{{ consultation.title }}</h4>
-                  <p style="margin: 0; font-size: 0.85em; color: #666;">送信日時: {{ consultation.createdAt | date:'short' }}</p>
-                </div>
-                <!-- ステータスバッジ -->
-                @switch (consultation.status) {
-                  @case ('pending') {
-                    <span style="display: inline-block; background: #fff3cd; color: #856404; padding: 4px 12px; border-radius: 12px; font-size: 0.8em; font-weight: bold; white-space: nowrap;">未返信</span>
-                  }
-                  @case ('replied') {
-                    <span style="display: inline-block; background: #d4edda; color: #155724; padding: 4px 12px; border-radius: 12px; font-size: 0.8em; font-weight: bold; white-space: nowrap;">✓ 返信済み</span>
-                  }
-                  @default {
-                    <span style="display: inline-block; background: #e2e3e5; color: #383d41; padding: 4px 12px; border-radius: 12px; font-size: 0.8em; font-weight: bold; white-space: nowrap;">{{ formatConsultationStatus(consultation.status) }}</span>
-                  }
-                }
-              </div>
-
-              <!-- 相談内容 -->
-              <div style="background: #f8f9fa; padding: 12px; border-radius: 4px; margin-bottom: 12px; border-left: 3px solid #667eea;">
-                <p style="margin: 0; font-size: 0.9em; line-height: 1.5; color: #333; white-space: pre-wrap; word-break: break-word;">
-                  {{ consultation.description || consultation.inquiry || '内容が記録されていません' }}
-                </p>
-              </div>
-
-              <!-- 返信内容（返信済みの場合） -->
-              @if (consultation.status === 'replied' && consultation.response) {
-                <div style="background: #d4edda; padding: 12px; border-radius: 4px; border-left: 4px solid #155724;">
-                  <p style="margin: 0 0 8px 0; font-weight: bold; color: #155724; font-size: 0.85em;">【人事からの返信】</p>
-                  <div style="background: white; padding: 12px; border-radius: 4px; font-size: 0.9em; color: #333; line-height: 1.6; white-space: pre-wrap; word-break: break-word;">
-                    {{ consultation.response }}
+                  <div style="padding-top: 10px; border-top: 1px dashed #ddd;">
+                    @if (consultation.status === 'replied' && consultation.response) {
+                      <div style="background: #e8f8f5; padding: 10px; border-radius: 4px; border-left: 3px solid #9b59b6;">
+                        <p style="margin: 0 0 5px 0; font-size: 0.8em; font-weight: bold; color: #7d3c98;">人事からの返信:</p>
+                        <p style="margin: 0; font-size: 0.9em; color: #333; white-space: pre-wrap;">{{ consultation.response }}</p>
+                      </div>
+                    } @else {
+                      <span style="background: #fdebd0; color: #d68910; padding: 4px 10px; border-radius: 12px; font-size: 0.75em; font-weight: bold;">未返信</span>
+                    }
                   </div>
                 </div>
               }
             </div>
           }
         </div>
-      }
-    </section>
+      </section>
+    }
   </div>
 </div>
 
+<!-- ============================================== -->
 <!-- 面談予約モーダル -->
-@if (showReservationModal) {
-  <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000;" (click)="closeReservationModal()">
-    <div style="background: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 500px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);" (click)="$event.stopPropagation()">
-      <h3 style="margin-top: 0; border-bottom: 2px solid #667eea; padding-bottom: 15px; color: #2c3e50;">面談を予約する</h3>
+<!-- ============================================== -->
+@if (showReservationForm) {
+  <div style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;" (click)="closeReservationModal()">
+    <div style="background: white; border-radius: 12px; padding: 30px; width: 90%; max-width: 500px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);" (click)="$event.stopPropagation()">
+      <h2 style="margin: 0 0 20px 0; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;">📅 面談予約の枠を選択</h2>
 
-      <div style="margin: 20px 0;">
-        <p style="margin: 0 0 10px 0; color: #666; font-size: 0.9em;">
-          <strong>選択日付：</strong>
-          <span style="color: #667eea; font-weight: bold; font-size: 1.1em;">{{ modalDate }}</span>
-        </p>
-      </div>
-
-      @if (isLoadingModalSlots) {
-        <div style="padding: 15px; text-align: center; color: #666;">
-          読み込み中...
-        </div>
-      } @else if (modalAvailableSlots.length > 0) {
-        <div style="margin-bottom: 20px;">
-          <label for="modalTimeSlot" style="display: block; margin-bottom: 8px; font-weight: bold; color: #333;">時間枠を選択</label>
-          <select
-            id="modalTimeSlot"
-            [(ngModel)]="modalTimeSlot"
-            style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 1em;">
+      <div style="margin-bottom: 25px;">
+        <label style="display: block; font-weight: bold; color: #555; margin-bottom: 10px;">時間帯を選択 <span style="color: #e74c3c;">*</span></label>
+        @if (isLoadingModalSlots) {
+          <p style="color: #999;">予約枠を読み込み中...</p>
+        } @else if (modalAvailableSlots.length === 0) {
+          <p style="color: #e74c3c; font-weight: bold; background: #fadbd8; padding: 10px; border-radius: 4px;">この日は予約可能な枠がありません。</p>
+        } @else {
+          <select [(ngModel)]="selectedTimeSlot" style="width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1em; cursor: pointer;">
             <option value="">時間を選択してください</option>
-            @for (slot of modalAvailableSlots; track slot.timeSlot) {
-              <option [value]="slot.timeSlot">{{ slot.timeSlot }}</option>
+            @for (slot of modalAvailableSlots; track slot) {
+              <option [value]="slot">{{ slot }}</option>
             }
           </select>
-        </div>
-      } @else {
-        <div style="padding: 15px; background: #fff3cd; border-radius: 4px; color: #856404; margin-bottom: 20px;">
-          この日付には空き枠がありません
-        </div>
-      }
-
-      <div style="margin-bottom: 20px;">
-        <label for="modalReason" style="display: block; margin-bottom: 8px; font-weight: bold; color: #333;">相談内容（任意）</label>
-        <textarea
-          id="modalReason"
-          [(ngModel)]="modalReason"
-          placeholder="事前に相談内容をお知らせいただけるとスムーズです"
-          style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 1em; min-height: 100px; font-family: inherit; resize: vertical;">
-        </textarea>
+        }
       </div>
 
-      <div style="display: flex; gap: 10px;">
-        <button
-          (click)="submitReservation()"
-          [disabled]="isBookingReservation || !modalTimeSlot || isLoadingModalSlots"
-          style="flex: 1; padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 1em; transition: opacity 0.2s;"
-          [style.opacity]="isBookingReservation || !modalTimeSlot || isLoadingModalSlots ? '0.6' : '1'">
-          {{ isBookingReservation ? '予約中...' : '予約する' }}
-        </button>
-        <button
-          (click)="closeReservationModal()"
-          [disabled]="isBookingReservation"
-          style="flex: 1; padding: 12px; background: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 1em; transition: opacity 0.2s;"
-          [style.opacity]="isBookingReservation ? '0.6' : '1'">
-          キャンセル
+      <div style="margin-bottom: 25px;">
+        <label style="display: block; font-weight: bold; color: #555; margin-bottom: 10px;">相談の概要（任意）</label>
+        <textarea [(ngModel)]="reservationReason" placeholder="内示に関する面談、今後のキャリアについて など" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 1em; min-height: 80px; box-sizing: border-box; resize: vertical;"></textarea>
+      </div>
+
+      <div style="display: flex; gap: 10px; justify-content: flex-end; border-top: 1px solid #eee; padding-top: 20px;">
+        <button (click)="closeReservationModal()" style="padding: 10px 20px; background: #95a5a6; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">キャンセル</button>
+        <button (click)="bookReservation()" [disabled]="!selectedTimeSlot || isBookingReservation" style="padding: 10px 30px; background: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);" [style.opacity]="!selectedTimeSlot || isBookingReservation ? '0.5' : '1'">
+          {{ isBookingReservation ? '予約中...' : '予約を確定する' }}
         </button>
       </div>
     </div>

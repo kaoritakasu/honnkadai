@@ -36,6 +36,9 @@ export class EmployeeMyPageComponent implements OnInit {
   allocationSkillGapData = signal<any>(null);
   simulationSkillGapData = signal<any>(null);
 
+  // 内示の開封状態を管理
+  isNoticeRevealed = signal(false);
+
   Math = Math;
 
   constructor(
@@ -255,5 +258,16 @@ export class EmployeeMyPageComponent implements OnInit {
       isFromSimulation: true,
       simulationDate: simulationResult.createdAt
     };
+  }
+
+  revealNotice() {
+    if (confirm('次期異動の内示内容を確認しますか？\n※確認後、必ず人事との面談予約を行ってください。')) {
+      this.isNoticeRevealed.set(true);
+    }
+  }
+
+  goToReservation() {
+    this.activeTab.set('consultation');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 }

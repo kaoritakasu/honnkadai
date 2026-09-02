@@ -33,9 +33,23 @@ export class MyPageComponent implements OnInit {
   isSaving: boolean = false;
   isSubmittingConsultation: boolean = false;
   allocations = signal<any[]>([]);
-  skillGapData = signal<any[]>([]);
-  simulationSkillGapData = signal<any>(null);
+  skillGapData = signal<any>(null);
+  simulationSkillGapData: any = null;
   desiredDeptData: any = null;
+
+  // Tab and notice reveal
+  activeTab = signal<'profile' | 'allocations' | 'consultation'>('profile');
+  isNoticeRevealed = false;
+
+  // Consultation form
+  showConsultationForm = false;
+  consultationTitle = '';
+  consultationDescription = '';
+  success = signal('');
+  error = signal('');
+
+  // Reservation form
+  reservationReason = '';
 
   // Interview reservation fields
   selectedDate: string = '';
@@ -130,47 +144,56 @@ export class MyPageComponent implements OnInit {
   }
 
   buildSkillGapData() {
-    if (!this.desiredDept || !this.user) {
-      this.skillGapData.set([]);
-      this.desiredDeptData = null;
+    if (!this.allocations().length || !this.departments.length || !this.user) {
+      this.skillGapData.set(null);
       return;
     }
 
-    const matchedDept = this.departments.find(d => d.name === this.desiredDept);
-    if (!matchedDept) {
-      this.skillGapData.set([]);
-      this.desiredDeptData = null;
-      return;
-    }
+    const currentAllocation = this.allocations()[0];
+    const dept = this.departments.find(d => d.id === currentAllocation.departmentId);
+    if (!dept) return;
 
-    this.desiredDeptData = matchedDept;
+    // 部署の要件（重み）を100点満点の割合に変換
+    const wS = Number(dept.weightSales) || 0;
+    const wM = Number(dept.weightManagement) || 0;
+    const wE = Number(dept.weightExploration) || 0;
+    const wD = Number(dept.weightDevelopment) || 0;
+    const totalWeight = wS + wM + wE + wD;
 
-    const userSkills = this.getUserSkills();
-    const skillMappings = [
-      { key: 'salesForce', label: '営業力', deptKey: 'weightSales' },
-      { key: 'managementForce', label: '管理力', deptKey: 'weightManagement' },
-      { key: 'explorationForce', label: '開拓力', deptKey: 'weightExploration' },
-      { key: 'developmentForce', label: '育成力', deptKey: 'weightDevelopment' }
-    ];
+    const ideal = totalWeight > 0 ? {
+      salesForce: Math.round((wS / totalWeight) * 100),
+      managementForce: Math.round((wM / totalWeight) * 100),
+      explorationForce: Math.round((wE / totalWeight) * 100),
+      developmentForce: Math.round((wD / totalWeight) * 100)
+    } : { salesForce: 0, managementForce: 0, explorationForce: 0, developmentForce: 0 };
 
-    const gapData = skillMappings.map(mapping => {
-      const currentValue = userSkills[mapping.key] || 0;
-      const targetValue = matchedDept[mapping.deptKey] || 0;
-      const gap = Math.max(0, targetValue - currentValue);
-      const maxValue = Math.max(currentValue, targetValue, 10);
+    // 個人のスキル値は this.profile() から取得する（this.userではない！）
+    const profileData = this.profile();
+    const actual = {
+      salesForce: Number(profileData?.salesForce) || 0,
+      managementForce: Number(profileData?.managementForce) || 0,
+      explorationForce: Number(profileData?.explorationForce) || 0,
+      developmentForce: Number(profileData?.developmentForce) || 0
+    };
 
-      return {
-        label: mapping.label,
-        current: currentValue,
-        target: targetValue,
-        gap: gap,
-        currentPercent: (currentValue / maxValue) * 100,
-        targetPercent: (targetValue / maxValue) * 100,
-        maxValue: maxValue
-      };
+    this.skillGapData.set({
+      deptName: dept.name,
+      ideal,
+      actual
     });
+  }
 
-    this.skillGapData.set(gapData);
+  profile() {
+    if (!this.user) {
+      return { salesForce: 0, managementForce: 0, explorationForce: 0, developmentForce: 0 };
+    }
+
+    return {
+      salesForce: this.user.salesForce || 0,
+      managementForce: this.user.managementForce || 0,
+      explorationForce: this.user.explorationForce || 0,
+      developmentForce: this.user.developmentForce || 0
+    };
   }
 
   private getUserSkills(): any {
@@ -217,7 +240,8 @@ export class MyPageComponent implements OnInit {
   }
 
   submitConsultation() {
-    if (!this.inquiry.trim()) {
+    const description = this.consultationDescription || this.inquiry;
+    if (!description.trim()) {
       alert('相談内容を入力してください');
       return;
     }
@@ -228,17 +252,23 @@ export class MyPageComponent implements OnInit {
     }
 
     this.isSubmittingConsultation = true;
-    this.apiService.submitConsultation(this.user.id, this.inquiry).subscribe({
+    this.apiService.submitConsultation(this.user.id, description).subscribe({
       next: () => {
-        alert('人事へ相談を送信しました');
+        this.success.set('人事へ相談を送信しました');
+        this.consultationTitle = '';
+        this.consultationDescription = '';
         this.inquiry = '';
+        this.showConsultationForm = false;
         this.isSubmittingConsultation = false;
+        setTimeout(() => this.success.set(''), 3000);
+        this.loadMyConsultations();
         this.cdr.detectChanges();
       },
       error: (err: any) => {
         console.error('Error submitting consultation:', err);
-        alert(err.error?.error || '相談の送信に失敗しました');
+        this.error.set(err.error?.error || '相談の送信に失敗しました');
         this.isSubmittingConsultation = false;
+        setTimeout(() => this.error.set(''), 3000);
         this.cdr.detectChanges();
       }
     });
@@ -282,29 +312,31 @@ export class MyPageComponent implements OnInit {
   }
 
   bookReservation() {
-    if (!this.selectedDate || !this.selectedTimeSlot) {
+    if (!this.modalDate || !this.selectedTimeSlot) {
       alert('日付と時間枠を選択してください');
       return;
     }
     this.isBookingReservation = true;
     const payload = {
-      date: this.selectedDate,
+      date: this.modalDate,
       timeSlot: this.selectedTimeSlot,
-      reason: this.interviewReason || null
+      reason: this.reservationReason || null
     };
     this.apiService.createReservation(payload).subscribe({
       next: (data: any) => {
-        alert('面談を予約しました');
-        this.resetReservationForm();
+        this.success.set('面談を予約しました');
+        this.closeReservationModal();
         this.loadMyReservations();
+        this.generateCalendarDays();
         this.isBookingReservation = false;
-        this.showReservationForm = false;
+        setTimeout(() => this.success.set(''), 3000);
         this.cdr.detectChanges();
       },
       error: (err: any) => {
         console.error('Error booking reservation:', err);
-        alert(err.error?.error || '予約に失敗しました');
+        this.error.set(err.error?.error || '予約に失敗しました');
         this.isBookingReservation = false;
+        setTimeout(() => this.error.set(''), 3000);
         this.cdr.detectChanges();
       }
     });
@@ -518,8 +550,8 @@ export class MyPageComponent implements OnInit {
   closeReservationModal() {
     this.showReservationModal = false;
     this.modalDate = '';
-    this.modalTimeSlot = '';
-    this.modalReason = '';
+    this.selectedTimeSlot = '';
+    this.reservationReason = '';
     this.modalAvailableSlots = [];
   }
 
@@ -582,20 +614,38 @@ export class MyPageComponent implements OnInit {
   loadSimulationSkillGap() {
     this.apiService.getMyLatestSimulation().subscribe({
       next: (data) => {
-        this.simulationSkillGapData.set(this.calculateSimulationSkillGap(data));
+        this.simulationSkillGapData = this.calculateSimulationSkillGap(data);
         this.cdr.detectChanges();
       },
       error: (err) => {
         console.log('No simulation history available');
-        this.simulationSkillGapData.set(null);
+        this.simulationSkillGapData = null;
       }
     });
   }
 
-  calculateSimulationSkillGap(simulationResult: any): any {
-    if (!simulationResult || !simulationResult.employeeData) {
-      return null;
+  revealNotice() {
+    if (confirm('次期異動の内示内容を確認しますか？\n※確認後、必ず人事との面談予約を行ってください。')) {
+      this.isNoticeRevealed = true;
     }
+  }
+
+  goToReservation() {
+    this.activeTab.set('consultation');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  updatePreferences() {
+    this.savePreferences();
+  }
+
+  isDateUnavailable(date: Date | null): boolean {
+    if (!date) return true;
+    return this.isDateDisabledForSelection(date);
+  }
+
+  calculateSimulationSkillGap(simulationResult: any): any {
+    if (!simulationResult || !simulationResult.employeeData) return null;
 
     const empData = simulationResult.employeeData;
     const deptName = empData.department?.name || '';
@@ -608,12 +658,18 @@ export class MyPageComponent implements OnInit {
     };
 
     const dept = empData.department || {};
-    const ideal = {
-      salesForce: Math.min(Math.round((Number(dept.weightSales) || 0) * 200), 100),
-      managementForce: Math.min(Math.round((Number(dept.weightManagement) || 0) * 200), 100),
-      explorationForce: Math.min(Math.round((Number(dept.weightExploration) || 0) * 200), 100),
-      developmentForce: Math.min(Math.round((Number(dept.weightDevelopment) || 0) * 200), 100)
-    };
+    const wS = Number(dept.weightSales) || 0;
+    const wM = Number(dept.weightManagement) || 0;
+    const wE = Number(dept.weightExploration) || 0;
+    const wD = Number(dept.weightDevelopment) || 0;
+    const totalWeight = wS + wM + wE + wD;
+
+    const ideal = totalWeight > 0 ? {
+      salesForce: Math.round((wS / totalWeight) * 100),
+      managementForce: Math.round((wM / totalWeight) * 100),
+      explorationForce: Math.round((wE / totalWeight) * 100),
+      developmentForce: Math.round((wD / totalWeight) * 100)
+    } : null;
 
     return {
       deptName: deptName,
@@ -622,5 +678,16 @@ export class MyPageComponent implements OnInit {
       isFromSimulation: true,
       simulationDate: simulationResult.createdAt
     };
+  }
+
+  getAverageGap(gapData: any): number {
+    if (!gapData || !gapData.ideal) return 0;
+    const gaps = [
+      Math.abs(gapData.ideal.salesForce - gapData.actual.salesForce),
+      Math.abs(gapData.ideal.managementForce - gapData.actual.managementForce),
+      Math.abs(gapData.ideal.explorationForce - gapData.actual.explorationForce),
+      Math.abs(gapData.ideal.developmentForce - gapData.actual.developmentForce)
+    ];
+    return Math.round(gaps.reduce((a, b) => a + b, 0) / gaps.length);
   }
 }

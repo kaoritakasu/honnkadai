@@ -94,6 +94,16 @@ export class AdminDashboardComponent implements OnInit {
   isSavingException = signal(false);
   exceptionError = signal('');
 
+  // --- 配置シミュレーション適用（予約）用 ---
+  showApplyModal = false;
+  applyDate = '';
+  applyMemo = '';
+
+  // 異動候補（未公開）のリスト（初期ダミーデータあり）
+  pendingTransfers = signal<any[]>([
+    { id: 1, employeeNumber: 'E015', employeeName: '佐藤健太', fromDept: 'C事業部', toDept: 'A事業部', applyDate: '2026-10-01', status: 'pending', memo: '本人のキャリア希望（営業への挑戦）を反映。15日の面談で合意予定。' }
+  ]);
+
   // --- ポップアップ用ステート ---
   selectedEmployeeNode = signal<any>(null);
 
@@ -1043,6 +1053,63 @@ export class AdminDashboardComponent implements OnInit {
         alert('保存に失敗しました。サーバーが立ち上がっているか確認してください。');
       }
     });
+  }
+
+  openApplyModal() {
+    this.showApplyModal = true;
+    // デフォルトで翌月1日をセット
+    const nextMonth = new Date();
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+    nextMonth.setDate(1);
+    this.applyDate = nextMonth.toISOString().split('T')[0];
+  }
+
+  closeApplyModal() {
+    this.showApplyModal = false;
+    this.applyDate = '';
+    this.applyMemo = '';
+  }
+
+  confirmApplySimulation() {
+    if (!this.applyDate) {
+      alert('発令日（適用日）を入力してください。');
+      return;
+    }
+
+    // シミュレーション結果を「異動候補」として追加
+    const newTransfers = [...this.pendingTransfers()];
+    newTransfers.push({
+      id: Date.now(),
+      employeeNumber: 'NEW',
+      employeeName: 'シミュレーション対象者',
+      fromDept: '-',
+      toDept: 'シミュレーション先',
+      applyDate: this.applyDate,
+      status: 'pending',
+      memo: this.applyMemo || 'シミュレーション結果からの自動追加'
+    });
+    this.pendingTransfers.set(newTransfers);
+
+    alert(`【予約完了】\n配置案を「異動候補（未公開）」として保存しました。\n人事ダッシュボードの「異動候補・内示管理」から面談と確定処理を行ってください。`);
+    this.closeApplyModal();
+    this.viewingHistoryDetail = false;
+  }
+
+  approveTransfer(transfer: any) {
+    if (confirm(`${transfer.employeeName} さんの異動を「確定（公開）」にしますか？\n※確定すると、対象者のマイページに新しい配属先が正式に表示されます。`)) {
+      const updated = this.pendingTransfers().map(t =>
+        t.id === transfer.id ? { ...t, status: 'approved' } : t
+      );
+      this.pendingTransfers.set(updated);
+      alert('異動を確定（公開）しました。対象者に通知が送信されました。');
+    }
+  }
+
+  rejectTransfer(transfer: any) {
+    if (confirm(`${transfer.employeeName} さんの異動案を「見送り（白紙）」にしますか？`)) {
+      const updated = this.pendingTransfers().filter(t => t.id !== transfer.id);
+      this.pendingTransfers.set(updated);
+    }
   }
 
   applySimulation() {

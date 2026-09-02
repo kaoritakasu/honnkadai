@@ -182,7 +182,7 @@
                     <label>成長係数</label>
                     <input type="number" step="0.1" [(ngModel)]="dept.growthFactor" placeholder="成長係数" class="input-field" style="width: 100%; padding: 5px; box-sizing: border-box;" />
                   </div>
-                </div> <!-- 修正点1: 成長係数の後で dept-fields の div をしっかり閉じる -->
+                </div>
 
                 <div class="shortage-penalty-section" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ccc;">
                   <h4>人員不足ペナルティ条件</h4>
@@ -220,13 +220,12 @@
                   <button (click)="addPenaltyRule(dept)" class="btn-add-rule" style="margin-top: 10px; padding: 8px 16px; background-color: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; display: block;">＋ ペナルティ条件を追加</button>
                 </div>
 
-                <!-- ボタングループ（編集・削除）を別セクションに移動 -->
+                <!-- ボタングループ（編集・削除） -->
                 <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 25px; margin-bottom: 20px; padding: 20px 0; border-top: 1px solid #eee; border-bottom: 1px solid #eee;">
                   <button (click)="startEdit(dept.id)" class="btn-edit" style="padding: 8px 16px; background-color: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;">編集する</button>
                   <button (click)="deleteDepartment(dept.id)" class="btn-delete" style="padding: 8px 16px; background-color: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer;">削除する</button>
                 </div>
 
-                <!-- 独立した行として更新・キャンセルボタンを右下に配置 -->
                 <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 25px; padding-top: 20px; border-top: 1px dashed #ccc; width: 100%;">
                   <button (click)="cancelEdit()" class="btn-cancel" style="padding: 10px 20px; background-color: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s;">キャンセル</button>
                   <button (click)="updateDepartment(dept)" class="btn-update" style="padding: 10px 30px; background-color: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: 0.2s;">更新する</button>
@@ -409,7 +408,7 @@
                   </div>
                 </div>
               }
-                </div> <!-- 修正点2: この div で @if (expandedDeptIds) 内の背景白エリアを正しく閉じる -->
+                </div>
               }
             </div>
           }
@@ -590,7 +589,7 @@
 
               <!-- 本番反映ボタンは履歴閲覧中のみ表示 -->
               @if (viewingHistoryDetail) {
-                <button (click)="applySimulation()" style="padding: 10px 20px; background-color: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: all 0.2s;">
+                <button (click)="openApplyModal()" style="padding: 10px 20px; background-color: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: all 0.2s;">
                   🚀 この配置を本番環境に反映する
                 </button>
               }
@@ -607,63 +606,115 @@
             </button>
           </div>
 
+          <!-- ============================================== -->
+          <!-- 修正版: ロジックツリー型 組織図 (水平展開) -->
+          <!-- ============================================== -->
           @if (viewMode === 'tree') {
             <div style="padding: 20px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 8px; overflow-x: auto;">
-              <div style="font-weight: bold; font-size: 1.2em; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 8px;">
+              <div style="font-weight: bold; font-size: 1.2em; margin-bottom: 30px; border-bottom: 1px solid #eee; padding-bottom: 8px; color: #2c3e50;">
                 🌳 ロジックツリー型 組織図
               </div>
               
-              <div class="flex items-stretch min-w-[900px]">
+              <div style="min-width: 1000px; padding: 20px;">
+                <!-- ツリー全体を包むフレックスコンテナ（垂直中央揃え） -->
+                <div style="display: flex; align-items: center;">
 
-                <!-- 第1階層: 会社全体 -->
-                <div class="flex items-center relative pr-8" style="background: #2c3e50; color: white; padding: 15px 25px; border-radius: 30px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1); flex-shrink: 0;" style="--tw-content: attr(data-after);">
-                  <div style="pointer-events: none; position: absolute; right: 0; top: 50%; width: 32px; height: 1px; background: #95a5a6; transform: translateY(-50%);"></div>
-                  🏢 会社全体<br><span style="font-size: 0.8em; font-weight: normal; opacity: 0.8;">(総計: 100名)</span>
-                </div>
+                  <!-- 第1階層: 会社全体 -->
+                  <div style="position: relative; z-index: 10; background: #2c3e50; color: white; padding: 15px 30px; border-radius: 8px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; flex-shrink: 0;">
+                    🏢 会社全体<br>
+                    <span style="font-size: 0.85em; font-weight: normal; opacity: 0.8;">(総計: 100名)</span>
+                  </div>
 
-                <!-- 第2階層: 事業部グループ -->
-                <div class="flex flex-col justify-center border-l-2 border-gray-400 pl-8 py-4 space-y-4">
-                  @for (dept of simulationResults(); track dept.departmentId) {
-                    <div class="flex items-stretch">
-                      <!-- 事業部ノード -->
-                      <div class="flex items-center relative pr-8" style="background: #3498db; color: white; padding: 12px 24px; border-radius: 25px; font-weight: bold; box-shadow: 0 3px 6px rgba(0,0,0,0.1); min-width: 160px; text-align: center; flex-shrink: 0;">
-                        <div style="pointer-events: none; position: absolute; right: 0; top: 50%; width: 32px; height: 1px; background: #95a5a6; transform: translateY(-50%);"></div>
-                        📁 {{ dept.departmentName || dept.department?.name }}<br>
-                        <span style="font-size: 0.8em; font-weight: normal; opacity: 0.8;">({{ dept.candidates?.length || 0 }}名)</span>
-                      </div>
+                  <!-- 第2階層コンテナ (事業部グループ) -->
+                  <div style="display: flex; flex-direction: column; justify-content: center; margin-left: 40px; position: relative;">
+                    <!-- 会社全体からグループ全体の中央へ伸びる横線 -->
+                    <div style="position: absolute; left: -40px; top: 50%; width: 40px; height: 2px; background-color: #94a3b8; transform: translateY(-50%);"></div>
 
-                      <!-- 第3階層: リーダーとメンバーグループ -->
-                      <div class="flex flex-col justify-center border-l-2 border-gray-300 pl-8 py-4 space-y-4 flex-1">
-                        <!-- リーダーノード -->
-                        <div class="flex items-center">
-                          @if (getDepartmentLeader(dept.candidates); as leader) {
-                            <div class="cursor-pointer transition-all duration-200 hover:bg-yellow-100 hover:shadow-lg hover:scale-105 active:scale-95" style="background: #fff9e6; border: 2px solid #f39c12; color: #2c3e50; padding: 10px 20px; border-radius: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); min-width: 250px;" (click)="openEmployeeModal(leader)">
-                              <div style="color: #d35400; font-size: 0.8em; font-weight: bold; margin-bottom: 4px;">👑 部門リーダー (管理・育成重視)</div>
-                              <div style="font-weight: bold;">👤 {{ leader.employeeNumber }} {{ getDisplayName(leader) }}</div>
-                              <div style="font-size: 0.85em; color: #666; margin-top: 4px;">
-                                営:{{ leader.salesForce }} | <strong style="color:#d35400;">管:{{ leader.managementForce }}</strong> | 開:{{ leader.explorationForce }} | <strong style="color:#d35400;">育:{{ leader.developmentForce }}</strong>
+                    @for (dept of simulationResults(); track dept.departmentId; let isFirstDept = $first; let isLastDept = $last) {
+                      <div style="display: flex; align-items: center; position: relative;">
+                        
+                        <!-- 縦線（事業部間の分岐線） -->
+                        @if (!isFirstDept && !isLastDept) {
+                          <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background-color: #94a3b8;"></div>
+                        }
+                        @if (isFirstDept && !isLastDept) {
+                          <div style="position: absolute; left: 0; top: 50%; bottom: 0; width: 2px; background-color: #94a3b8;"></div>
+                        }
+                        @if (isLastDept && !isFirstDept) {
+                          <div style="position: absolute; left: 0; top: 0; bottom: 50%; width: 2px; background-color: #94a3b8;"></div>
+                        }
+                        @if (isFirstDept && isLastDept) {
+                          <!-- 1つしかない場合は縦線を引かない -->
+                        }
+
+                        <!-- 分岐点から事業部へ向かう横線 -->
+                        <div style="position: absolute; left: 0; top: 50%; width: 40px; height: 2px; background-color: #94a3b8; transform: translateY(-50%);"></div>
+
+                        <!-- 隙間をpaddingで作ることで縦線を密着させる -->
+                        <div style="padding-left: 40px; padding-top: 20px; padding-bottom: 20px; display: flex; align-items: center;">
+
+                          <!-- 事業部ノード -->
+                          <div style="position: relative; z-index: 10; background: #3498db; color: white; padding: 12px 24px; border-radius: 8px; font-weight: bold; box-shadow: 0 3px 6px rgba(0,0,0,0.1); text-align: center; flex-shrink: 0; min-width: 160px;">
+                            📁 {{ dept.departmentName || dept.department?.name }}<br>
+                            <span style="font-size: 0.85em; font-weight: normal; opacity: 0.9;">({{ dept.allocatedCount || dept.candidates?.length || 0 }}名)</span>
+                          </div>
+
+                          <!-- 第3階層コンテナ (リーダー・メンバー) -->
+                          <div style="display: flex; flex-direction: column; justify-content: center; margin-left: 40px; position: relative;">
+                            <!-- 事業部からグループ全体の中央へ伸びる横線 -->
+                            <div style="position: absolute; left: -40px; top: 50%; width: 40px; height: 2px; background-color: #94a3b8; transform: translateY(-50%);"></div>
+
+                            <!-- リーダーの描画 -->
+                            @if (getDepartmentLeader(dept.candidates); as leader) {
+                              <div style="display: flex; align-items: center; position: relative;">
+                                <!-- 縦線（一番上の子要素扱い：下へ伸ばす） -->
+                                <div style="position: absolute; left: 0; top: 50%; bottom: 0; width: 2px; background-color: #94a3b8;"></div>
+                                <!-- 横線 -->
+                                <div style="position: absolute; left: 0; top: 50%; width: 40px; height: 2px; background-color: #94a3b8; transform: translateY(-50%);"></div>
+
+                                <div style="padding-left: 40px; padding-top: 15px; padding-bottom: 15px;">
+                                  <div class="cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.02]" style="cursor: pointer; background: #fff9e6; border: 2px solid #f39c12; padding: 12px 20px; border-radius: 8px; min-width: 280px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);" (click)="openEmployeeModal(leader)">
+                                    <div style="color: #d35400; font-size: 0.8em; font-weight: bold; margin-bottom: 6px;">👑 部門リーダー (管理・育成重視)</div>
+                                    <div style="font-weight: bold; color: #2c3e50; font-size: 1.05em; margin-bottom: 6px;">
+                                      👤 {{ leader.employeeNumber }} {{ getDisplayName(leader) }}
+                                    </div>
+                                    <div style="font-size: 0.85em; color: #666; margin-top: 4px;">
+                                      営:{{ leader.salesForce || 0 }} | <strong style="color:#d35400;">管:{{ leader.managementForce || 0 }}</strong> | 開:{{ leader.explorationForce || 0 }} | <strong style="color:#d35400;">育:{{ leader.developmentForce || 0 }}</strong>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            }
+
+                            <!-- メンバーの描画 -->
+                            <div style="display: flex; align-items: center; position: relative;">
+                              <!-- 縦線（一番下の子要素扱い：上から伸ばす。リーダーがいる場合のみ描画） -->
+                              @if (getDepartmentLeader(dept.candidates)) {
+                                <div style="position: absolute; left: 0; top: 0; bottom: 50%; width: 2px; background-color: #94a3b8;"></div>
+                              }
+                              <!-- 横線 -->
+                              <div style="position: absolute; left: 0; top: 50%; width: 40px; height: 2px; background-color: #94a3b8; transform: translateY(-50%);"></div>
+
+                              <div style="padding-left: 40px; padding-top: 15px; padding-bottom: 15px;">
+                                <div style="background: white; border: 1px solid #bdc3c7; padding: 16px; border-radius: 8px; width: 100%; max-width: 500px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                                  <div style="color: #7f8c8d; font-size: 0.85em; font-weight: bold; margin-bottom: 12px;">👥 所属メンバー</div>
+                                  <div style="display: flex; flex-wrap: wrap; gap: 8px; max-height: 160px; overflow-y: auto; padding-right: 5px;">
+                                    @for (emp of getDepartmentMembers(dept.candidates, getDepartmentLeader(dept.candidates)); track emp.employeeNumber) {
+                                      <div class="cursor-pointer transition-all duration-200 hover:bg-blue-100 hover:border-blue-400 hover:shadow-md" style="cursor: pointer; background: #f1f2f6; border: 1px solid #dfe4ea; padding: 6px 10px; border-radius: 4px; font-size: 0.85em; color: #2c3e50; white-space: nowrap;" (click)="openEmployeeModal(emp)" title="{{ getDisplayName(emp) }}">
+                                        👤 {{ emp.employeeNumber }} {{ getDisplayName(emp) }}
+                                      </div>
+                                    }
+                                  </div>
+                                </div>
                               </div>
                             </div>
-                          }
-                        </div>
 
-                        <!-- メンバーノード -->
-                        <div class="flex items-center">
-                          <div style="background: white; border: 1px solid #bdc3c7; padding: 15px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); width: 380px;">
-                            <div style="font-size: 0.85em; font-weight: bold; color: #7f8c8d; margin-bottom: 8px;">👥 所属メンバー</div>
-                            <!-- スクロール可能な領域にメンバーを敷き詰める -->
-                            <div style="display: flex; flex-wrap: wrap; gap: 6px; max-height: 120px; overflow-y: auto; padding-right: 5px;">
-                              @for (emp of getDepartmentMembers(dept.candidates, getDepartmentLeader(dept.candidates)); track emp.employeeNumber) {
-                                <div class="cursor-pointer transition-all duration-200 hover:bg-blue-200 hover:border-blue-500 hover:shadow-md hover:scale-110 active:scale-95" style="background: #f1f2f6; border: 1px solid #dfe4ea; padding: 4px 8px; border-radius: 6px; font-size: 0.8em; color: #2c3e50; white-space: nowrap;" (click)="openEmployeeModal(emp)" title="{{ getDisplayName(emp) }}">
-                                  👤 {{ emp.employeeNumber }}
-                                </div>
-                              }
-                            </div>
-                          </div>
+                          </div> <!-- End 第3階層コンテナ -->
                         </div>
                       </div>
-                    </div>
-                  }
+                    }
+                  </div> <!-- End 第2階層コンテナ -->
+
                 </div>
               </div>
             </div>
@@ -983,83 +1034,67 @@
       <div class="hr-management-section">
         <h2>人事管理ダッシュボード</h2>
 
-        <!-- 面談可能日（予約枠ルール）設定セクション -->
-        <div class="hr-section" style="margin-bottom: 30px; padding: 20px; background-color: #f8f9fa; border-radius: 8px; border-left: 4px solid #9b59b6;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-            <div>
-              <h3 style="margin: 0; color: #2c3e50;">⚙️ 面談受付ルールの設定</h3>
-              <p style="margin: 5px 0 0 0; color: #666; font-size: 0.9em;">社員が予約できる曜日と時間帯を管理します。</p>
-            </div>
-            <button (click)="toggleAvailabilityForm()" style="padding: 8px 16px; background: #9b59b6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: background 0.2s;">
-              {{ showAvailabilityForm() ? '閉じる' : '＋ ルールを追加' }}
-            </button>
-          </div>
+       <!-- 異動候補・内示管理セクション -->
+<div class="hr-section" style="margin-bottom: 30px; padding: 20px; background-color: #fffbf0; border-radius: 8px; border-left: 4px solid #f39c12; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+    <div>
+      <h3 style="margin: 0; color: #d35400;">🔄 異動候補・内示管理 (ワークフロー)</h3>
+      <p style="margin: 5px 0 0 0; color: #666; font-size: 0.9em;">シミュレーションから予約された異動候補です。面談を実施し、合意が取れたら「確定（公開）」を押してください。</p>
+    </div>
+  </div>
 
-          @if (showAvailabilityForm()) {
-            <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-              <h4 style="margin-top: 0; color: #2c3e50;">新規ルールの追加</h4>
-              <div style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
-                <div style="flex: 1; min-width: 120px;">
-                  <label style="display: block; font-size: 0.9em; font-weight: bold; margin-bottom: 5px; color: #555;">曜日</label>
-                  <select [(ngModel)]="newRule.dayOfWeek" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
-                    <option [value]="1">月曜日</option>
-                    <option [value]="2">火曜日</option>
-                    <option [value]="3">水曜日</option>
-                    <option [value]="4">木曜日</option>
-                    <option [value]="5">金曜日</option>
-                    <option [value]="6">土曜日</option>
-                    <option [value]="0">日曜日</option>
-                  </select>
-                </div>
-                <div style="flex: 1; min-width: 120px;">
-                  <label style="display: block; font-size: 0.9em; font-weight: bold; margin-bottom: 5px; color: #555;">開始時間</label>
-                  <input type="time" [(ngModel)]="newRule.startTime" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
-                </div>
-                <div style="flex: 1; min-width: 120px;">
-                  <label style="display: block; font-size: 0.9em; font-weight: bold; margin-bottom: 5px; color: #555;">終了時間</label>
-                  <input type="time" [(ngModel)]="newRule.endTime" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
-                </div>
-                <div style="flex: 0 0 auto;">
-                  <button (click)="saveAvailabilityRule()" [disabled]="isSavingRule()" style="padding: 9px 20px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
-                    {{ isSavingRule() ? '保存中...' : '保存する' }}
-                  </button>
-                </div>
-              </div>
-              @if (ruleError()) {
-                <p style="color: #e74c3c; margin: 10px 0 0 0; font-size: 0.9em; font-weight: bold;">{{ ruleError() }}</p>
+  @if (pendingTransfers().length === 0) {
+    <div style="padding: 20px; background: white; border-radius: 4px; text-align: center; color: #999; border: 1px dashed #ddd;">
+      現在、未公開の異動候補はありません。
+    </div>
+  } @else {
+    <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 4px; overflow: hidden; border: 1px solid #eaeaea;">
+      <thead style="background: #fdf5e6;">
+        <tr>
+          <th style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; color: #d35400;">対象者</th>
+          <th style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; color: #d35400;">異動内容</th>
+          <th style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; color: #d35400;">発令予定日</th>
+          <th style="padding: 12px; text-align: center; border-bottom: 1px solid #ddd; color: #d35400;">ステータス</th>
+          <th style="padding: 12px; text-align: center; border-bottom: 1px solid #ddd; color: #d35400;">操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (transfer of pendingTransfers(); track transfer.id) {
+          <tr style="border-bottom: 1px solid #eaeaea;">
+            <td style="padding: 12px; font-weight: bold; color: #2c3e50;">
+              👤 {{ transfer.employeeName }} <span style="font-size: 0.8em; color: #999; font-weight: normal;">({{ transfer.employeeNumber }})</span>
+            </td>
+            <td style="padding: 12px;">
+              <span style="color: #7f8c8d;">{{ transfer.fromDept }}</span>
+              <span style="margin: 0 8px; color: #3498db;">➔</span>
+              <span style="font-weight: bold; color: #3498db;">{{ transfer.toDept }}</span>
+              <div style="font-size: 0.8em; color: #666; margin-top: 4px;">📝 {{ transfer.memo }}</div>
+            </td>
+            <td style="padding: 12px; font-weight: bold; color: #555;">{{ transfer.applyDate }}</td>
+            <td style="padding: 12px; text-align: center;">
+              @if (transfer.status === 'pending') {
+                <span style="background: #fff3cd; color: #856404; padding: 4px 10px; border-radius: 12px; font-size: 0.8em; font-weight: bold;">未公開（面談待ち）</span>
+              } @else {
+                <span style="background: #d4edda; color: #155724; padding: 4px 10px; border-radius: 12px; font-size: 0.8em; font-weight: bold;">✓ 確定（公開済み）</span>
               }
-            </div>
-          }
-
-          <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 4px; overflow: hidden; border: 1px solid #eaeaea;">
-            <thead style="background: #f1f5f9;">
-              <tr>
-                <th style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; color: #2c3e50;">曜日</th>
-                <th style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; color: #2c3e50;">時間帯</th>
-                <th style="padding: 12px; text-align: center; border-bottom: 1px solid #ddd; color: #2c3e50;">操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (rule of availabilityRules(); track rule.id) {
-                <tr style="border-bottom: 1px solid #eaeaea;">
-                  <td style="padding: 12px; font-weight: bold;">{{ getDayOfWeekLabel(rule.dayOfWeek) }}曜日</td>
-                  <td style="padding: 12px;">{{ rule.startTime }} 〜 {{ rule.endTime }}</td>
-                  <td style="padding: 12px; text-align: center;">
-                    <button (click)="deleteAvailabilityRule(rule.id)" style="padding: 6px 12px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: bold;">削除</button>
-                  </td>
-                </tr>
+            </td>
+            <td style="padding: 12px; text-align: center;">
+              @if (transfer.status === 'pending') {
+                <div style="display: flex; gap: 8px; justify-content: center;">
+                  <button (click)="approveTransfer(transfer)" style="padding: 6px 12px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: 0.2s;">確定(公開)</button>
+                  <button (click)="rejectTransfer(transfer)" style="padding: 6px 12px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: bold;">見送り</button>
+                </div>
               }
-              @if (availabilityRules().length === 0) {
-                <tr>
-                  <td colspan="3" style="padding: 20px; text-align: center; color: #999;">受付ルールが設定されていません。基本の営業時間（9:00〜17:00等）が適用されます。</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>
         <div class="hr-section" style="margin-bottom: 30px; padding: 20px; background-color: #f8f9fa; border-radius: 8px; border-left: 4px solid #3498db;">
-          <!-- ヘッダー部分と開閉ボタン -->
+          <!-- ヘ
+           ッダー部分と開閉ボタン -->
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
             <div>
               <h3 style="margin: 0; color: #2c3e50;">📅 面談予約管理</h3>
@@ -1213,6 +1248,82 @@
                 }
               </div>
             }
+          }
+        </div>
+
+        <!-- 異動候補・内示管理セクション -->
+        <div class="hr-section" style="margin-bottom: 30px; padding: 20px; background-color: #f8f9fa; border-radius: 8px; border-left: 4px solid #f39c12;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <div>
+              <h3 style="margin: 0; color: #2c3e50;">📋 異動候補・内示管理</h3>
+              <p style="margin: 5px 0 0 0; color: #666; font-size: 0.9em;">配置シミュレーション結果を異動候補として管理し、面談後に確定処理を行えます。</p>
+            </div>
+          </div>
+
+          @if (pendingTransfers().length === 0) {
+            <div style="padding: 40px 20px; background-color: white; border-radius: 4px; text-align: center; color: #999; border: 1px dashed #ddd;">
+              <p style="margin: 0; font-size: 1em;">現在、異動候補はありません。</p>
+            </div>
+          } @else {
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+              @for (transfer of pendingTransfers(); track transfer.id) {
+                <div style="background: white; border-radius: 8px; padding: 16px; border-left: 4px solid #f39c12; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                  <!-- 異動者情報 -->
+                  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                    <div style="flex: 1;">
+                      <p style="margin: 0 0 4px 0; font-weight: bold; color: #2c3e50; font-size: 0.95em;">
+                        {{ transfer.employeeNumber }} {{ transfer.employeeName }}
+                      </p>
+                      <p style="margin: 0; font-size: 0.85em; color: #666;">
+                        {{ transfer.fromDept }} → {{ transfer.toDept }}
+                      </p>
+                    </div>
+                    <!-- ステータスバッジ -->
+                    <div>
+                      @if (transfer.status === 'pending') {
+                        <span style="display: inline-block; background: #fff3cd; color: #856404; padding: 6px 12px; border-radius: 12px; font-size: 0.8em; font-weight: bold;">未確定</span>
+                      } @else if (transfer.status === 'approved') {
+                        <span style="display: inline-block; background: #d4edda; color: #155724; padding: 6px 12px; border-radius: 12px; font-size: 0.8em; font-weight: bold;">確定（公開）</span>
+                      }
+                    </div>
+                  </div>
+
+                  <!-- 発令日情報 -->
+                  <div style="margin-bottom: 12px; padding: 10px; background: #f8f9fa; border-radius: 4px; font-size: 0.85em;">
+                    <p style="margin: 0; color: #666;">
+                      <strong>発令日：</strong> {{ transfer.applyDate }}
+                    </p>
+                  </div>
+
+                  <!-- メモ表示 -->
+                  @if (transfer.memo) {
+                    <div style="margin-bottom: 12px; padding: 10px; background: #f0f4ff; border-radius: 4px; border-left: 3px solid #3498db;">
+                      <p style="margin: 0 0 6px 0; font-size: 0.85em; color: #666; font-weight: bold;">💬 メモ</p>
+                      <p style="margin: 0; font-size: 0.85em; color: #333; white-space: pre-wrap; word-break: break-word;">{{ transfer.memo }}</p>
+                    </div>
+                  }
+
+                  <!-- ボタングループ -->
+                  <div style="display: flex; gap: 8px; margin-top: 12px;">
+                    @if (transfer.status === 'pending') {
+                      <button (click)="approveTransfer(transfer)" style="flex: 1; padding: 8px 16px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.85em;">
+                        ✓ 確定（公開）
+                      </button>
+                      <button (click)="rejectTransfer(transfer)" style="flex: 1; padding: 8px 16px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.85em;">
+                        ✕ 見送り
+                      </button>
+                    } @else if (transfer.status === 'approved') {
+                      <div style="flex: 1; padding: 8px 16px; background: #d4edda; color: #155724; border-radius: 4px; text-align: center; font-weight: bold; font-size: 0.85em;">
+                        ✓ 公開済み
+                      </div>
+                      <button (click)="rejectTransfer(transfer)" style="flex: 1; padding: 8px 16px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.85em;">
+                        取消
+                      </button>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
           }
         </div>
       </div>
@@ -1395,6 +1506,45 @@
       <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px; padding-top: 20px; border-top: 1px solid #eee;">
         <button (click)="closeEmployeeModal()" class="hover:bg-gray-700 transition-all" style="padding: 10px 25px; background-color: #95a5a6; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
           閉じる
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ============================================== -->
+<!-- 配置シミュレーション適用（予約）モーダル -->
+<!-- ============================================== -->
+@if (showApplyModal) {
+  <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 12px; padding: 30px; max-width: 500px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+      <h2 style="margin: 0 0 20px 0; color: #2c3e50; font-size: 1.5em; display: flex; align-items: center; gap: 10px;">
+        📋 配置案を発令予約する
+      </h2>
+
+      <p style="margin: 0 0 20px 0; color: #666; line-height: 1.6;">
+        この配置案を「発令待ち（内示期間）」の状態として登録します。対象社員には人事との面談案内が通知されます。
+      </p>
+
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; margin-bottom: 8px; font-weight: bold; color: #333;">発令日（適用日）<span style="color: #e74c3c;">*</span></label>
+        <input type="date" [(ngModel)]="applyDate" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 1em; box-sizing: border-box;" />
+        <p style="margin: 6px 0 0 0; font-size: 0.85em; color: #666;">
+          💡 この日付から配置が適用される予定です
+        </p>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; margin-bottom: 8px; font-weight: bold; color: #333;">メモ（オプション）</label>
+        <textarea [(ngModel)]="applyMemo" placeholder="発令に関するメモや補足情報があれば入力してください" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; min-height: 80px; font-size: 0.95em; font-family: inherit; box-sizing: border-box;"></textarea>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 25px; padding-top: 20px; border-top: 1px solid #eee;">
+        <button (click)="closeApplyModal()" style="padding: 10px 25px; background-color: #95a5a6; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: all 0.2s;">
+          キャンセル
+        </button>
+        <button (click)="confirmApplySimulation()" style="padding: 10px 30px; background-color: #e74c3c; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: all 0.2s;">
+          予約を確定する
         </button>
       </div>
     </div>
