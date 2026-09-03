@@ -96,24 +96,30 @@ export class ApiService {
     return this.http.post(`${this.apiUrl}/allocations/simulate-multi`, payload, { headers: this.getHeaders() });
   }
 
-  simulateBatchAllocation(data: any[], lastYearTotalRevenue?: number, simulationMode?: string): Observable<any> {
-    let payload: any = Array.isArray(data) ? { employees: data } : data;
-    if (lastYearTotalRevenue && lastYearTotalRevenue > 0) {
+  simulateBatchAllocation(payloadData: any, lastYearTotalRevenue?: number, simulationMode?: string, previousSimulationId?: string): Observable<any> {
+    let payload: any = Array.isArray(payloadData) ? { employees: payloadData } : payloadData;
+    if (lastYearTotalRevenue !== undefined) {
       payload.lastYearTotalRevenue = lastYearTotalRevenue;
     }
-    if (simulationMode) {
+    if (simulationMode !== undefined) {
       payload.simulationMode = simulationMode;
+    }
+    if (previousSimulationId !== undefined) {
+      payload.previousSimulationId = previousSimulationId;
     }
     return this.http.post<any>(`${this.apiUrl}/allocations/simulate-batch`, payload, { headers: this.getHeaders() });
   }
 
-  simulateMultiDepartmentWithEmployees(employees: any[], lastYearTotalRevenue?: number, simulationMode?: string): Observable<any> {
+  simulateMultiDepartmentWithEmployees(employees: any[], lastYearTotalRevenue?: number, simulationMode?: string, previousSimulationId?: string): Observable<any> {
     let payload: any = Array.isArray(employees) ? { employees } : employees;
     if (lastYearTotalRevenue && lastYearTotalRevenue > 0) {
       payload.lastYearTotalRevenue = lastYearTotalRevenue;
     }
     if (simulationMode) {
       payload.simulationMode = simulationMode;
+    }
+    if (previousSimulationId) {
+      payload.previousSimulationId = previousSimulationId;
     }
     return this.http.post<any>(`${this.apiUrl}/allocations/simulate-batch`, payload, { headers: this.getHeaders() });
   }

@@ -118,6 +118,7 @@ export class AdminDashboardComponent implements OnInit {
   isSimulatingHiring: boolean = false;
   hiringSimulationResult: any = null;
   pendingNewHires: any[] | null = null;
+  lastSimulationId: string | null = null;
 
   // --- ペルソナ別採用候補生成用 ---
   newGradCount: number = 0;
@@ -417,14 +418,36 @@ export class AdminDashboardComponent implements OnInit {
 
     this.loading.set(true);
 
-    // 採用候補者を含めてシミュレーション実行
-    const employees = this.employees();
-    const employeesWithNewCandidates = [...employees, ...this.newCandidates];
+    // 新規採用候補者だけを送信（前回の配置を維持）
+    let payload: any = {
+      employees: this.newCandidates,
+      lastYearTotalRevenue: this.lastYearTotalRevenue,
+      simulationMode: this.simulationMode,
+      addOnlyMode: true  // 前回の配置に追加する形での配置を指示
+    };
+
+    // 前回のシミュレーション結果が存在する場合は、それを基準に配置
+    if (this.simulationResults() && Array.isArray(this.simulationResults())) {
+      const currentResults = this.simulationResults();
+      payload.previousAllocations = currentResults.map((result: any) => ({
+        departmentId: result.departmentId,
+        departmentName: result.departmentName,
+        currentCount: result.allocatedCount || result.candidates?.length || 0,
+        candidates: result.candidates || []
+      }));
+      payload.previousSimulationId = this.lastSimulationId;
+    } else {
+      // シミュレーション結果がない場合は通常モード
+      const existingEmployees = this.employees() || [];
+      payload.employees = [...existingEmployees, ...this.newCandidates];
+      payload.addOnlyMode = false;
+    }
 
     this.apiService.simulateBatchAllocation(
-      employeesWithNewCandidates,
+      payload,
       this.lastYearTotalRevenue,
-      this.simulationMode
+      this.simulationMode,
+      this.lastSimulationId || undefined
     ).subscribe({
       next: (data: any) => {
         if (data && data.results && Array.isArray(data.results)) {
@@ -581,8 +604,23 @@ export class AdminDashboardComponent implements OnInit {
 
     this.loading.set(true);
 
+    let baseEmployees = [];
+    if (this.simulationResults() && Array.isArray(this.simulationResults())) {
+      baseEmployees = this.simulationResults().flatMap((dept: any) => dept.candidates);
+    } else {
+      baseEmployees = this.employees().filter((emp: any) => emp.user?.role !== 'ADMIN');
+    }
+    const employeesWithParsedData = [...baseEmployees, ...parsedEmployees];
+
+    const payload = {
+      departmentIds: this.selectedDepartments().length > 0 ? this.selectedDepartments() : this.departments().map(d => d.id),
+      employees: employeesWithParsedData,
+      lastYearTotalRevenue: this.lastYearTotalRevenue,
+      simulationMode: this.simulationMode
+    };
+
     this.apiService.simulateBatchAllocation(
-      parsedEmployees,
+      payload,
       this.lastYearTotalRevenue,
       this.simulationMode
     ).subscribe({
@@ -807,7 +845,7 @@ export class AdminDashboardComponent implements OnInit {
   addNewCandidate() {
     this.newCandidates.push({
       employeeId: 'NEW_' + Date.now(),
-      employeeNumber: 'NEW',
+      employeeNumber: `NEW${String(Date.now() + this.newCandidates.length).slice(-4)}`,
       employeeName: '',
       salesForce: 50,
       managementForce: 50,
@@ -944,9 +982,11 @@ export class AdminDashboardComponent implements OnInit {
 
 
   private enrichWithMyPageData(results: any): any {
-    const dbEmployees = this.employees();
     const isArray = Array.isArray(results);
     const resultsArray = isArray ? results : [results];
+
+    // 社員一覧は補助データとして使用（employeeNameなどの表示用のみ）
+    const dbEmployees = this.employees();
 
     const enrichedResults = resultsArray.map((result: any) => ({
       ...result,
@@ -971,8 +1011,8 @@ export class AdminDashboardComponent implements OnInit {
           else if (maxVal === d) topSkill = '育成力';
         }
 
-        let currentTags = dbEmp?.tags || cand.tags || [];
-        if (!Array.isArray(currentTags)) currentTags = [];
+        // APIから返されたtagsを100%優先（ローカルデータで上書きしない）
+        let currentTags = Array.isArray(cand.tags) ? cand.tags : [];
 
         const abilityTypes = ['営業力', '管理力', '開拓力', '育成力'];
         let newTags = currentTags.filter((t: string) => !abilityTypes.includes(t));
@@ -981,14 +1021,24 @@ export class AdminDashboardComponent implements OnInit {
           newTags.unshift(topSkill);
         }
 
-        const dbEmpName = dbEmp?.employeeName || dbEmp?.name || dbEmp?.user?.name || '';
+        // employeeNameなどの表示用情報はローカルデータから補助的に取得
+        const empName = cand.employeeName || dbEmp?.employeeName || dbEmp?.name || dbEmp?.user?.name || cand.employeeNumber || '名前未設定';
+        const desiredDept = cand.desiredDept || dbEmp?.desiredDept || '';
+        const workLifeBalance = cand.workLifeBalance || dbEmp?.workLifeBalance || '';
 
         return {
           ...cand,
-          employeeName: dbEmpName || cand.employeeName || cand.employeeNumber || '名前未設定',
-          desiredDept: dbEmp?.desiredDept || cand.desiredDept || '',
-          workLifeBalance: dbEmp?.workLifeBalance || cand.workLifeBalance || '',
-          tags: newTags
+          salesForce: cand.salesForce,
+          managementForce: cand.managementForce,
+          explorationForce: cand.explorationForce,
+          developmentForce: cand.developmentForce,
+          laborCost: cand.laborCost,
+          score: cand.score,
+          tags: newTags,
+          isExecutiveCandidate: cand.isExecutiveCandidate,
+          employeeName: empName,
+          desiredDept: desiredDept,
+          workLifeBalance: workLifeBalance
         };
       })
     }));
@@ -1047,7 +1097,10 @@ export class AdminDashboardComponent implements OnInit {
     };
 
     this.apiService.saveSimulation(payload).subscribe({
-      next: () => alert('配置案を保存し、社員への通知が完了しました！'),
+      next: (res: any) => {
+        this.lastSimulationId = res?.id || null;
+        alert('配置案を保存し、社員への通知が完了しました！');
+      },
       error: (err: any) => {
         console.error(err);
         alert('保存に失敗しました。サーバーが立ち上がっているか確認してください。');
@@ -1069,7 +1122,8 @@ export class AdminDashboardComponent implements OnInit {
     };
 
     this.apiService.saveSimulation(payload).subscribe({
-      next: () => {
+      next: (res: any) => {
+        this.lastSimulationId = res?.id || null;
         alert('配置案を履歴に保存しました（社員への通知はありません）');
         this.resetSimulation();
       },
@@ -1153,7 +1207,8 @@ export class AdminDashboardComponent implements OnInit {
     };
 
     this.apiService.saveSimulation(payload).subscribe({
-      next: () => {
+      next: (res: any) => {
+        this.lastSimulationId = res?.id || null;
         alert('配置案を本番環境に反映し、社員への通知が完了しました！');
         this.resetSimulation();
         this.loadDashboard();
@@ -1461,8 +1516,12 @@ export class AdminDashboardComponent implements OnInit {
     let targetEmployees: any[] = [];
     let currentData: any = null;
 
-    // シミュレーション履歴を最優先で使用
-    if (this.dashboard()?.simulationHistory?.length > 0) {
+    // 1. 現在のシミュレーション結果を最優先で使用
+    if (this.simulationResults()) {
+      currentData = this.simulationResults();
+    }
+    // 2. シミュレーション履歴を次優先で使用
+    else if (this.dashboard()?.simulationHistory?.length > 0) {
       const latestHistory = this.dashboard().simulationHistory[0];
       try {
         const historyResults = latestHistory.results || latestHistory.data || latestHistory.details;
@@ -1471,11 +1530,6 @@ export class AdminDashboardComponent implements OnInit {
         console.warn('Failed to parse simulation history results:', e);
         currentData = null;
       }
-    }
-
-    // シミュレーション履歴がない場合は現在のシミュレーション結果を使用
-    if (!currentData) {
-      currentData = this.simulationResults();
     }
 
     // シミュレーションデータから抽出
@@ -1495,34 +1549,6 @@ export class AdminDashboardComponent implements OnInit {
       if (deptResult && Array.isArray(deptResult.candidates)) {
         targetEmployees = deptResult.candidates;
       }
-    }
-
-    // データベースの社員情報から抽出（シミュレーションデータがない場合）
-    if (targetEmployees.length === 0) {
-      targetEmployees = this.employees().filter((emp: any) => {
-        const eDeptId = String(emp.departmentId || emp.currentDeptId || '').trim();
-        if (deptId && eDeptId === deptId) return true;
-
-        const directDept = String(emp.currentDept || emp.department?.name || emp.departmentName || '').trim();
-        if (directDept) {
-          const nameMatch = directDept === deptName || directDept.includes(deptName) || deptName.includes(directDept);
-          const partialMatch = directDept.replace(/部|課|室|グループ|チーム/g, '') === deptName.replace(/部|課|室|グループ|チーム/g, '');
-          if (nameMatch || partialMatch) return true;
-        }
-
-        if (Array.isArray(emp.allocations) && emp.allocations.length > 0) {
-          return emp.allocations.some((a: any) => {
-            const aId = String(a.departmentId || a.department?.id || '').trim();
-            if (deptId && aId === deptId) return true;
-            const aName = String(a.department?.name || a.departmentName || a.department || '').trim();
-            if (!aName) return false;
-            const nameMatch = aName === deptName || aName.includes(deptName) || deptName.includes(aName);
-            const partialMatch = aName.replace(/部|課|室|グループ|チーム/g, '') === deptName.replace(/部|課|室|グループ|チーム/g, '');
-            return nameMatch || partialMatch;
-          });
-        }
-        return false;
-      });
     }
 
     if (targetEmployees.length === 0) {
@@ -1693,7 +1719,7 @@ export class AdminDashboardComponent implements OnInit {
 
     const combinedData = [...baseData, ...this.pendingNewHires];
 
-    this.apiService.simulateBatchAllocation(combinedData, this.getTotalCompanyRevenue(), this.simulationMode).subscribe({
+    this.apiService.simulateBatchAllocation(combinedData, this.getTotalCompanyRevenue(), this.simulationMode, this.lastSimulationId || undefined).subscribe({
       next: (data: any) => {
         this.isSimulatingHiring = false;
         if (data && data.results) {
@@ -1777,20 +1803,49 @@ export class AdminDashboardComponent implements OnInit {
     return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 
+  private getStrategyBonus(): { sales: number; management: number; exploration: number; development: number } {
+    switch (this.simulationMode) {
+      case 'sales_focus':
+        return { sales: 15, management: -10, exploration: 15, development: -10 };
+      case 'management_focus':
+        return { sales: -10, management: 20, exploration: -10, development: -5 };
+      case 'tech_focus':
+        return { sales: -5, management: -5, exploration: 15, development: 15 };
+      case 'balanced':
+      default:
+        return { sales: 5, management: 5, exploration: 5, development: 5 };
+    }
+  }
+
+  private getPreferredSpecializationTypes(): string[] {
+    switch (this.simulationMode) {
+      case 'sales_focus':
+        return ['sales', 'exploration'];
+      case 'management_focus':
+        return ['management'];
+      case 'tech_focus':
+        return ['exploration', 'development'];
+      case 'balanced':
+      default:
+        return [];
+    }
+  }
+
   private generateNewGradCandidates(count: number): any[] {
     const candidates = [];
+    const strategyBonus = this.getStrategyBonus();
     for (let i = 0; i < count; i++) {
       const baseForce = this.randomInt(10, 30);
-      const randomize = (val: number) => Math.min(100, Math.max(0, val + this.randomInt(-5, 5)));
+      const randomize = (val: number, bonus: number) => Math.min(100, Math.max(0, val + this.randomInt(-5, 5) + bonus));
 
       candidates.push({
         employeeId: `NEW_GRAD_${Date.now()}_${i}`,
         employeeNumber: `GRAD${String(Date.now() + i).slice(-4)}`,
         employeeName: `新卒採用候補${i + 1}`,
-        salesForce: randomize(baseForce),
-        managementForce: randomize(baseForce),
-        explorationForce: randomize(baseForce),
-        developmentForce: randomize(baseForce),
+        salesForce: randomize(baseForce, strategyBonus.sales),
+        managementForce: randomize(baseForce, strategyBonus.management),
+        explorationForce: randomize(baseForce, strategyBonus.exploration),
+        developmentForce: randomize(baseForce, strategyBonus.development),
         laborCost: Number((Math.random() * (3.0 - 2.0) + 2.0).toFixed(1)),
         isNew: true,
         tags: ['新卒'],
@@ -1803,10 +1858,17 @@ export class AdminDashboardComponent implements OnInit {
 
   private generateMidCareerCandidates(count: number): any[] {
     const candidates = [];
-    const forceTypes = ['sales', 'management', 'exploration', 'development'];
+    const allTypes = ['sales', 'management', 'exploration', 'development'];
+    const strategyBonus = this.getStrategyBonus();
+    const preferredTypes = this.getPreferredSpecializationTypes();
 
     for (let i = 0; i < count; i++) {
-      const specializedType = forceTypes[this.randomInt(0, forceTypes.length - 1)];
+      let specializedType: string;
+      if (preferredTypes.length > 0 && Math.random() < 0.7) {
+        specializedType = preferredTypes[this.randomInt(0, preferredTypes.length - 1)];
+      } else {
+        specializedType = allTypes[this.randomInt(0, allTypes.length - 1)];
+      }
       const highForce = this.randomInt(60, 80);
       const lowForce = this.randomInt(20, 40);
 
@@ -1817,16 +1879,16 @@ export class AdminDashboardComponent implements OnInit {
         developmentForce: specializedType === 'development' ? highForce : lowForce
       };
 
-      const randomize = (val: number) => Math.min(100, Math.max(0, val + this.randomInt(-3, 3)));
+      const randomize = (val: number, bonus: number) => Math.min(100, Math.max(0, val + this.randomInt(-3, 3) + bonus));
 
       candidates.push({
         employeeId: `NEW_MID_${Date.now()}_${i}`,
         employeeNumber: `MID${String(Date.now() + i).slice(-4)}`,
         employeeName: `中途採用候補${i + 1}`,
-        salesForce: randomize(forces.salesForce),
-        managementForce: randomize(forces.managementForce),
-        explorationForce: randomize(forces.explorationForce),
-        developmentForce: randomize(forces.developmentForce),
+        salesForce: randomize(forces.salesForce, strategyBonus.sales),
+        managementForce: randomize(forces.managementForce, strategyBonus.management),
+        explorationForce: randomize(forces.explorationForce, strategyBonus.exploration),
+        developmentForce: randomize(forces.developmentForce, strategyBonus.development),
         laborCost: Number((Math.random() * (7.0 - 5.0) + 5.0).toFixed(1)),
         isNew: true,
         tags: ['中途'],
@@ -1839,19 +1901,20 @@ export class AdminDashboardComponent implements OnInit {
 
   private generateExecutiveCandidates(count: number): any[] {
     const candidates = [];
+    const strategyBonus = this.getStrategyBonus();
     for (let i = 0; i < count; i++) {
       const highForce = this.randomInt(70, 90);
       const managementForce = this.randomInt(80, 95);
-      const randomize = (val: number) => Math.min(100, Math.max(0, val + this.randomInt(-2, 2)));
+      const randomize = (val: number, bonus: number) => Math.min(100, Math.max(0, val + this.randomInt(-2, 2) + bonus));
 
       candidates.push({
         employeeId: `NEW_EXEC_${Date.now()}_${i}`,
         employeeNumber: `EXEC${String(Date.now() + i).slice(-4)}`,
         employeeName: `幹部候補${i + 1}`,
-        salesForce: randomize(highForce),
-        managementForce: randomize(managementForce),
-        explorationForce: randomize(highForce),
-        developmentForce: randomize(highForce),
+        salesForce: randomize(highForce, strategyBonus.sales),
+        managementForce: randomize(managementForce, strategyBonus.management),
+        explorationForce: randomize(highForce, strategyBonus.exploration),
+        developmentForce: randomize(highForce, strategyBonus.development),
         laborCost: Number((Math.random() * (10.0 - 8.0) + 8.0).toFixed(1)),
         isNew: true,
         tags: ['幹部候補'],
@@ -1863,6 +1926,10 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   generateCandidatesByPersona() {
+    if (this.currentUserRole !== 'ADMIN' && this.executiveCandidateCount > 0) {
+      this.executiveCandidateCount = 0;
+    }
+
     if (this.newGradCount === 0 && this.midCareerCount === 0 && this.executiveCandidateCount === 0) {
       alert('最低でも1つのペルソナで1名以上を指定してください');
       return;
@@ -1900,10 +1967,23 @@ export class AdminDashboardComponent implements OnInit {
 
     this.loading.set(true);
 
-    const employeesWithNewCandidates = [...this.employees(), ...this.newCandidates];
+    let baseEmployees = [];
+    if (this.simulationResults() && Array.isArray(this.simulationResults())) {
+      baseEmployees = this.simulationResults().flatMap((dept: any) => dept.candidates);
+    } else {
+      baseEmployees = this.employees().filter((emp: any) => emp.user?.role !== 'ADMIN');
+    }
+    const employeesWithNewCandidates = [...baseEmployees, ...this.newCandidates];
+
+    const payload = {
+      departmentIds: this.selectedDepartments().length > 0 ? this.selectedDepartments() : this.departments().map(d => d.id),
+      employees: employeesWithNewCandidates,
+      lastYearTotalRevenue: this.lastYearTotalRevenue,
+      simulationMode: this.simulationMode
+    };
 
     this.apiService.simulateBatchAllocation(
-      employeesWithNewCandidates,
+      payload,
       this.lastYearTotalRevenue,
       this.simulationMode
     ).subscribe({

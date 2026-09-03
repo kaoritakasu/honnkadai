@@ -197,12 +197,23 @@ const calculateTwoPhaseAllocation = (
   departments.forEach(dept => allocations.set(dept.id, []));
   const allocatedEmployeeKeys = new Set<string>();
 
+  // フェーズ0: 固定配置（前回の配置を維持）
+  for (const emp of allEmployees) {
+    if (emp.fixedDepartmentId) {
+      const deptAllocations = allocations.get(emp.fixedDepartmentId) || [];
+      deptAllocations.push(emp);
+      allocations.set(emp.fixedDepartmentId, deptAllocations);
+      allocatedEmployeeKeys.add(emp.employeeNumber || String(emp.id));
+    }
+  }
+
   // フェーズ1: 最低配置人数の確実な確保
   const employeesByDepartment: { [deptId: string]: any[] } = {};
 
   for (const dept of departments) {
     const deptId = dept.id;
     const minHeadcount = dept.minHeadcount ?? 0;
+    const currentAllocations = allocations.get(deptId) || [];
 
     // この部門への適性スコアでソート
     const empScores = allEmployees
@@ -213,8 +224,8 @@ const calculateTwoPhaseAllocation = (
       }))
       .sort((a, b) => b.matchScore - a.matchScore);
 
-    // 最低配置人数を割り当て
-    for (let i = 0; i < minHeadcount && i < empScores.length; i++) {
+    // 最低配置人数を割り当て（既に配置されている人数を考慮）
+    for (let i = 0; i < minHeadcount - currentAllocations.length && i < empScores.length; i++) {
       const deptAllocations = allocations.get(deptId) || [];
       deptAllocations.push(empScores[i].employee);
       allocations.set(deptId, deptAllocations);
@@ -223,6 +234,9 @@ const calculateTwoPhaseAllocation = (
   }
 
   // フェーズ2: 残り人員の戦略的最適化（限界効用で配置）
+  // 新規採用候補者（isNew: true）だけを配置対象にする場合は、フェーズ1で配置された社員を除外
+  const employeesToAllocate = allEmployees.filter(emp => !allocatedEmployeeKeys.has(emp.employeeNumber || String(emp.id)));
+
   let improved = true;
   while (improved && allocatedEmployeeKeys.size < allEmployees.length) {
     improved = false;
@@ -231,7 +245,7 @@ const calculateTwoPhaseAllocation = (
     let bestDepartmentId: string | null = null;
 
     // 未配置の全社員を検討
-    for (const emp of allEmployees) {
+    for (const emp of employeesToAllocate) {
       if (allocatedEmployeeKeys.has(emp.employeeNumber || String(emp.id))) continue;
 
       // 各部門への追加配置での限界効用を計算
@@ -249,25 +263,25 @@ const calculateTwoPhaseAllocation = (
         if (simulationMode === 'task1' || simulationMode === 'additional') {
           // 課題1・追加課題：全社売上最大化
           deltaScore = calculateDeltaRevenue(dept, currentAllocations, emp);
-          
+
         } else if (simulationMode === 'task2') {
           // 課題2：A事業部（飽和）の利益最大化
           if (deptName.includes('A') || deptName.includes('飽和')) {
             deltaScore = calculateDeltaProfit(dept, currentAllocations, emp);
           }
-          
+
         } else if (simulationMode === 'task3') {
           // 課題3：B事業部（成長）の売上最大化
           if (deptName.includes('B') || deptName.includes('成長')) {
             deltaScore = calculateDeltaRevenue(dept, currentAllocations, emp);
           }
-          
+
         } else if (simulationMode === 'task4') {
           // 課題4：C事業部（新規）の売上最大化
           if (deptName.includes('C') || deptName.includes('新規')) {
             deltaScore = calculateDeltaRevenue(dept, currentAllocations, emp);
           }
-          
+
         } else {
           // デフォルト（全社バランス）：利益への貢献度
           deltaScore = calculateDeltaProfit(dept, currentAllocations, emp);
@@ -297,36 +311,41 @@ const calculateTwoPhaseAllocation = (
   }
 
   // 強制割り当てフェーズ: 残りの未配置社員を配置
-  for (const emp of allEmployees) {
-    if (!allocatedEmployeeKeys.has(emp.employeeNumber || String(emp.id))) {
-      // 最低配置人数に達していない部門へ優先割り当て
-      let targetDept: string | null = null;
-      for (const dept of departments) {
-        const currentAllocations = allocations.get(dept.id) || [];
-        const minHeadcount = dept.minHeadcount ?? 0;
-        if (currentAllocations.length < minHeadcount) {
-          targetDept = dept.id;
-          break;
-        }
-      }
+  // 新規採用候補者（isNew: true）だけの場合は強制割り当てをスキップ（最適人数で止める）
+  const hasOnlyNewEmployees = employeesToAllocate.every(emp => emp.isNew === true);
 
-      // 最低配置人数に達している場合は最も人員が少ない部門へ
-      if (!targetDept) {
-        let minAllocations = Infinity;
+  if (!hasOnlyNewEmployees) {
+    for (const emp of allEmployees) {
+      if (!allocatedEmployeeKeys.has(emp.employeeNumber || String(emp.id))) {
+        // 最低配置人数に達していない部門へ優先割り当て
+        let targetDept: string | null = null;
         for (const dept of departments) {
           const currentAllocations = allocations.get(dept.id) || [];
-          if (currentAllocations.length < minAllocations) {
-            minAllocations = currentAllocations.length;
+          const minHeadcount = dept.minHeadcount ?? 0;
+          if (currentAllocations.length < minHeadcount) {
             targetDept = dept.id;
+            break;
           }
         }
-      }
 
-      if (targetDept) {
-        const deptAllocations = allocations.get(targetDept) || [];
-        deptAllocations.push(emp);
-        allocations.set(targetDept, deptAllocations);
-        allocatedEmployeeKeys.add(emp.employeeNumber || String(emp.id));
+        // 最低配置人数に達している場合は最も人員が少ない部門へ
+        if (!targetDept) {
+          let minAllocations = Infinity;
+          for (const dept of departments) {
+            const currentAllocations = allocations.get(dept.id) || [];
+            if (currentAllocations.length < minAllocations) {
+              minAllocations = currentAllocations.length;
+              targetDept = dept.id;
+            }
+          }
+        }
+
+        if (targetDept) {
+          const deptAllocations = allocations.get(targetDept) || [];
+          deptAllocations.push(emp);
+          allocations.set(targetDept, deptAllocations);
+          allocatedEmployeeKeys.add(emp.employeeNumber || String(emp.id));
+        }
       }
     }
   }
@@ -605,6 +624,7 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
     let departmentIds: string[] = [];
     let employees: any[] = [];
     let lastYearTotalRevenue: number = 0;
+    let previousSimulationId: string | null = null;
 
     if (Array.isArray(req.body)) {
       employees = req.body;
@@ -614,14 +634,17 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
       departmentIds = req.body.departmentIds;
       employees = req.body.employees;
       lastYearTotalRevenue = req.body.lastYearTotalRevenue || 0;
+      previousSimulationId = req.body.previousSimulationId || null;
     } else if (req.body.departmentIds && Array.isArray(req.body.departmentIds)) {
       departmentIds = req.body.departmentIds;
       const allEmps = await prisma.employee.findMany({ include: { user: true } });
       employees = allEmps;
       lastYearTotalRevenue = req.body.lastYearTotalRevenue || 0;
+      previousSimulationId = req.body.previousSimulationId || null;
     } else if (Array.isArray(req.body) || (req.body.employees && Array.isArray(req.body.employees))) {
       employees = Array.isArray(req.body) ? req.body : req.body.employees;
       lastYearTotalRevenue = req.body.lastYearTotalRevenue || 0;
+      previousSimulationId = req.body.previousSimulationId || null;
       const allDepts = await prisma.department.findMany();
       departmentIds = allDepts.map(d => d.id);
     } else {
@@ -649,22 +672,43 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
       baselineCompanyRevenue = lastYearTotalRevenue;
     }
 
-    const dbEmployees = await prisma.employee.findMany({ include: { user: true } });
-    const enrichedEmployees = employees.map((emp: any) => {
-      let dbEmp: any = null;
-
-      if (emp.employeeNumber) {
-        dbEmp = dbEmployees.find((e: any) => e.employeeNumber === emp.employeeNumber);
+    // 前回のシミュレーション結果から既存社員の配置を取得
+    const previousAllocations = new Map<string, { deptId: string; deptName: string }>();
+    const previousAllocationsByDept = new Map<string, any[]>();
+    if (previousSimulationId) {
+      const prevSimulation = await prisma.simulationResult.findUnique({
+        where: { id: previousSimulationId }
+      });
+      if (prevSimulation && prevSimulation.details) {
+        let prevDetails = prevSimulation.details;
+        if (typeof prevDetails === 'string') {
+          prevDetails = JSON.parse(prevDetails);
+        }
+        if (Array.isArray(prevDetails)) {
+          for (const dept of (prevDetails as any[])) {
+            if (!dept) continue;
+            if ((dept as any).candidates && Array.isArray((dept as any).candidates)) {
+              const deptId = (dept as any).departmentId;
+              previousAllocationsByDept.set(deptId, (dept as any).candidates);
+              for (const cand of (dept as any).candidates) {
+                const candId = String(cand.employeeId || cand.id);
+                previousAllocations.set(candId, {
+                  deptId: deptId,
+                  deptName: (dept as any).departmentName
+                });
+              }
+            }
+          }
+        }
       }
-      if (!dbEmp) {
-        const empId = emp.id || emp.employeeId;
-        dbEmp = dbEmployees.find((e: any) => e.id === empId);
-      }
+    }
 
+    // リクエストから送信された従業員を処理
+    const enrichedEmployees = employees.map((emp: any, index: number) => {
       const result = {
         ...emp,
-        id: emp.id || emp.employeeId,
-        employeeNumber: emp.employeeNumber,
+        id: emp.id || emp.employeeId || `temp_${Date.now()}_${index}`,
+        employeeNumber: emp.employeeNumber || `TEMP-NEW-${index}`,
         employeeName: emp.name || emp.employeeName,
         desiredDept: emp.desiredDept,
         tags: emp.tags || [],
@@ -675,14 +719,51 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
         laborCost: emp.laborCost !== undefined && emp.laborCost !== null ? emp.laborCost : (emp.isNew ? 5.0 : 0),
         score: emp.score ?? 0,
         skills: emp.skills || [],
-        isExecutiveCandidate: ((emp.managementForce || 0) >= 70 && (emp.developmentForce || 0) >= 70)
+        isExecutiveCandidate: ((emp.managementForce || 0) >= 70 && (emp.developmentForce || 0) >= 70),
+        isNew: emp.isNew || false
       };
       return result;
     });
 
+    // 「追加配置モード」の判定：前回のシミュレーション結果に追加する形で新規採用候補者を配置
+    const addOnlyMode = req.body.addOnlyMode === true && previousSimulationId && previousAllocationsByDept.size > 0;
+
+    let allEmployeesForSimulation: any[] = [];
+
+    if (addOnlyMode) {
+      // 追加配置モード：新規採用候補者（isNew: true）だけを配置対象にする
+      allEmployeesForSimulation = enrichedEmployees.filter((emp: any) => emp.isNew === true);
+
+      // 前回の配置済み社員も追加（ただし配置先は固定される）
+      for (const [deptId, candidates] of previousAllocationsByDept.entries()) {
+        for (const cand of candidates) {
+          allEmployeesForSimulation.push({
+            id: cand.employeeId || cand.id,
+            employeeNumber: cand.employeeNumber,
+            employeeName: cand.employeeName || cand.name,
+            desiredDept: cand.desiredDept,
+            tags: cand.tags || [],
+            salesForce: cand.salesForce ?? 0,
+            managementForce: cand.managementForce ?? 0,
+            explorationForce: cand.explorationForce ?? 0,
+            developmentForce: cand.developmentForce ?? 0,
+            laborCost: cand.laborCost ?? 0,
+            score: cand.score ?? 0,
+            skills: cand.skills || [],
+            isExecutiveCandidate: ((cand.managementForce || 0) >= 70 && (cand.developmentForce || 0) >= 70),
+            isNew: false,
+            fixedDepartmentId: deptId  // 前回の配置を固定
+          });
+        }
+      }
+    } else {
+      // 通常モード：フロントエンドから送られてきた社員だけを配置対象にする
+      allEmployeesForSimulation = enrichedEmployees;
+    }
+
     // 2段階配置アルゴリズムを使用
     const simulationMode = req.body.simulationMode;
-    const allocations = calculateTwoPhaseAllocation(enrichedEmployees, departments, simulationMode);
+    const allocations = calculateTwoPhaseAllocation(allEmployeesForSimulation, departments, simulationMode);
 
     // 最終チェック：最低配置人数の制約を満たしているか検証
     for (const dept of departments) {
@@ -696,6 +777,28 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
     const results = departments.map((department) => {
       const allocatedEmployees = allocations.get(department.id) || [];
       const state = calculateDepartmentState(department, allocatedEmployees);
+
+      // 新規採用候補と既存社員の両方を含める
+      const allCandidates = allocatedEmployees.map((emp: any) => {
+        const candidate: any = {
+          employeeId: emp.id || emp.employeeId,
+          employeeNumber: emp.employeeNumber,
+          employeeName: emp.employeeName || emp.name || emp.id || emp.employeeId || 'Unknown',
+          score: emp.score || 0,
+          skills: emp.skills,
+          desiredDept: emp.desiredDept,
+          laborCost: emp.laborCost,
+          salesForce: emp.salesForce,
+          managementForce: emp.managementForce,
+          explorationForce: emp.explorationForce,
+          developmentForce: emp.developmentForce,
+          tags: emp.tags || calculateTags(emp),
+          isExecutiveCandidate: isAdminUser ? ((emp.managementForce || 0) >= 70 && (emp.developmentForce || 0) >= 70) : false,
+          isNew: emp.isNew || false
+        };
+        // fixedDepartmentIdは内部フラグなので結果から削除
+        return candidate;
+      });
 
       return {
         departmentId: department.id,
@@ -712,21 +815,7 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
         cost: Math.round(state.totalCost),
         totalCost: Math.round(state.totalCost),
         profit: Math.round(state.profit),
-        candidates: allocatedEmployees.map((emp: any) => ({
-          employeeId: emp.id || emp.employeeId,
-          employeeNumber: emp.employeeNumber,
-          employeeName: emp.employeeName || emp.name || emp.id || emp.employeeId || 'Unknown',
-          score: emp.score || 0,
-          skills: emp.skills,
-          desiredDept: emp.desiredDept,
-          laborCost: emp.laborCost,
-          salesForce: emp.salesForce,
-          managementForce: emp.managementForce,
-          explorationForce: emp.explorationForce,
-          developmentForce: emp.developmentForce,
-          tags: emp.tags || calculateTags(emp),
-          isExecutiveCandidate: isAdminUser ? ((emp.managementForce || 0) >= 70 && (emp.developmentForce || 0) >= 70) : false
-        })).sort((a, b) => (Number(a.employeeId) || 0) - (Number(b.employeeId) || 0))
+        candidates: allCandidates.sort((a, b) => (Number(a.employeeId) || 0) - (Number(b.employeeId) || 0))
       };
     });
 
@@ -883,7 +972,8 @@ router.post('/recalculate', authenticate, isAdmin, async (req: AuthRequest, res:
 
 router.post('/save', authenticate, isAdmin, async (req: AuthRequest, res: Response) => {
   try {
-    const { results, totalCompanyRevenue, totalCompanyCost, totalCompanyProfit } = req.body;
+    const results: any[] = req.body.results || [];
+    const { totalCompanyRevenue, totalCompanyCost, totalCompanyProfit } = req.body;
     const executedBy = req.user?.email || 'Unknown';
 
     // 1. 会社全体のシミュレーション履歴を保存
@@ -898,8 +988,8 @@ router.post('/save', authenticate, isAdmin, async (req: AuthRequest, res: Respon
     });
 
     // 2. req.body.results をループし、各 candidates について以下を実行
-    for (const dept of results) {
-      for (const cand of dept.candidates) {
+    for (const dept of (results as any[])) {
+      for (const cand of ((dept as any).candidates as any[])) {
         // 3. employeeNumber または id で Employee を検索
         let dbEmp = null;
 
@@ -926,12 +1016,12 @@ router.post('/save', authenticate, isAdmin, async (req: AuthRequest, res: Respon
 
           // 5. prisma.allocation.create で新規作成
           const topSkill = cand.tags?.[0] || '総合的な能力';
-          const reason = `${dept.departmentName}の求める要件に対し、あなたの「${topSkill}」が高く評価されました。事業部の利益への高い貢献が期待されています。`;
+          const reason = `${(dept as any).departmentName}の求める要件に対し、あなたの「${topSkill}」が高く評価されました。事業部の利益への高い貢献が期待されています。`;
 
           await prisma.allocation.create({
             data: {
               employeeId: dbEmp.id,
-              departmentId: dept.departmentId,
+              departmentId: (dept as any).departmentId,
               status: 'ASSIGNED',
               reason: reason,
             }
@@ -941,7 +1031,7 @@ router.post('/save', authenticate, isAdmin, async (req: AuthRequest, res: Respon
           await prisma.employee.update({
             where: { id: dbEmp.id },
             data: {
-              currentDept: dept.departmentName,
+              currentDept: (dept as any).departmentName,
               laborCost: cand.laborCost !== undefined && cand.laborCost !== null ? cand.laborCost : (dbEmp.laborCost ?? 0)
             }
           });
@@ -962,17 +1052,17 @@ router.post('/save', authenticate, isAdmin, async (req: AuthRequest, res: Respon
               explorationForce: cand.explorationForce ?? 0,
               developmentForce: cand.developmentForce ?? 0,
               laborCost: cand.laborCost !== undefined && cand.laborCost !== null ? cand.laborCost : 0,
-              currentDept: dept.departmentName
+              currentDept: (dept as any).departmentName
             }
           });
 
           const topSkill = cand.tags?.[0] || '総合的な能力';
-          const reason = `${dept.departmentName}の求める要件に対し、あなたの「${topSkill}」が高く評価されました。事業部の利益への高い貢献が期待されています。`;
+          const reason = `${(dept as any).departmentName}の求める要件に対し、あなたの「${topSkill}」が高く評価されました。事業部の利益への高い貢献が期待されています。`;
 
           await prisma.allocation.create({
             data: {
               employeeId: newEmp.id,
-              departmentId: dept.departmentId,
+              departmentId: (dept as any).departmentId,
               status: 'ASSIGNED',
               reason: reason,
             }

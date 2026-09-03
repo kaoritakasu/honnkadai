@@ -550,6 +550,34 @@
 
 
             </div>
+
+          </div>
+
+          <!-- ============================================== -->
+          <!-- 📋 テキストデータから直接シミュレーション -->
+          <!-- ============================================== -->
+          <div class="form-group" style="margin-top: 20px; padding: 20px; background: linear-gradient(135deg, #f0f0f0 0%, #e8e8e8 100%); border-left: 4px solid #7f8c8d; border-radius: 8px;">
+            <label style="display: block; font-weight: bold; margin-bottom: 8px; color: #2c3e50; font-size: 1.05em;">📋 テキストデータから直接実行</label>
+            <p style="margin: 0 0 15px 0; font-size: 0.9em; color: #555;">テキスト形式で社員データを貼り付けて、直接シミュレーションを実行できます。</p>
+
+            <div style="margin-bottom: 15px;">
+              <label style="display: block; font-weight: bold; margin-bottom: 8px; color: #333;">データを貼り付け（タブ区切り形式）</label>
+              <textarea
+                [(ngModel)]="pasteDataText"
+                placeholder="社員番号	営業力	管理力	開拓力	育成力	人件費&#10;E001	80	70	60	50	5.0&#10;E002	75	65	70	55	4.8"
+                style="width: 100%; height: 150px; padding: 12px; border: 1px solid #bdc3c7; border-radius: 4px; font-family: monospace; font-size: 0.9em; box-sizing: border-box; resize: vertical;">
+              </textarea>
+            </div>
+
+            <div style="text-align: right;">
+              <button (click)="runPastedDataSimulation()" [disabled]="loading()" style="padding: 12px 30px; background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95em; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s;" [style.opacity]="loading() ? '0.7' : '1'" [style.cursor]="loading() ? 'not-allowed' : 'pointer'" onmouseover="!this.disabled && (this.style.transform='scale(1.02)')" onmouseout="this.style.transform='scale(1)'">
+                @if (loading()) {
+                  <span>⏳ 処理中...</span>
+                } @else {
+                  <span>🚀 シミュレーション実行</span>
+                }
+              </button>
+            </div>
           </div>
         </div>
 
@@ -567,10 +595,7 @@
         }
 
         @if (simulationResults()) {
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
-            <h3 style="margin: 0; color: #2c3e50;">
-              📊 {{ viewingHistoryDetail ? '過去の配置案（履歴）' : 'シミュレーション結果' }}
-            </h3>
+          <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
             <div style="display: flex; gap: 10px;">
               <button (click)="resetSimulation()" style="padding: 10px 15px; background-color: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: all 0.2s;">
                 🔙 {{ viewingHistoryDetail ? '履歴一覧に戻る' : '条件入力に戻る' }}
@@ -590,15 +615,332 @@
             </div>
           </div>
 
+          <!-- 🎯 経営戦略（シミュレーションモード）セクション -->
+          <div class="form-group" style="margin-bottom: 20px; padding: 20px; background-color: #fff8f0; border-radius: 8px; border-left: 4px solid #f39c12;">
+            <label style="display: block; font-weight: bold; margin-bottom: 3px; color: #333; font-size: 1.05em;">🎯 経営戦略（シミュレーションモード）</label>
+            <p style="margin: 0 0 15px 0; font-size: 0.9em; color: #666;">シミュレーションに適用する経営戦略を選択してください。選択した戦略に応じてアルゴリズムの重み付けが動的に変わります。</p>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+              <!-- ⚖️ 全社売上最大化 -->
+              <button
+                class="btn-strategy"
+                (click)="simulationMode = 'balanced'"
+                [style.background]="simulationMode === 'balanced' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : '#ffffff'"
+                [style.color]="simulationMode === 'balanced' ? 'white' : '#333'"
+                [style.border]="simulationMode === 'balanced' ? '2px solid #667eea' : '2px solid #ddd'"
+                style="padding: 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: left; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"
+              >
+                <p style="margin: 0 0 4px 0; font-weight: bold; font-size: 1em;">⚖️ 全社売上最大化</p>
+                <p style="margin: 0; font-size: 0.85em; opacity: 0.8;">すべてのスキルを均等に評価</p>
+              </button>
+
+              <!-- 👔 管理体制強化 -->
+              <button
+                class="btn-strategy"
+                (click)="simulationMode = 'management_focus'"
+                [style.background]="simulationMode === 'management_focus' ? 'linear-gradient(135deg, #3498db 0%, #2980b9 100%)' : '#ffffff'"
+                [style.color]="simulationMode === 'management_focus' ? 'white' : '#333'"
+                [style.border]="simulationMode === 'management_focus' ? '2px solid #3498db' : '2px solid #ddd'"
+                style="padding: 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: left; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"
+              >
+                <p style="margin: 0 0 4px 0; font-weight: bold; font-size: 1em;">👔 管理体制強化</p>
+                <p style="margin: 0; font-size: 0.85em; opacity: 0.8;">飽和事業の売上最大化</p>
+              </button>
+
+              <!-- 🚀 営業・開拓特化 -->
+              <button
+                class="btn-strategy"
+                (click)="simulationMode = 'sales_focus'"
+                [style.background]="simulationMode === 'sales_focus' ? 'linear-gradient(135deg, #f39c12 0%, #e67e22 100%)' : '#ffffff'"
+                [style.color]="simulationMode === 'sales_focus' ? 'white' : '#333'"
+                [style.border]="simulationMode === 'sales_focus' ? '2px solid #f39c12' : '2px solid #ddd'"
+                style="padding: 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: left; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"
+              >
+                <p style="margin: 0 0 4px 0; font-weight: bold; font-size: 1em;">🚀 営業・開拓特化</p>
+                <p style="margin: 0; font-size: 0.85em; opacity: 0.8;">成長事業の利益最大化</p>
+              </button>
+
+              <!-- 🎓 育成・技術投資 -->
+              <button
+                class="btn-strategy"
+                (click)="simulationMode = 'tech_focus'"
+                [style.background]="simulationMode === 'tech_focus' ? 'linear-gradient(135deg, #27ae60 0%, #16a085 100%)' : '#ffffff'"
+                [style.color]="simulationMode === 'tech_focus' ? 'white' : '#333'"
+                [style.border]="simulationMode === 'tech_focus' ? '2px solid #27ae60' : '2px solid #ddd'"
+                style="padding: 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: left; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"
+              >
+                <p style="margin: 0 0 4px 0; font-weight: bold; font-size: 1em;">🎓 育成・技術投資</p>
+                <p style="margin: 0; font-size: 0.85em; opacity: 0.8;">新規事業の売上最大化</p>
+              </button>
+            </div>
+          </div>
+
+          @if (simulationSummary()) {
+            <div class="company-summary-card" style="margin-bottom: 20px; padding: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px;">
+              <h4 style="margin: 0 0 10px 0;">全社合計</h4>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                <div style="padding: 10px;">
+                  <p style="margin: 0 0 5px 0; opacity: 0.9;">全社売上</p>
+                  <p style="margin: 0; font-size: 1.5em; font-weight: bold;">¥{{ simulationSummary().totalCompanyRevenue | number }}</p>
+                </div>
+                <div style="padding: 10px;">
+                  <p style="margin: 0 0 5px 0; opacity: 0.9;">全社コスト</p>
+                  <p style="margin: 0; font-size: 1.5em; font-weight: bold;">¥{{ simulationSummary().totalCompanyCost | number }}</p>
+                </div>
+                <div style="padding: 10px;">
+                  <p style="margin: 0 0 5px 0; opacity: 0.9;">全社利益</p>
+                  <p style="margin: 0; font-size: 1.5em; font-weight: bold;">¥{{ simulationSummary().totalCompanyProfit | number }}</p>
+                </div>
+              </div>
+
+              @if (lastYearTotalRevenue > 0) {
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.3);">
+                  <p style="margin: 0 0 5px 0; opacity: 0.9; font-size: 0.9em;">昨年の全社売上（制約値）</p>
+                  <p style="margin: 0; font-size: 1.2em; font-weight: bold;">¥{{ lastYearTotalRevenue | number }}</p>
+                  @if (simulationSummary().totalCompanyRevenue >= lastYearTotalRevenue) {
+                    <p style="margin: 5px 0 0 0; font-size: 0.85em; background: rgba(76, 175, 80, 0.3); padding: 8px; border-radius: 4px; border-left: 3px solid #4caf50;">✓ 制約条件を満たしています</p>
+                  } @else {
+                    <p style="margin: 5px 0 0 0; font-size: 0.85em; background: rgba(244, 67, 54, 0.3); padding: 8px; border-radius: 4px; border-left: 3px solid #f44336;">⚠️ 制約値を下回っています</p>
+                  }
+                </div>
+              }
+            </div>
+          }
+
+          <p style="font-size: 0.8em; color: #7f8c8d; margin-bottom: 10px; text-align: right;">※本数値はシミュレーションによる予測値であり、実際の業績を保証するものではありません</p>
+
+          <!-- ============================================== -->
+          <!-- 👥 ペルソナ別モックデータ一括生成 -->
+          <!-- ============================================== -->
+          <div style="margin-bottom: 25px; padding: 20px; background: linear-gradient(135deg, #fff5e6 0%, #ffe0b2 100%); border-left: 4px solid #ff9800; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 15px;">
+              <div style="flex: 1; min-width: 300px;">
+                <h4 style="margin: 0 0 8px 0; color: #2c3e50; font-size: 1.05em;">👥 ペルソナ別採用候補一括生成</h4>
+                <p style="margin: 0; font-size: 0.9em; color: #555; line-height: 1.4;">
+                  「新卒」「中途」「幹部候補」のペルソナごとに採用候補者を一括生成します。各ペルソナの能力値とコストは基準に従って設定されます。
+                </p>
+              </div>
+            </div>
+
+            <!-- 3つのペルソナ入力フォーム -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
+              <!-- 新卒 -->
+              <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #3498db; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                  <span style="font-size: 1.5em;">🎓</span>
+                  <label style="font-weight: bold; color: #2c3e50; margin: 0; font-size: 0.95em;">新卒</label>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                  <input type="number" [(ngModel)]="newGradCount" min="0" max="50" placeholder="0" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em;">
+                  <span style="color: #666; font-weight: bold; font-size: 0.9em; white-space: nowrap;">名</span>
+                </div>
+                <p style="margin: 8px 0 0 0; font-size: 0.8em; color: #888;">Force: 10～30 | 年俸: 200～300万</p>
+              </div>
+
+              <!-- 中途 -->
+              <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #27ae60; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                  <span style="font-size: 1.5em;">💼</span>
+                  <label style="font-weight: bold; color: #2c3e50; margin: 0; font-size: 0.95em;">中途</label>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                  <input type="number" [(ngModel)]="midCareerCount" min="0" max="50" placeholder="0" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em;">
+                  <span style="color: #666; font-weight: bold; font-size: 0.9em; white-space: nowrap;">名</span>
+                </div>
+                <p style="margin: 8px 0 0 0; font-size: 0.8em; color: #888;">Force: 60～80 (特定) | 年俸: 500～700万</p>
+              </div>
+
+              <!-- 幹部候補 -->
+              @if (currentUserRole === 'ADMIN') {
+                <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #e74c3c; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                    <span style="font-size: 1.5em;">👑</span>
+                    <label style="font-weight: bold; color: #2c3e50; margin: 0; font-size: 0.95em;">幹部候補</label>
+                  </div>
+                  <div style="display: flex; gap: 8px; align-items: center;">
+                    <input type="number" [(ngModel)]="executiveCandidateCount" min="0" max="50" placeholder="0" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em;">
+                    <span style="color: #666; font-weight: bold; font-size: 0.9em; white-space: nowrap;">名</span>
+                  </div>
+                  <p style="margin: 8px 0 0 0; font-size: 0.8em; color: #888;">Force: 70～90 (全体) | 年俸: 800～1000万</p>
+                </div>
+              }
+            </div>
+
+            <!-- データ生成ボタン（プレビュー用テキストエリアにセット） -->
+            <div style="margin-top: 15px; text-align: right;">
+              <button (click)="generateCandidatesByPersona()" style="padding: 12px 30px; background: linear-gradient(135deg, #ff9800 0%, #f39c12 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1em; box-shadow: 0 4px 8px rgba(255, 152, 0, 0.3); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                📊 データを生成（プレビュー）
+              </button>
+            </div>
+          </div>
+
+          @if (newCandidates.length > 0) {
+            <div style="margin-bottom: 30px; padding: 20px; background-color: #fffbf0; border: 2px dashed #ffa500; border-radius: 8px;">
+              <h4 style="margin: 0 0 15px 0; color: #ff6b00;">新しい人材候補</h4>
+              <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 4px;">
+                  <thead>
+                    <tr style="background-color: #fff8e6; border-bottom: 2px solid #ffa500;">
+                      <th style="padding: 12px; text-align: left; font-weight: bold;">人材名</th>
+                      <th style="padding: 12px; text-align: center; font-weight: bold;">ペルソナ</th>
+                      <th style="padding: 12px; text-align: center; font-weight: bold;">営業力</th>
+                      <th style="padding: 12px; text-align: center; font-weight: bold;">管理力</th>
+                      <th style="padding: 12px; text-align: center; font-weight: bold;">開拓力</th>
+                      <th style="padding: 12px; text-align: center; font-weight: bold;">育成力</th>
+                      <th style="padding: 12px; text-align: center; font-weight: bold;">人件費</th>
+                      <th style="padding: 12px; text-align: center; font-weight: bold;">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (cand of newCandidates; track cand.employeeId; let i = $index) {
+                      <tr style="border-bottom: 1px solid #f0e6d2; transition: background-color 0.2s;">
+                        <td style="padding: 12px; border-right: 1px solid #f0e6d2;">
+                          <input type="text" [(ngModel)]="cand.employeeName" placeholder="人材名" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;" />
+                        </td>
+                        <td style="padding: 12px; text-align: center; border-right: 1px solid #f0e6d2;">
+                          @if (cand.tags && cand.tags.includes('新卒')) { <span>🎓 新卒</span> }
+                          @else if (cand.tags && cand.tags.includes('中途')) { <span>💼 中途</span> }
+                          @else if (cand.tags && cand.tags.includes('幹部候補')) { <span>👑 幹部候補</span> }
+                          @else { <span style="color: #999;">-</span> }
+                        </td>
+                        <td style="padding: 12px; text-align: center; border-right: 1px solid #f0e6d2;">
+                          <input type="number" [(ngModel)]="cand.salesForce" style="width: 60px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; text-align: center;" />
+                        </td>
+                        <td style="padding: 12px; text-align: center; border-right: 1px solid #f0e6d2;">
+                          <input type="number" [(ngModel)]="cand.managementForce" style="width: 60px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; text-align: center;" />
+                        </td>
+                        <td style="padding: 12px; text-align: center; border-right: 1px solid #f0e6d2;">
+                          <input type="number" [(ngModel)]="cand.explorationForce" style="width: 60px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; text-align: center;" />
+                        </td>
+                        <td style="padding: 12px; text-align: center; border-right: 1px solid #f0e6d2;">
+                          <input type="number" [(ngModel)]="cand.developmentForce" style="width: 60px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; text-align: center;" />
+                        </td>
+                        <td style="padding: 12px; text-align: center; border-right: 1px solid #f0e6d2;">
+                          <input type="number" step="0.1" [(ngModel)]="cand.laborCost" style="width: 70px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; text-align: center;" />
+                        </td>
+                        <td style="padding: 12px; text-align: center;">
+                          <button (click)="removeCandidate(i)" style="padding: 6px 12px; background-color: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em;">削除</button>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- 自動配置シミュレーション実行ボタン -->
+            @if (newCandidates.length > 0) {
+              <div style="margin-top: 20px; text-align: center;">
+                <button (click)="runSimulation()" [disabled]="loading()" style="padding: 14px 40px; background: linear-gradient(135deg, #27ae60 0%, #16a085 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1.05em; box-shadow: 0 4px 8px rgba(0,0,0,0.2); transition: all 0.3s;" [style.opacity]="loading() ? '0.7' : '1'" [style.cursor]="loading() ? 'not-allowed' : 'pointer'" onmouseover="!this.disabled && (this.style.transform='scale(1.02)')" onmouseout="this.style.transform='scale(1)'">
+                  @if (loading()) {
+                    <span>⏳ 処理中...</span>
+                  } @else {
+                    <span>🚀 自動配置シミュレーションを実行</span>
+                  }
+                </button>
+              </div>
+            }
+          }
+
           <!-- ビューモード切り替えボタン -->
           <div style="display: flex; gap: 8px; margin-bottom: 20px;">
-            <button (click)="viewMode = 'tree'" [style.background]="viewMode === 'tree' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : '#ffffff'" [style.color]="viewMode === 'tree' ? 'white' : '#333'" [style.border]="viewMode === 'tree' ? '2px solid #667eea' : '2px solid #ddd'" style="padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-              🌳 ツリー表示
-            </button>
             <button (click)="viewMode = 'dnd'" [style.background]="viewMode === 'dnd' ? 'linear-gradient(135deg, #f39c12 0%, #e67e22 100%)' : '#ffffff'" [style.color]="viewMode === 'dnd' ? 'white' : '#333'" [style.border]="viewMode === 'dnd' ? '2px solid #f39c12' : '2px solid #ddd'" style="padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
               ✋ ドラッグ&ドロップ
             </button>
+             <button (click)="viewMode = 'tree'" [style.background]="viewMode === 'tree' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : '#ffffff'" [style.color]="viewMode === 'tree' ? 'white' : '#333'" [style.border]="viewMode === 'tree' ? '2px solid #667eea' : '2px solid #ddd'" style="padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+              🌳 ツリー表示
+            </button>
           </div>
+
+          
+          @if (viewMode === 'dnd') {
+            <div class="adjustment-controls" style="margin-bottom: 20px; padding: 15px; background-color: #f0f4ff; border-radius: 8px; border-left: 4px solid #667eea;">
+            <h4 style="margin: 0 0 10px 0;">人員配置の微調整</h4>
+            <p style="margin: 0 0 15px 0; color: #666;">ドラッグ&ドロップで人員を異動させるか、新しい人材を追加してください</p>
+
+            @if (adjustedAllocations.size > 0 || newCandidates.length > 0) {
+              <button (click)="resetAdjustments()" style="padding: 10px 20px; background: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer;">調整をリセット</button>
+            }
+          </div>
+
+          <div class="drag-drop-container" cdkDropListGroup style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; margin-bottom: 30px; align-items: stretch; width: 100%; box-sizing: border-box;" [attr.id]="'dropListGroup'">
+            @if (Array.isArray(simulationResults())) {
+              @for (result of simulationResults(); track $index; let i = $index) {
+                <div class="department-zone" style="display: flex; flex-direction: column; box-sizing: border-box; border: 2px dashed #667eea; border-radius: 8px; padding: 10px; background-color: #f9f9f9; min-width: 0; overflow-x: hidden;" cdkDropList [cdkDropListData]="result.candidates" (cdkDropListDropped)="drop($event)">
+                  <h4 style="margin: 0 0 8px 0; color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 6px; font-size: 0.85em;">{{ result.departmentName || result.department?.name || '-' }}</h4>
+
+                  <!-- 絞り込みと並び替え -->
+                  <div class="dept-controls" style="margin-bottom: 8px; display: flex; flex-direction: column; gap: 4px; flex-wrap: wrap;">
+                    <div style="display: flex; gap: 4px; margin-bottom: 8px;">
+                      <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
+                        <span>🔍</span>
+                        <input type="text" placeholder="名前/タグ..." [(ngModel)]="filterInputs[result.departmentId]" style="flex: 1; font-size: 0.7em; padding: 4px; box-sizing: border-box;">
+                      </div>
+                      <button (click)="applyFilter(result.departmentId)" style="font-size: 0.7em; padding: 4px 8px; background-color: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer;">絞り込む</button>
+                    </div>
+                    <select [(ngModel)]="simulationSortKey" (change)="sortCandidates(result.candidates, $event)" style="font-size: 0.7em; padding: 2px; border: 1px solid #ddd; border-radius: 3px;">
+                      <option value="employeeNumber">社員番号順</option>
+                      <option value="salesForce">営業力順</option>
+                      <option value="managementForce">管理力順</option>
+                      <option value="explorationForce">開拓力順</option>
+                      <option value="developmentForce">育成力順</option>
+                    </select>
+                  </div>
+
+                  <p style="margin: 0 0 5px 0; font-size: 0.9em; color: #666;"><strong>充足率:</strong> {{ result.fulfillmentRate || '-' }}%</p>
+                  <p style="margin: 0 0 15px 0; font-size: 0.9em; color: #666;"><strong>利益:</strong> ¥{{ (result.profit || (result.finalRevenue - result.cost) || 0) | number }}</p>
+
+                  <div style="flex: 1 1 auto; min-width: 0; min-height: 0; overflow-x: hidden; background-color: white; border-radius: 4px; padding: 5px; border: 1px dashed #ddd; display: flex; flex-direction: column; gap: 4px;">
+                    @if (Array.isArray(result.candidates) && result.candidates.length > 0) {
+                      @for (emp of result.candidates; track emp.employeeNumber || emp.employeeId) {
+                        <div class="employee-card transition-all duration-150 hover:shadow-xl hover:scale-105 cursor-pointer" cdkDrag [cdkDragData]="emp" [style.display]="isMatch(emp, activeFilters[result.departmentId]) ? 'flex' : 'none'" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 6px; border-radius: 4px; cursor: move; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex-direction: column;" (click)="openEmployeeModal(emp)">
+                          <p style="margin: 0; font-weight: bold; font-size: 0.95em; line-height: 1.4; white-space: normal; word-break: break-all;">
+                            {{ emp.employeeNumber ? emp.employeeNumber + ' ' : '' }}{{ getDisplayName(emp) }}
+                            @if (currentUserRole === 'ADMIN' && emp.isExecutiveCandidate) { <span title="幹部候補" style="margin-left: 4px;">👑</span> }
+                            @if (emp.isOldData) { <span style="color: #e74c3c; font-size: 0.75em; margin-left: 4px; border: 1px solid #e74c3c; padding: 1px 4px; border-radius: 4px;">⚠️古いデータ</span> }
+                          </p>
+
+                          <!-- タグ表示 -->
+                          @if ((emp.tags && emp.tags.length > 0) || emp.desiredDept || emp.workLifeBalance) {
+                            <div class="tags-container" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">
+                              @if (emp.desiredDept) {
+                                <span class="tag" style="background-color: #f59e0b; color: white; font-size: 0.7em; padding: 3px 8px; border-radius: 12px; white-space: nowrap; font-weight: bold; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">希望: {{ emp.desiredDept }}</span>
+                              }
+
+                              <!-- ワークライフバランス（WLB）の表示 -->
+                              @if (emp.workLifeBalance) {
+                                <details style="margin-top: 4px; width: 100%;" (click)="$event.stopPropagation()">
+                                  <summary class="tag" style="background-color: #27ae60; color: white; font-size: 0.7em; padding: 3px 8px; border-radius: 12px; white-space: nowrap; font-weight: bold; box-shadow: 0 1px 2px rgba(0,0,0,0.1); cursor: pointer; display: inline-block; list-style: none; user-select: none;">
+                                    💬 WLB ▼
+                                  </summary>
+                                  <div style="margin-top: 6px; background-color: #f0fdf4; color: #166534; padding: 8px; border-radius: 4px; font-size: 0.75em; font-weight: bold; white-space: pre-wrap; word-break: break-all; line-height: 1.4; border: 1px solid #bbf7d0; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">{{ emp.workLifeBalance }}</div>
+                                </details>
+                              }
+                              @if (emp.tags && emp.tags.length > 0) {
+                                @for (tag of emp.tags; track tag) {
+                                  <span class="tag" style="background-color: rgba(255,255,255,0.3); font-size: 0.7em; padding: 3px 8px; border-radius: 12px; white-space: nowrap;">{{ tag }}</span>
+                                }
+                              }
+                            </div>
+                          }
+
+                          <div class="ability-scores" style="font-size: 0.65em; margin-top: 4px;">
+                            <span style="padding: 2px;">営:{{ emp.salesForce || 0 }}</span>
+                            <span style="padding: 2px;">管:{{ emp.managementForce || 0 }}</span>
+                            <span style="padding: 2px;">開:{{ emp.explorationForce || 0 }}</span>
+                            <span style="padding: 2px;">育:{{ emp.developmentForce || 0 }}</span>
+                          </div>
+                        </div>
+                      }
+                    } @else {
+                      <p style="color: #999; text-align: center; margin-top: 80px;">人員をドラッグして配置してください</p>
+                    }
+                  </div>
+                </div>
+              }
+            }
+          </div>
+          }
 
           <!-- ============================================== -->
           <!-- 修正版: ロジックツリー型 組織図 (水平展開) -->
@@ -608,7 +950,7 @@
               <div style="font-weight: bold; font-size: 1.2em; margin-bottom: 30px; border-bottom: 1px solid #eee; padding-bottom: 8px; color: #2c3e50;">
                 🌳 ロジックツリー型 組織図
               </div>
-              
+
               <div style="min-width: 1000px; padding: 20px;">
                 <!-- ツリー全体を包むフレックスコンテナ（垂直中央揃え） -->
                 <div style="display: flex; align-items: center;">
@@ -626,7 +968,7 @@
 
                     @for (dept of simulationResults(); track dept.departmentId; let isFirstDept = $first; let isLastDept = $last) {
                       <div style="display: flex; align-items: center; position: relative;">
-                        
+
                         <!-- 縦線（事業部間の分岐線） -->
                         @if (!isFirstDept && !isLastDept) {
                           <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background-color: #94a3b8;"></div>
@@ -714,259 +1056,6 @@
             </div>
           }
 
-          @if (simulationSummary()) {
-            <div class="company-summary-card" style="margin-bottom: 20px; padding: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px;">
-              <h4 style="margin: 0 0 10px 0;">全社合計</h4>
-              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
-                <div style="padding: 10px;">
-                  <p style="margin: 0 0 5px 0; opacity: 0.9;">全社売上</p>
-                  <p style="margin: 0; font-size: 1.5em; font-weight: bold;">¥{{ simulationSummary().totalCompanyRevenue | number }}</p>
-                </div>
-                <div style="padding: 10px;">
-                  <p style="margin: 0 0 5px 0; opacity: 0.9;">全社コスト</p>
-                  <p style="margin: 0; font-size: 1.5em; font-weight: bold;">¥{{ simulationSummary().totalCompanyCost | number }}</p>
-                </div>
-                <div style="padding: 10px;">
-                  <p style="margin: 0 0 5px 0; opacity: 0.9;">全社利益</p>
-                  <p style="margin: 0; font-size: 1.5em; font-weight: bold;">¥{{ simulationSummary().totalCompanyProfit | number }}</p>
-                </div>
-              </div>
-
-              @if (lastYearTotalRevenue > 0) {
-                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.3);">
-                  <p style="margin: 0 0 5px 0; opacity: 0.9; font-size: 0.9em;">昨年の全社売上（制約値）</p>
-                  <p style="margin: 0; font-size: 1.2em; font-weight: bold;">¥{{ lastYearTotalRevenue | number }}</p>
-                  @if (simulationSummary().totalCompanyRevenue >= lastYearTotalRevenue) {
-                    <p style="margin: 5px 0 0 0; font-size: 0.85em; background: rgba(76, 175, 80, 0.3); padding: 8px; border-radius: 4px; border-left: 3px solid #4caf50;">✓ 制約条件を満たしています</p>
-                  } @else {
-                    <p style="margin: 5px 0 0 0; font-size: 0.85em; background: rgba(244, 67, 54, 0.3); padding: 8px; border-radius: 4px; border-left: 3px solid #f44336;">⚠️ 制約値を下回っています</p>
-                  }
-                </div>
-              }
-            </div>
-          }
-
-          <p style="font-size: 0.8em; color: #7f8c8d; margin-bottom: 10px; text-align: right;">※本数値はシミュレーションによる予測値であり、実際の業績を保証するものではありません</p>
-
-          <!-- ============================================== -->
-          <!-- 👥 ペルソナ別モックデータ一括生成 -->
-          <!-- ============================================== -->
-          <div style="margin-bottom: 25px; padding: 20px; background: linear-gradient(135deg, #fff5e6 0%, #ffe0b2 100%); border-left: 4px solid #ff9800; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 15px;">
-              <div style="flex: 1; min-width: 300px;">
-                <h4 style="margin: 0 0 8px 0; color: #2c3e50; font-size: 1.05em;">👥 ペルソナ別採用候補一括生成</h4>
-                <p style="margin: 0; font-size: 0.9em; color: #555; line-height: 1.4;">
-                  「新卒」「中途」「幹部候補」のペルソナごとに採用候補者を一括生成します。各ペルソナの能力値とコストは基準に従って設定されます。
-                </p>
-              </div>
-            </div>
-
-            <!-- 3つのペルソナ入力フォーム -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
-              <!-- 新卒 -->
-              <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #3498db; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-                  <span style="font-size: 1.5em;">🎓</span>
-                  <label style="font-weight: bold; color: #2c3e50; margin: 0; font-size: 0.95em;">新卒</label>
-                </div>
-                <div style="display: flex; gap: 8px; align-items: center;">
-                  <input type="number" [(ngModel)]="newGradCount" min="0" max="50" placeholder="0" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em;">
-                  <span style="color: #666; font-weight: bold; font-size: 0.9em; white-space: nowrap;">名</span>
-                </div>
-                <p style="margin: 8px 0 0 0; font-size: 0.8em; color: #888;">Force: 10～30 | 年俸: 200～300万</p>
-              </div>
-
-              <!-- 中途 -->
-              <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #27ae60; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-                  <span style="font-size: 1.5em;">💼</span>
-                  <label style="font-weight: bold; color: #2c3e50; margin: 0; font-size: 0.95em;">中途</label>
-                </div>
-                <div style="display: flex; gap: 8px; align-items: center;">
-                  <input type="number" [(ngModel)]="midCareerCount" min="0" max="50" placeholder="0" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em;">
-                  <span style="color: #666; font-weight: bold; font-size: 0.9em; white-space: nowrap;">名</span>
-                </div>
-                <p style="margin: 8px 0 0 0; font-size: 0.8em; color: #888;">Force: 60～80 (特定) | 年俸: 500～700万</p>
-              </div>
-
-              <!-- 幹部候補 -->
-              <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #e74c3c; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-                  <span style="font-size: 1.5em;">👑</span>
-                  <label style="font-weight: bold; color: #2c3e50; margin: 0; font-size: 0.95em;">幹部候補</label>
-                </div>
-                <div style="display: flex; gap: 8px; align-items: center;">
-                  <input type="number" [(ngModel)]="executiveCandidateCount" min="0" max="50" placeholder="0" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em;">
-                  <span style="color: #666; font-weight: bold; font-size: 0.9em; white-space: nowrap;">名</span>
-                </div>
-                <p style="margin: 8px 0 0 0; font-size: 0.8em; color: #888;">Force: 70～90 (全体) | 年俸: 800～1000万</p>
-              </div>
-            </div>
-
-            <!-- データ生成ボタン（プレビュー用テキストエリアにセット） -->
-            <div style="margin-top: 15px; text-align: right;">
-              <button (click)="generateCandidatesByPersona()" style="padding: 12px 30px; background: linear-gradient(135deg, #ff9800 0%, #f39c12 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1em; box-shadow: 0 4px 8px rgba(255, 152, 0, 0.3); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-                📊 データを生成（プレビュー）
-              </button>
-            </div>
-          </div>
-
-          @if (newCandidates.length > 0) {
-            <div style="margin-bottom: 30px; padding: 20px; background-color: #fffbf0; border: 2px dashed #ffa500; border-radius: 8px;">
-              <h4 style="margin: 0 0 15px 0; color: #ff6b00;">新しい人材候補</h4>
-              <div style="overflow-x: auto;">
-                <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 4px;">
-                  <thead>
-                    <tr style="background-color: #fff8e6; border-bottom: 2px solid #ffa500;">
-                      <th style="padding: 12px; text-align: left; font-weight: bold;">人材名</th>
-                      <th style="padding: 12px; text-align: center; font-weight: bold;">ペルソナ</th>
-                      <th style="padding: 12px; text-align: center; font-weight: bold;">営業力</th>
-                      <th style="padding: 12px; text-align: center; font-weight: bold;">管理力</th>
-                      <th style="padding: 12px; text-align: center; font-weight: bold;">開拓力</th>
-                      <th style="padding: 12px; text-align: center; font-weight: bold;">育成力</th>
-                      <th style="padding: 12px; text-align: center; font-weight: bold;">人件費</th>
-                      <th style="padding: 12px; text-align: center; font-weight: bold;">操作</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (cand of newCandidates; track cand.employeeId; let i = $index) {
-                      <tr style="border-bottom: 1px solid #f0e6d2; transition: background-color 0.2s;">
-                        <td style="padding: 12px; border-right: 1px solid #f0e6d2;">
-                          <input type="text" [(ngModel)]="cand.employeeName" placeholder="人材名" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;" />
-                        </td>
-                        <td style="padding: 12px; text-align: center; border-right: 1px solid #f0e6d2;">
-                          @if (cand.tags && cand.tags.includes('新卒')) { <span>🎓 新卒</span> }
-                          @else if (cand.tags && cand.tags.includes('中途')) { <span>💼 中途</span> }
-                          @else if (cand.tags && cand.tags.includes('幹部候補')) { <span>👑 幹部候補</span> }
-                          @else { <span style="color: #999;">-</span> }
-                        </td>
-                        <td style="padding: 12px; text-align: center; border-right: 1px solid #f0e6d2;">
-                          <input type="number" [(ngModel)]="cand.salesForce" style="width: 60px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; text-align: center;" />
-                        </td>
-                        <td style="padding: 12px; text-align: center; border-right: 1px solid #f0e6d2;">
-                          <input type="number" [(ngModel)]="cand.managementForce" style="width: 60px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; text-align: center;" />
-                        </td>
-                        <td style="padding: 12px; text-align: center; border-right: 1px solid #f0e6d2;">
-                          <input type="number" [(ngModel)]="cand.explorationForce" style="width: 60px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; text-align: center;" />
-                        </td>
-                        <td style="padding: 12px; text-align: center; border-right: 1px solid #f0e6d2;">
-                          <input type="number" [(ngModel)]="cand.developmentForce" style="width: 60px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; text-align: center;" />
-                        </td>
-                        <td style="padding: 12px; text-align: center; border-right: 1px solid #f0e6d2;">
-                          <input type="number" step="0.1" [(ngModel)]="cand.laborCost" style="width: 70px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; text-align: center;" />
-                        </td>
-                        <td style="padding: 12px; text-align: center;">
-                          <button (click)="removeCandidate(i)" style="padding: 6px 12px; background-color: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em;">削除</button>
-                        </td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <!-- 自動配置シミュレーション実行ボタン -->
-            @if (newCandidates.length > 0) {
-              <div style="margin-top: 20px; text-align: center;">
-                <button (click)="runSimulation()" [disabled]="loading()" style="padding: 14px 40px; background: linear-gradient(135deg, #27ae60 0%, #16a085 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1.05em; box-shadow: 0 4px 8px rgba(0,0,0,0.2); transition: all 0.3s;" [style.opacity]="loading() ? '0.7' : '1'" [style.cursor]="loading() ? 'not-allowed' : 'pointer'" onmouseover="!this.disabled && (this.style.transform='scale(1.02)')" onmouseout="this.style.transform='scale(1)'">
-                  @if (loading()) {
-                    <span>⏳ 処理中...</span>
-                  } @else {
-                    <span>🚀 自動配置シミュレーションを実行</span>
-                  }
-                </button>
-              </div>
-            }
-          }
-
-          @if (viewMode === 'dnd') {
-            <div class="adjustment-controls" style="margin-bottom: 20px; padding: 15px; background-color: #f0f4ff; border-radius: 8px; border-left: 4px solid #667eea;">
-            <h4 style="margin: 0 0 10px 0;">人員配置の微調整</h4>
-            <p style="margin: 0 0 15px 0; color: #666;">ドラッグ&ドロップで人員を異動させるか、新しい人材を追加してください</p>
-
-            @if (adjustedAllocations.size > 0 || newCandidates.length > 0) {
-              <button (click)="resetAdjustments()" style="padding: 10px 20px; background: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer;">調整をリセット</button>
-            }
-          </div>
-
-          <div class="drag-drop-container" cdkDropListGroup style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; margin-bottom: 30px; align-items: stretch; width: 100%; box-sizing: border-box;" [attr.id]="'dropListGroup'">
-            @if (Array.isArray(simulationResults())) {
-              @for (result of simulationResults(); track $index; let i = $index) {
-                <div class="department-zone" style="display: flex; flex-direction: column; box-sizing: border-box; border: 2px dashed #667eea; border-radius: 8px; padding: 10px; background-color: #f9f9f9; min-width: 0; overflow-x: hidden;" cdkDropList [cdkDropListData]="result.candidates" (cdkDropListDropped)="drop($event)">
-                  <h4 style="margin: 0 0 8px 0; color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 6px; font-size: 0.85em;">{{ result.departmentName || result.department?.name || '-' }}</h4>
-
-                  <!-- 絞り込みと並び替え -->
-                  <div class="dept-controls" style="margin-bottom: 8px; display: flex; flex-direction: column; gap: 4px; flex-wrap: wrap;">
-                    <div style="display: flex; gap: 4px; margin-bottom: 8px;">
-                      <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
-                        <span>🔍</span>
-                        <input type="text" placeholder="名前/タグ..." [(ngModel)]="filterInputs[result.departmentId]" style="flex: 1; font-size: 0.7em; padding: 4px; box-sizing: border-box;">
-                      </div>
-                      <button (click)="applyFilter(result.departmentId)" style="font-size: 0.7em; padding: 4px 8px; background-color: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer;">絞り込む</button>
-                    </div>
-                    <select [(ngModel)]="simulationSortKey" (change)="sortCandidates(result.candidates, $event)" style="font-size: 0.7em; padding: 2px; border: 1px solid #ddd; border-radius: 3px;">
-                      <option value="employeeNumber">社員番号順</option>
-                      <option value="salesForce">営業力順</option>
-                      <option value="managementForce">管理力順</option>
-                      <option value="explorationForce">開拓力順</option>
-                      <option value="developmentForce">育成力順</option>
-                    </select>
-                  </div>
-
-                  <p style="margin: 0 0 5px 0; font-size: 0.9em; color: #666;"><strong>充足率:</strong> {{ result.fulfillmentRate || '-' }}%</p>
-                  <p style="margin: 0 0 15px 0; font-size: 0.9em; color: #666;"><strong>利益:</strong> ¥{{ (result.profit || (result.finalRevenue - result.cost) || 0) | number }}</p>
-
-                  <div style="flex: 1 1 auto; min-width: 0; min-height: 0; overflow-x: hidden; background-color: white; border-radius: 4px; padding: 5px; border: 1px dashed #ddd; display: flex; flex-direction: column; gap: 4px;">
-                    @if (Array.isArray(result.candidates) && result.candidates.length > 0) {
-                      @for (emp of result.candidates; track emp.employeeId) {
-                        <div class="employee-card transition-all duration-150 hover:shadow-xl hover:scale-105 cursor-pointer" cdkDrag [cdkDragData]="emp" [style.display]="isMatch(emp, activeFilters[result.departmentId]) ? 'flex' : 'none'" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 6px; border-radius: 4px; cursor: move; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex-direction: column;" (click)="openEmployeeModal(emp)">
-                          <p style="margin: 0; font-weight: bold; font-size: 0.95em; line-height: 1.4; white-space: normal; word-break: break-all;">
-                            {{ emp.employeeNumber ? emp.employeeNumber + ' ' : '' }}{{ getDisplayName(emp) }}
-                            @if (currentUserRole === 'ADMIN' && emp.isExecutiveCandidate) { <span title="幹部候補" style="margin-left: 4px;">👑</span> }
-                            @if (emp.isOldData) { <span style="color: #e74c3c; font-size: 0.75em; margin-left: 4px; border: 1px solid #e74c3c; padding: 1px 4px; border-radius: 4px;">⚠️古いデータ</span> }
-                          </p>
-
-                          <!-- タグ表示 -->
-                          @if ((emp.tags && emp.tags.length > 0) || emp.desiredDept || emp.workLifeBalance) {
-                            <div class="tags-container" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">
-                              @if (emp.desiredDept) {
-                                <span class="tag" style="background-color: #f59e0b; color: white; font-size: 0.7em; padding: 3px 8px; border-radius: 12px; white-space: nowrap; font-weight: bold; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">希望: {{ emp.desiredDept }}</span>
-                              }
-
-                              <!-- ワークライフバランス（WLB）の表示 -->
-                              @if (emp.workLifeBalance) {
-                                <details style="margin-top: 4px; width: 100%;" (click)="$event.stopPropagation()">
-                                  <summary class="tag" style="background-color: #27ae60; color: white; font-size: 0.7em; padding: 3px 8px; border-radius: 12px; white-space: nowrap; font-weight: bold; box-shadow: 0 1px 2px rgba(0,0,0,0.1); cursor: pointer; display: inline-block; list-style: none; user-select: none;">
-                                    💬 WLB ▼
-                                  </summary>
-                                  <div style="margin-top: 6px; background-color: #f0fdf4; color: #166534; padding: 8px; border-radius: 4px; font-size: 0.75em; font-weight: bold; white-space: pre-wrap; word-break: break-all; line-height: 1.4; border: 1px solid #bbf7d0; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">{{ emp.workLifeBalance }}</div>
-                                </details>
-                              }
-                              @if (emp.tags && emp.tags.length > 0) {
-                                @for (tag of emp.tags; track tag) {
-                                  <span class="tag" style="background-color: rgba(255,255,255,0.3); font-size: 0.7em; padding: 3px 8px; border-radius: 12px; white-space: nowrap;">{{ tag }}</span>
-                                }
-                              }
-                            </div>
-                          }
-
-                          <div class="ability-scores" style="font-size: 0.65em; margin-top: 4px;">
-                            <span style="padding: 2px;">営:{{ emp.salesForce || 0 }}</span>
-                            <span style="padding: 2px;">管:{{ emp.managementForce || 0 }}</span>
-                            <span style="padding: 2px;">開:{{ emp.explorationForce || 0 }}</span>
-                            <span style="padding: 2px;">育:{{ emp.developmentForce || 0 }}</span>
-                          </div>
-                        </div>
-                      }
-                    } @else {
-                      <p style="color: #999; text-align: center; margin-top: 80px;">人員をドラッグして配置してください</p>
-                    }
-                  </div>
-                </div>
-              }
-            }
-          </div>
-          }
 
           <div class="results-table-container">
             <table class="results-table">
