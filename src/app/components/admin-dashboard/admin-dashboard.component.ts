@@ -411,7 +411,16 @@ export class AdminDashboardComponent implements OnInit {
     }
 
     this.loading.set(true);
-    this.apiService.simulateMultiDepartment(this.selectedDepartments(), this.lastYearTotalRevenue, this.simulationMode).subscribe({
+
+    // 採用候補者を含めてシミュレーション実行
+    const employees = this.employees();
+    const employeesWithNewCandidates = [...employees, ...this.newCandidates];
+
+    this.apiService.simulateBatchAllocation(
+      employeesWithNewCandidates,
+      this.lastYearTotalRevenue,
+      this.simulationMode
+    ).subscribe({
       next: (data: any) => {
         if (data && data.results && Array.isArray(data.results)) {
           const enrichedResults = this.enrichWithMyPageData(data.results);
