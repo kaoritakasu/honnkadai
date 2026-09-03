@@ -1296,19 +1296,14 @@ export class AdminDashboardComponent implements OnInit {
 
   updateBaseline() {
     if (this.simulationSummary()) {
+      // 既にシミュレーション結果が出ている場合のみ、それを次回の比較元にする
       this.currentBaseline = {
         revenue: this.simulationSummary().totalCompanyRevenue,
         cost: this.simulationSummary().totalCompanyCost,
         profit: this.simulationSummary().totalCompanyProfit
       };
-    } else if (this.dashboard()?.simulationHistory?.length > 0) {
-      const h = this.dashboard().simulationHistory[0];
-      this.currentBaseline = {
-        revenue: h.totalRevenue || h.totalCompanyRevenue || 0,
-        cost: h.totalCost || h.totalCompanyCost || 0,
-        profit: h.totalProfit || h.totalCompanyProfit || 0
-      };
     } else {
+      // 初回実行時は比較しない（差分表示なし）
       this.currentBaseline = null;
     }
   }
