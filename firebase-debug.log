@@ -1,13 +1,12 @@
-[debug] [2026-09-03T07:50:43.489Z] ----------------------------------------------------------------------
-[debug] [2026-09-03T07:50:43.492Z] Command:       /home/kaoritakasu/.local/share/fnm/node-versions/v24.19.0/installation/bin/node /run/user/1000/fnm_multishells/81318_1788421744182/bin/firebase init hosting
-[debug] [2026-09-03T07:50:43.493Z] CLI Version:   15.29.0
-[debug] [2026-09-03T07:50:43.493Z] Platform:      linux
-[debug] [2026-09-03T07:50:43.493Z] Node Version:  v24.19.0
-[debug] [2026-09-03T07:50:43.493Z] Detected Agent: unknown
-[debug] [2026-09-03T07:50:43.494Z] Time:          Thu Sep 03 2026 16:50:43 GMT+0900 (Japan Standard Time)
-[debug] [2026-09-03T07:50:43.494Z] ----------------------------------------------------------------------
+[debug] [2026-09-03T07:53:50.230Z] ----------------------------------------------------------------------
+[debug] [2026-09-03T07:53:50.233Z] Command:       /home/kaoritakasu/.local/share/fnm/node-versions/v24.19.0/installation/bin/node /run/user/1000/fnm_multishells/81318_1788421744182/bin/firebase init
+[debug] [2026-09-03T07:53:50.233Z] CLI Version:   15.29.0
+[debug] [2026-09-03T07:53:50.233Z] Platform:      linux
+[debug] [2026-09-03T07:53:50.233Z] Node Version:  v24.19.0
+[debug] [2026-09-03T07:53:50.234Z] Detected Agent: unknown
+[debug] [2026-09-03T07:53:50.234Z] Time:          Thu Sep 03 2026 16:53:50 GMT+0900 (Japan Standard Time)
+[debug] [2026-09-03T07:53:50.234Z] ----------------------------------------------------------------------
 [debug] 
-[debug] [2026-09-03T07:50:43.513Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
 [info] 
      ######## #### ########  ######## ########     ###     ######  ########
      ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
@@ -19,58 +18,3 @@ You're about to initialize a Firebase project in this directory:
 
   /home/kaoritakasu/development/honnkadai1
 
-[info] 
-=== Project Setup
-[info] 
-[info] First, let's associate this project directory with a Firebase project.
-[info] You can create multiple project aliases by running firebase use --add, 
-[info] 
-[debug] [2026-09-03T07:50:45.094Z] <<< [apiv2][status] GET https://firebase-public.firebaseio.com/cli.json 200
-[debug] [2026-09-03T07:50:45.095Z] <<< [apiv2][body] GET https://firebase-public.firebaseio.com/cli.json {"cloudBuildErrorAfter":1594252800000,"cloudBuildWarnAfter":1590019200000,"defaultNode10After":1594252800000,"minVersion":"3.0.5","node8DeploysDisabledAfter":1613390400000,"node8RuntimeDisabledAfter":1615809600000,"node8WarnAfter":1600128000000}
-[debug] [2026-09-03T07:50:53.592Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
-[debug] [2026-09-03T07:50:53.593Z] > authorizing via signed-in user (kaori.takasu@pathoslogos.co.jp)
-[debug] [2026-09-03T07:50:53.594Z] Checked if tokens are valid: false, expires at: 1786526127576
-[debug] [2026-09-03T07:50:53.594Z] Checked if tokens are valid: false, expires at: 1786526127576
-[debug] [2026-09-03T07:50:53.594Z] > refreshing access token with scopes: []
-[debug] [2026-09-03T07:50:53.596Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
-[debug] [2026-09-03T07:50:53.597Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
-[debug] [2026-09-03T07:50:53.798Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 400
-[debug] [2026-09-03T07:50:53.798Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
-[error] Authentication Error: Your credentials are no longer valid. Please run firebase login --reauth
-
-For CI servers and headless environments, generate a new token with firebase login:ci
-[error] Authentication Error: Your credentials are no longer valid. Please run firebase login --reauth
-
-For CI servers and headless environments, generate a new token with firebase login:ci
-[debug] [2026-09-03T07:50:53.799Z] Authentication Error: Your credentials are no longer valid. Please run firebase login --reauth
-
-For CI servers and headless environments, generate a new token with firebase login:ci
-[debug] [2026-09-03T07:50:53.887Z] FirebaseError: Authentication Error: Your credentials are no longer valid. Please run firebase login --reauth
-
-For CI servers and headless environments, generate a new token with firebase login:ci
-    at invalidCredentialError (/home/kaoritakasu/.local/share/fnm/node-versions/v24.19.0/installation/lib/node_modules/firebase-tools/lib/auth.js:178:12)
-    at refreshTokens (/home/kaoritakasu/.local/share/fnm/node-versions/v24.19.0/installation/lib/node_modules/firebase-tools/lib/auth.js:607:15)
-    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
-    at async getAccessToken (/home/kaoritakasu/.local/share/fnm/node-versions/v24.19.0/installation/lib/node_modules/firebase-tools/lib/apiv2.js:53:18)
-    at async Client.addAuthHeader (/home/kaoritakasu/.local/share/fnm/node-versions/v24.19.0/installation/lib/node_modules/firebase-tools/lib/apiv2.js:209:21)
-    at async Client.request (/home/kaoritakasu/.local/share/fnm/node-versions/v24.19.0/installation/lib/node_modules/firebase-tools/lib/apiv2.js:156:34)
-    at async getProjectPage (/home/kaoritakasu/.local/share/fnm/node-versions/v24.19.0/installation/lib/node_modules/firebase-tools/lib/management/projects.js:287:17)
-    at async getFirebaseProjectPage (/home/kaoritakasu/.local/share/fnm/node-versions/v24.19.0/installation/lib/node_modules/firebase-tools/lib/management/projects.js:304:23)
-    at async selectProjectInteractively (/home/kaoritakasu/.local/share/fnm/node-versions/v24.19.0/installation/lib/node_modules/firebase-tools/lib/management/projects.js:150:41)
-    at async Object.doSetup (/home/kaoritakasu/.local/share/fnm/node-versions/v24.19.0/installation/lib/node_modules/firebase-tools/lib/init/features/project.js:56:24)
-[error] 
-[error] Error: Failed to list Firebase projects. See firebase-debug.log for more info.
-[debug] [2026-09-03T07:52:01.137Z] ----------------------------------------------------------------------
-[debug] [2026-09-03T07:52:01.140Z] Command:       /home/kaoritakasu/.local/share/fnm/node-versions/v24.19.0/installation/bin/node /run/user/1000/fnm_multishells/81318_1788421744182/bin/firebase login --reauth
-[debug] [2026-09-03T07:52:01.141Z] CLI Version:   15.29.0
-[debug] [2026-09-03T07:52:01.141Z] Platform:      linux
-[debug] [2026-09-03T07:52:01.141Z] Node Version:  v24.19.0
-[debug] [2026-09-03T07:52:01.142Z] Detected Agent: unknown
-[debug] [2026-09-03T07:52:01.142Z] Time:          Thu Sep 03 2026 16:52:01 GMT+0900 (Japan Standard Time)
-[debug] [2026-09-03T07:52:01.142Z] ----------------------------------------------------------------------
-[debug] 
-[info] 
-[info] Visit this URL on this device to log in:
-[info] https://accounts.google.com/o/oauth2/auth?client_id=563584335869-fgrhgmd47bqnekij5i8b5pr03ho849e6.apps.googleusercontent.com&scope=email%20openid%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloudplatformprojects.readonly%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Ffirebase%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloud-platform&response_type=code&state=80301352&redirect_uri=http%3A%2F%2Flocalhost%3A9005&login_hint=kaori.takasu%40pathoslogos.co.jp
-[info] 
-[info] Waiting for authentication...
