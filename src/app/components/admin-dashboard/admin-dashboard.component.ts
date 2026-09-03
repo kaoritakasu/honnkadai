@@ -125,6 +125,9 @@ export class AdminDashboardComponent implements OnInit {
   midCareerCount: number = 0;
   executiveCandidateCount: number = 0;
 
+  // --- シミュレーション比較用 ---
+  currentBaseline: any = null;
+
   constructor(
     private apiService: ApiService,
     private authService: AuthService,
@@ -416,6 +419,11 @@ export class AdminDashboardComponent implements OnInit {
       return;
     }
 
+    // 初回実行時はベースラインを設定
+    if (!this.currentBaseline) {
+      this.updateBaseline();
+    }
+
     this.loading.set(true);
 
     // 新規採用候補者だけを送信（前回の配置を維持）
@@ -548,6 +556,11 @@ export class AdminDashboardComponent implements OnInit {
     if (!this.pasteDataText || this.pasteDataText.trim() === '') {
       alert('データを入力してください。');
       return;
+    }
+
+    // 初回実行時はベースラインを設定
+    if (!this.currentBaseline) {
+      this.updateBaseline();
     }
 
     const lines = this.pasteDataText.trim().split(/\r?\n/);
@@ -1281,6 +1294,25 @@ export class AdminDashboardComponent implements OnInit {
     this.viewingHistoryDetail = false;
   }
 
+  updateBaseline() {
+    if (this.simulationSummary()) {
+      this.currentBaseline = {
+        revenue: this.simulationSummary().totalCompanyRevenue,
+        cost: this.simulationSummary().totalCompanyCost,
+        profit: this.simulationSummary().totalCompanyProfit
+      };
+    } else if (this.dashboard()?.simulationHistory?.length > 0) {
+      const h = this.dashboard().simulationHistory[0];
+      this.currentBaseline = {
+        revenue: h.totalRevenue || h.totalCompanyRevenue || 0,
+        cost: h.totalCost || h.totalCompanyCost || 0,
+        profit: h.totalProfit || h.totalCompanyProfit || 0
+      };
+    } else {
+      this.currentBaseline = null;
+    }
+  }
+
   getFilteredAndSortedEmployees(): any[] {
     const allEmployees = this.employees();
     const searchText = this.employeeSearchText.toLowerCase().trim();
@@ -1963,6 +1995,11 @@ export class AdminDashboardComponent implements OnInit {
     if (!this.newCandidates || this.newCandidates.length === 0) {
       alert('シミュレーション対象の採用候補者がいません');
       return;
+    }
+
+    // 初回実行時はベースラインを設定
+    if (!this.currentBaseline) {
+      this.updateBaseline();
     }
 
     this.loading.set(true);
