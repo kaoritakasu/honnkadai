@@ -416,7 +416,7 @@ router.post('/simulate', authenticate, isAdmin, async (req: AuthRequest, res: Re
         managementForce: emp.managementForce ?? 0,
         explorationForce: emp.explorationForce ?? 0,
         developmentForce: emp.developmentForce ?? 0,
-        laborCost: emp.laborCost ?? 0,
+        laborCost: emp.laborCost !== undefined && emp.laborCost !== null ? emp.laborCost : (emp.isNew ? 5.0 : 0),
         score: emp.score ?? 0,
         skills: emp.skills || []
       };
@@ -669,7 +669,7 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
         managementForce: emp.managementForce ?? 0,
         explorationForce: emp.explorationForce ?? 0,
         developmentForce: emp.developmentForce ?? 0,
-        laborCost: emp.laborCost ?? 0,
+        laborCost: emp.laborCost !== undefined && emp.laborCost !== null ? emp.laborCost : (emp.isNew ? 5.0 : 0),
         score: emp.score ?? 0,
         skills: emp.skills || [],
         isExecutiveCandidate: ((emp.managementForce || 0) >= 70 && (emp.developmentForce || 0) >= 70)
@@ -809,7 +809,7 @@ router.post('/recalculate', authenticate, isAdmin, async (req: AuthRequest, res:
           managementForce: c.managementForce ?? 0,
           explorationForce: c.explorationForce ?? 0,
           developmentForce: c.developmentForce ?? 0,
-          laborCost: c.laborCost ?? 0,
+          laborCost: c.laborCost !== undefined && c.laborCost !== null ? c.laborCost : (c.isNew ? 5.0 : 0),
           score: c.score ?? 0,
           skills: c.skills || [],
           isExecutiveCandidate: ((c.managementForce || 0) >= 70 && (c.developmentForce || 0) >= 70)
@@ -934,7 +934,42 @@ router.post('/save', authenticate, isAdmin, async (req: AuthRequest, res: Respon
           // 社員の現在の所属テキストも更新しておく
           await prisma.employee.update({
             where: { id: dbEmp.id },
-            data: { currentDept: dept.departmentName }
+            data: {
+              currentDept: dept.departmentName,
+              laborCost: cand.laborCost !== undefined && cand.laborCost !== null ? cand.laborCost : (dbEmp.laborCost ?? 0)
+            }
+          });
+        } else if (cand.isNew) {
+          const newEmp = await prisma.employee.create({
+            data: {
+              employeeNumber: cand.employeeNumber || `NEW_${Date.now()}`,
+              user: {
+                create: {
+                  email: `new_${Date.now()}@temp.local`,
+                  password: '',
+                  name: cand.employeeName || 'New Employee',
+                  role: 'EMPLOYEE'
+                }
+              },
+              salesForce: cand.salesForce ?? 0,
+              managementForce: cand.managementForce ?? 0,
+              explorationForce: cand.explorationForce ?? 0,
+              developmentForce: cand.developmentForce ?? 0,
+              laborCost: cand.laborCost !== undefined && cand.laborCost !== null ? cand.laborCost : 0,
+              currentDept: dept.departmentName
+            }
+          });
+
+          const topSkill = cand.tags?.[0] || '総合的な能力';
+          const reason = `${dept.departmentName}の求める要件に対し、あなたの「${topSkill}」が高く評価されました。事業部の利益への高い貢献が期待されています。`;
+
+          await prisma.allocation.create({
+            data: {
+              employeeId: newEmp.id,
+              departmentId: dept.departmentId,
+              status: 'ASSIGNED',
+              reason: reason,
+            }
           });
         }
       }
