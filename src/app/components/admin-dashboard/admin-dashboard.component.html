@@ -1231,7 +1231,7 @@
                 <td>{{ emp.currentDept || '-' }}</td>
                 <td>{{ emp.desiredDept || emp.careerDesire || emp.careerGoals || '-' }}</td>
                 <td>{{ emp.status || '-' }}</td>
-                <td>{{ emp.lastUpdated | date: 'short' }}</td>
+                <td>{{ emp.lastUpdated | date: 'yyyy/MM/dd HH:mm' }}</td>
               </tr>
             }
           </tbody>
@@ -1254,7 +1254,7 @@
               <h3 style="margin: 0; color: #2c3e50;">📅 面談予約・受付ルール管理</h3>
               <p style="margin: 5px 0 0 0; color: #666; font-size: 0.9em;">面談予約のスケジュール、カレンダー例外設定、基本的な受付ルールの管理はここから行えます。</p>
             </div>
-            <button (click)="toggleReservationCalendar()" style="padding: 8px 16px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: background 0.2s;">
+            <button (click)="toggleReservationCalendar()" style="padding: 8px 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: all 0.2s; box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 4px 8px rgba(102, 126, 234, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(102, 126, 234, 0.3)'">
               {{ showReservationCalendar ? '設定とカレンダーを閉じる' : '設定とカレンダーを見る' }}
             </button>
           </div>
@@ -1454,7 +1454,7 @@
               <h3 style="margin: 0; color: #2c3e50;">💬 人事相談一覧</h3>
               <p style="margin: 5px 0 0 0; color: #666; font-size: 0.9em;">社員からの相談内容を確認・管理できます。</p>
             </div>
-            <button (click)="toggleConsultations()" style="padding: 8px 16px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: background 0.2s;">
+            <button (click)="toggleConsultations()" style="padding: 8px 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: all 0.2s; box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 4px 8px rgba(102, 126, 234, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(102, 126, 234, 0.3)'">
               {{ showConsultations ? '相談を閉じる' : '相談を見る' }}
             </button>
           </div>
@@ -1549,73 +1549,10 @@
               <h3 style="margin: 0; color: #2c3e50;">📋 異動候補・内示管理</h3>
               <p style="margin: 5px 0 0 0; color: #666; font-size: 0.9em;">配置シミュレーション結果を異動候補として管理し、面談後に確定処理を行えます。</p>
             </div>
+            <button style="padding: 8px 16px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: background 0.2s;">
+              内示一覧を見る
+            </button>
           </div>
-
-          @if (pendingTransfers().length === 0) {
-            <div style="padding: 40px 20px; background-color: white; border-radius: 4px; text-align: center; color: #999; border: 1px dashed #ddd;">
-              <p style="margin: 0; font-size: 1em;">現在、異動候補はありません。</p>
-            </div>
-          } @else {
-            <div style="display: flex; flex-direction: column; gap: 15px;">
-              @for (transfer of pendingTransfers(); track transfer.id) {
-                <div style="background: white; border-radius: 8px; padding: 16px; border-left: 4px solid #f39c12; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                  <!-- 異動者情報 -->
-                  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-                    <div style="flex: 1;">
-                      <p style="margin: 0 0 4px 0; font-weight: bold; color: #2c3e50; font-size: 0.95em;">
-                        {{ transfer.employeeNumber }} {{ transfer.employeeName }}
-                      </p>
-                      <p style="margin: 0; font-size: 0.85em; color: #666;">
-                        {{ transfer.fromDept }} → {{ transfer.toDept }}
-                      </p>
-                    </div>
-                    <!-- ステータスバッジ -->
-                    <div>
-                      @if (transfer.status === 'pending') {
-                        <span style="display: inline-block; background: #fff3cd; color: #856404; padding: 6px 12px; border-radius: 12px; font-size: 0.8em; font-weight: bold;">未確定</span>
-                      } @else if (transfer.status === 'approved') {
-                        <span style="display: inline-block; background: #d4edda; color: #155724; padding: 6px 12px; border-radius: 12px; font-size: 0.8em; font-weight: bold;">確定（公開）</span>
-                      }
-                    </div>
-                  </div>
-
-                  <!-- 発令日情報 -->
-                  <div style="margin-bottom: 12px; padding: 10px; background: #f8f9fa; border-radius: 4px; font-size: 0.85em;">
-                    <p style="margin: 0; color: #666;">
-                      <strong>発令日：</strong> {{ transfer.applyDate }}
-                    </p>
-                  </div>
-
-                  <!-- メモ表示 -->
-                  @if (transfer.memo) {
-                    <div style="margin-bottom: 12px; padding: 10px; background: #f0f4ff; border-radius: 4px; border-left: 3px solid #3498db;">
-                      <p style="margin: 0 0 6px 0; font-size: 0.85em; color: #666; font-weight: bold;">💬 メモ</p>
-                      <p style="margin: 0; font-size: 0.85em; color: #333; white-space: pre-wrap; word-break: break-word;">{{ transfer.memo }}</p>
-                    </div>
-                  }
-
-                  <!-- ボタングループ -->
-                  <div style="display: flex; gap: 8px; margin-top: 12px;">
-                    @if (transfer.status === 'pending') {
-                      <button (click)="approveTransfer(transfer)" style="flex: 1; padding: 8px 16px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.85em;">
-                        ✓ 確定（公開）
-                      </button>
-                      <button (click)="rejectTransfer(transfer)" style="flex: 1; padding: 8px 16px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.85em;">
-                        ✕ 見送り
-                      </button>
-                    } @else if (transfer.status === 'approved') {
-                      <div style="flex: 1; padding: 8px 16px; background: #d4edda; color: #155724; border-radius: 4px; text-align: center; font-weight: bold; font-size: 0.85em;">
-                        ✓ 公開済み
-                      </div>
-                      <button (click)="rejectTransfer(transfer)" style="flex: 1; padding: 8px 16px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.85em;">
-                        取消
-                      </button>
-                    }
-                  </div>
-                </div>
-              }
-            </div>
-          }
         </div>
       </div>
     }
