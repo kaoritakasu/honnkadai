@@ -1,8 +1,8 @@
-import express, { Response } from 'express';
+import express, { Response, Router } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticate, AuthRequest, isAdmin } from '../middleware/auth';
 
-const router = express.Router();
+const router: Router = express.Router();
 const prisma = new PrismaClient();
 
 // Get own profile
@@ -155,6 +155,7 @@ router.post('/:id/preferences', authenticate, async (req: AuthRequest, res: Resp
         data: {
           desiredDept: desiredDept,
           workLifeBalance: workLifeBalance,
+          laborCost: 0,
           // careerDesire: careerDesire,
           user: {
             connect: { id: employeeId }

@@ -543,13 +543,15 @@ export class AdminDashboardComponent implements OnInit {
       // データ行の処理（空行や列不足をスキップ）
       const empNoIdx = headerMap['社員番号'];
       if (empNoIdx !== undefined && cols[empNoIdx] && cols.length > 1) {
+        const laborCostIdx = headerMap['人件費'];
+        const laborCostValue = laborCostIdx !== undefined ? Number(cols[laborCostIdx]) : 0;
         parsedEmployees.push({
           employeeNumber: cols[empNoIdx],
           salesForce: Number(cols[headerMap['営業力']]) || 0,
           managementForce: Number(cols[headerMap['管理力']]) || 0,
           explorationForce: Number(cols[headerMap['開拓力']]) || 0,
           developmentForce: Number(cols[headerMap['育成力']]) || 0,
-          laborCost: Number(cols[headerMap['人件費']]) || 0
+          laborCost: !isNaN(laborCostValue) ? laborCostValue : 0
         });
       }
     }
@@ -829,7 +831,17 @@ export class AdminDashboardComponent implements OnInit {
     if (!this.simulationResults() || !Array.isArray(this.simulationResults())) return;
 
     this.loading.set(true);
-    this.apiService.recalculateSimulation({ results: this.simulationResults(), lastYearTotalRevenue: this.lastYearTotalRevenue }).subscribe({
+
+    // 採用候補者をシミュレーション結果に追加
+    const resultsWithNewCandidates = this.simulationResults().map((result: any) => {
+      const newCandsInDept = this.newCandidates.filter((cand: any) => cand.departmentId === result.departmentId);
+      return {
+        ...result,
+        candidates: [...(result.candidates || []), ...newCandsInDept]
+      };
+    });
+
+    this.apiService.recalculateSimulation({ results: resultsWithNewCandidates, lastYearTotalRevenue: this.lastYearTotalRevenue }).subscribe({
       next: (data: any) => {
         if (data && data.results && Array.isArray(data.results)) {
           const enrichedResults = this.enrichWithMyPageData(data.results);

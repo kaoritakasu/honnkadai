@@ -1,14 +1,14 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
 
-const router = express.Router();
+const router: Router = express.Router();
 const prisma = new PrismaClient();
 
 router.post('/register', async (req: Request, res: Response) => {
   try {
-    const { email, password, name, role, employeeNumber } = req.body;
+    const { email, password, name, role, employeeNumber, laborCost, salesForce, managementForce, explorationForce, developmentForce } = req.body;
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -27,7 +27,15 @@ router.post('/register', async (req: Request, res: Response) => {
       });
     } else {
       await prisma.employee.create({
-        data: { userId: user.id, employeeNumber },
+        data: {
+          userId: user.id,
+          employeeNumber,
+          laborCost: laborCost !== undefined && laborCost !== null ? Number(laborCost) : 0,
+          salesForce: salesForce !== undefined && salesForce !== null ? Number(salesForce) : 0,
+          managementForce: managementForce !== undefined && managementForce !== null ? Number(managementForce) : 0,
+          explorationForce: explorationForce !== undefined && explorationForce !== null ? Number(explorationForce) : 0,
+          developmentForce: developmentForce !== undefined && developmentForce !== null ? Number(developmentForce) : 0
+        },
       });
     }
 
