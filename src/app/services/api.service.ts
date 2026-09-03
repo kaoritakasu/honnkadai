@@ -107,6 +107,17 @@ export class ApiService {
     return this.http.post<any>(`${this.apiUrl}/allocations/simulate-batch`, payload, { headers: this.getHeaders() });
   }
 
+  simulateMultiDepartmentWithEmployees(employees: any[], lastYearTotalRevenue?: number, simulationMode?: string): Observable<any> {
+    let payload: any = Array.isArray(employees) ? { employees } : employees;
+    if (lastYearTotalRevenue && lastYearTotalRevenue > 0) {
+      payload.lastYearTotalRevenue = lastYearTotalRevenue;
+    }
+    if (simulationMode) {
+      payload.simulationMode = simulationMode;
+    }
+    return this.http.post<any>(`${this.apiUrl}/allocations/simulate-batch`, payload, { headers: this.getHeaders() });
+  }
+
   saveSimulation(payload: any): Observable<any> {
     return this.http.post(`${this.apiUrl}/allocations/save`, payload, { headers: this.getHeaders() });
   }

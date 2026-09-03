@@ -583,7 +583,10 @@ router.post('/simulate-multi', authenticate, isAdmin, async (req: AuthRequest, r
     }
 
     res.json({
-      results,
+      results: results.map((r: any) => ({
+        ...r,
+        cost: r.cost || r.totalCost
+      })),
       totalCompanyRevenue,
       totalCompanyCost,
       totalCompanyProfit,
@@ -698,6 +701,7 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
         departmentId: department.id,
         departmentName: department.name,
         allocatedCount: state.allocatedCount,
+        minHeadcount: department.minHeadcount ?? 0,
         optimalHeadcount: department.optimalHeadcount ?? 0,
         fulfillmentRate: Math.round(state.fulfillmentRate),
         departmentCapability: Math.round(state.departmentCapability),
@@ -705,6 +709,7 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
         shortagePenaltyFactor: state.shortagePenaltyFactor,
         overallocationPenaltyFactor: state.overallocationPenaltyFactor,
         finalRevenue: Math.round(state.finalRevenue),
+        cost: Math.round(state.totalCost),
         totalCost: Math.round(state.totalCost),
         profit: Math.round(state.profit),
         candidates: allocatedEmployees.map((emp: any) => ({
@@ -831,6 +836,7 @@ router.post('/recalculate', authenticate, isAdmin, async (req: AuthRequest, res:
         shortagePenaltyFactor: state.shortagePenaltyFactor,
         overallocationPenaltyFactor: state.overallocationPenaltyFactor,
         finalRevenue: Math.round(state.finalRevenue),
+        cost: Math.round(state.totalCost),
         totalCost: Math.round(state.totalCost),
         profit: Math.round(state.profit),
         candidates: allocatedEmployees.map((emp: any) => ({

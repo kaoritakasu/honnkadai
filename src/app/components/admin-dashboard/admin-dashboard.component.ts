@@ -119,6 +119,11 @@ export class AdminDashboardComponent implements OnInit {
   hiringSimulationResult: any = null;
   pendingNewHires: any[] | null = null;
 
+  // --- ペルソナ別採用候補生成用 ---
+  newGradCount: number = 0;
+  midCareerCount: number = 0;
+  executiveCandidateCount: number = 0;
+
   constructor(
     private apiService: ApiService,
     private authService: AuthService,
@@ -441,6 +446,7 @@ export class AdminDashboardComponent implements OnInit {
           this.simulationSummary.set(null);
         }
         this.loading.set(false);
+        this.newCandidates = [];
       },
       error: (error: any) => {
         this.error.set(error.error?.error || 'Multi-department simulation failed');
@@ -479,6 +485,7 @@ export class AdminDashboardComponent implements OnInit {
         }
         this.loading.set(false);
         this.pasteDataText = '';
+        this.newCandidates = [];
       },
       error: (error: any) => {
         this.error.set(error.error?.error || 'Batch simulation failed');
@@ -600,6 +607,7 @@ export class AdminDashboardComponent implements OnInit {
         }
         this.loading.set(false);
         this.pasteDataText = '';
+        this.newCandidates = [];
       },
       error: (err: any) => {
         console.error('API Error:', err);
@@ -806,7 +814,6 @@ export class AdminDashboardComponent implements OnInit {
       explorationForce: 50,
       developmentForce: 50,
       laborCost: 5.0,
-      departmentId: '',
       isNew: true
     });
   }
@@ -830,11 +837,6 @@ export class AdminDashboardComponent implements OnInit {
     this.recalculateResults();
   }
 
-  updateCandidateDepartment(candidate: any, deptId: string) {
-    candidate.departmentId = deptId;
-    const deptName = this.departments().find((d: any) => d.id === deptId)?.name || '';
-    candidate.departmentName = deptName;
-  }
 
   private recalculateResults() {
     if (!this.simulationResults() || !Array.isArray(this.simulationResults())) return;
@@ -940,9 +942,6 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
-  hasUnassignedCandidates(): boolean {
-    return this.newCandidates.some((cand: any) => !cand.departmentId || cand.departmentId.trim() === '');
-  }
 
   private enrichWithMyPageData(results: any): any {
     const dbEmployees = this.employees();
@@ -1736,7 +1735,7 @@ export class AdminDashboardComponent implements OnInit {
       return this.simulationSummary().totalCompanyCost;
     }
     if (Array.isArray(this.simulationResults())) {
-      return this.simulationResults().reduce((sum: number, r: any) => sum + (r.cost || 0), 0);
+      return this.simulationResults().reduce((sum: number, r: any) => sum + (r.cost || r.totalCost || 0), 0);
     }
     return 0;
   }
@@ -1774,5 +1773,168 @@ export class AdminDashboardComponent implements OnInit {
     this.pendingNewHires = null;
   }
 
+  private randomInt(min: number, max: number): number {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  private generateNewGradCandidates(count: number): any[] {
+    const candidates = [];
+    for (let i = 0; i < count; i++) {
+      const baseForce = this.randomInt(10, 30);
+      const randomize = (val: number) => Math.min(100, Math.max(0, val + this.randomInt(-5, 5)));
+
+      candidates.push({
+        employeeId: `NEW_GRAD_${Date.now()}_${i}`,
+        employeeNumber: `GRAD${String(Date.now() + i).slice(-4)}`,
+        employeeName: `新卒採用候補${i + 1}`,
+        salesForce: randomize(baseForce),
+        managementForce: randomize(baseForce),
+        explorationForce: randomize(baseForce),
+        developmentForce: randomize(baseForce),
+        laborCost: Number((Math.random() * (3.0 - 2.0) + 2.0).toFixed(1)),
+        isNew: true,
+        tags: ['新卒'],
+        desiredDept: '',
+        workLifeBalance: ''
+      });
+    }
+    return candidates;
+  }
+
+  private generateMidCareerCandidates(count: number): any[] {
+    const candidates = [];
+    const forceTypes = ['sales', 'management', 'exploration', 'development'];
+
+    for (let i = 0; i < count; i++) {
+      const specializedType = forceTypes[this.randomInt(0, forceTypes.length - 1)];
+      const highForce = this.randomInt(60, 80);
+      const lowForce = this.randomInt(20, 40);
+
+      const forces = {
+        salesForce: specializedType === 'sales' ? highForce : lowForce,
+        managementForce: specializedType === 'management' ? highForce : lowForce,
+        explorationForce: specializedType === 'exploration' ? highForce : lowForce,
+        developmentForce: specializedType === 'development' ? highForce : lowForce
+      };
+
+      const randomize = (val: number) => Math.min(100, Math.max(0, val + this.randomInt(-3, 3)));
+
+      candidates.push({
+        employeeId: `NEW_MID_${Date.now()}_${i}`,
+        employeeNumber: `MID${String(Date.now() + i).slice(-4)}`,
+        employeeName: `中途採用候補${i + 1}`,
+        salesForce: randomize(forces.salesForce),
+        managementForce: randomize(forces.managementForce),
+        explorationForce: randomize(forces.explorationForce),
+        developmentForce: randomize(forces.developmentForce),
+        laborCost: Number((Math.random() * (7.0 - 5.0) + 5.0).toFixed(1)),
+        isNew: true,
+        tags: ['中途'],
+        desiredDept: '',
+        workLifeBalance: ''
+      });
+    }
+    return candidates;
+  }
+
+  private generateExecutiveCandidates(count: number): any[] {
+    const candidates = [];
+    for (let i = 0; i < count; i++) {
+      const highForce = this.randomInt(70, 90);
+      const managementForce = this.randomInt(80, 95);
+      const randomize = (val: number) => Math.min(100, Math.max(0, val + this.randomInt(-2, 2)));
+
+      candidates.push({
+        employeeId: `NEW_EXEC_${Date.now()}_${i}`,
+        employeeNumber: `EXEC${String(Date.now() + i).slice(-4)}`,
+        employeeName: `幹部候補${i + 1}`,
+        salesForce: randomize(highForce),
+        managementForce: randomize(managementForce),
+        explorationForce: randomize(highForce),
+        developmentForce: randomize(highForce),
+        laborCost: Number((Math.random() * (10.0 - 8.0) + 8.0).toFixed(1)),
+        isNew: true,
+        tags: ['幹部候補'],
+        desiredDept: '',
+        workLifeBalance: ''
+      });
+    }
+    return candidates;
+  }
+
+  generateCandidatesByPersona() {
+    if (this.newGradCount === 0 && this.midCareerCount === 0 && this.executiveCandidateCount === 0) {
+      alert('最低でも1つのペルソナで1名以上を指定してください');
+      return;
+    }
+
+    const generatedCandidates = [
+      ...this.generateNewGradCandidates(this.newGradCount),
+      ...this.generateMidCareerCandidates(this.midCareerCount),
+      ...this.generateExecutiveCandidates(this.executiveCandidateCount)
+    ];
+
+    // newCandidatesに直接セット
+    this.newCandidates = [...this.newCandidates, ...generatedCandidates];
+
+    alert(`合計 ${generatedCandidates.length} 名の採用候補データを生成しました。\n新卒: ${this.newGradCount}名、中途: ${this.midCareerCount}名、幹部候補: ${this.executiveCandidateCount}名\n\nプレビューで内容を確認・修正したら、画面上部の「シミュレーション実行」ボタンでシミュレーションを実行してください。`);
+
+    this.newGradCount = 0;
+    this.midCareerCount = 0;
+    this.executiveCandidateCount = 0;
+  }
+
+  private generateTsvFromCandidates(candidates: any[]): string {
+    const header = '社員番号\t営業力\t管理力\t開拓力\t育成力\t人件費';
+    const rows = candidates.map(c =>
+      `${c.employeeNumber}\t${c.salesForce}\t${c.managementForce}\t${c.explorationForce}\t${c.developmentForce}\t${c.laborCost}`
+    );
+    return [header, ...rows].join('\n');
+  }
+
+  runSimulation() {
+    if (!this.newCandidates || this.newCandidates.length === 0) {
+      alert('シミュレーション対象の採用候補者がいません');
+      return;
+    }
+
+    this.loading.set(true);
+
+    const employeesWithNewCandidates = [...this.employees(), ...this.newCandidates];
+
+    this.apiService.simulateBatchAllocation(
+      employeesWithNewCandidates,
+      this.lastYearTotalRevenue,
+      this.simulationMode
+    ).subscribe({
+      next: (data: any) => {
+        if (data && data.results && Array.isArray(data.results)) {
+          const enrichedResults = this.enrichWithMyPageData(data.results);
+          const sortedResults = this.sortResultsByEmployeeNumber(enrichedResults.map((result: any) => ({
+            ...result,
+            cost: result.totalCost
+          })));
+          this.simulationResults.set(sortedResults);
+          this.simulationSummary.set({
+            totalCompanyRevenue: data.totalCompanyRevenue,
+            totalCompanyCost: data.totalCompanyCost,
+            totalCompanyProfit: data.totalCompanyProfit
+          });
+        } else {
+          const enrichedData = this.enrichWithMyPageData(data);
+          const sortedData = this.sortResultsByEmployeeNumber(enrichedData);
+          this.simulationResults.set(sortedData);
+          this.simulationSummary.set(null);
+        }
+        this.loading.set(false);
+        this.viewMode = 'tree';
+        this.newCandidates = [];
+      },
+      error: (error: any) => {
+        this.error.set(error.error?.error || 'シミュレーション実行に失敗しました');
+        this.loading.set(false);
+      }
+    });
+  }
 
 }
