@@ -216,11 +216,11 @@
                           <td style="border: 1px solid #ddd; padding: 8px;">
                             <div style="display: flex; gap: 8px; align-items: center;">
                               <input type="number" [(ngModel)]="rule.threshold" placeholder="100" class="input-field" style="flex: 1; padding: 5px; box-sizing: border-box;" />
+                               <span style="font-weight: 600; color: #333; white-space: nowrap;">%</span>
                               <select [(ngModel)]="rule.condition" class="input-field" style="flex: 0 1 auto; min-width: 80px; padding: 5px; box-sizing: border-box;">
                                 <option value="over">以上</option>
                                 <option value="under">未満</option>
                               </select>
-                              <span style="font-weight: 600; color: #333; white-space: nowrap;">%</span>
                             </div>
                           </td>
                           <td style="border: 1px solid #ddd; padding: 8px;">
@@ -309,7 +309,7 @@
                           <div style="margin-bottom: 14px;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                               <span style="font-weight: 600; color: #333; font-size: 0.9em;">{{ skill.emoji }} {{ skill.name }}</span>
-                              <span style="font-weight: bold; color: #667eea; font-size: 0.9em;">{{ skillValue }}/100</span>
+                              <span style="font-weight: bold; color: #9333ea; font-size: 0.9em;">{{ skillValue }}/100</span>
                             </div>
                             <div style="width: 100%; height: 24px; background-color: #f5f5f5; border-radius: 6px; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">
                               <div [style.width.%]="skillValue" style="height: 100%; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); transition: width 0.3s ease; border-radius: 6px; box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);"></div>
@@ -321,13 +321,13 @@
                           <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; font-size: 0.85em;">
                             <div style="text-align: center; padding: 8px; background: #f8f9fa; border-radius: 6px;">
                               <p style="margin: 0; color: #666; font-size: 0.8em;">平均値</p>
-                              <p style="margin: 3px 0 0 0; font-weight: bold; color: #667eea;">
+                              <p style="margin: 3px 0 0 0; font-weight: bold; color: #9333ea;">
                                 {{ getDepartmentSkillAverages(dept.name).averageSkill }}/100
                               </p>
                             </div>
                             <div style="text-align: center; padding: 8px; background: #f8f9fa; border-radius: 6px;">
                               <p style="margin: 0; color: #666; font-size: 0.8em;">最高スキル</p>
-                              <p style="margin: 3px 0 0 0; font-weight: bold; color: #764ba2;">
+                              <p style="margin: 3px 0 0 0; font-weight: bold; color: #9333ea;">
                                 {{ getDepartmentSkillAverages(dept.name).maxSkill }}/100
                               </p>
                             </div>
@@ -355,7 +355,7 @@
                         <p style="margin: 0 0 20px 0; font-size: 0.9em; color: #666; font-weight: 500;">部署が求めるスキル要件（重み）と実際の配置メンバーのスキル割合を比較</p>
 
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px;">
-                          @for (skill of [{name: '営業力', key: 'salesForce', emoji: '💼', color: '#f39c12'}, {name: '管理力', key: 'managementForce', emoji: '👔', color: '#3498db'}, {name: '開拓力', key: 'explorationForce', emoji: '🚀', color: '#e74c3c'}, {name: '育成力', key: 'developmentForce', emoji: '🎓', color: '#27ae60'}]; track skill.key) {
+                          @for (skill of [{name: '営業力', key: 'salesForce', emoji: '💼', color: '#667eea'}, {name: '管理力', key: 'managementForce', emoji: '👔', color: '#667eea'}, {name: '開拓力', key: 'explorationForce', emoji: '🚀', color: '#667eea'}, {name: '育成力', key: 'developmentForce', emoji: '🎓', color: '#667eea'}]; track skill.key) {
                             @let gapData = getSkillGapData(dept);
                             @let idealValue = gapData.ideal[skill.key];
                             @let actualValue = gapData.actual[skill.key];
@@ -475,9 +475,9 @@
 
         <div class="department-management">
           <h3>部署を追加</h3>
-          <div class="add-dept-form">
-            <input type="text" [(ngModel)]="newDepartmentName" placeholder="新しい部署名" class="input-field" />
-            <button (click)="addDepartment()" class="btn-add">＋ 部署を追加</button>
+          <div class="flex gap-0 items-stretch">
+            <input type="text" [(ngModel)]="newDepartmentName" placeholder="新しい部署名" class="input-field flex-1 rounded-r-none" />
+            <button (click)="addDepartment()" class="btn-add rounded-l-none" style="border-left: none;">＋ 部署を追加</button>
           </div>
         </div>
 
@@ -501,7 +501,17 @@
                   @for (history of dashboard().simulationHistory; track history.id || $index) {
                     <tr style="border-bottom: 1px solid #eee; transition: background-color 0.2s;">
                       <td style="padding: 12px; border-right: 1px solid #eee;">{{ history.createdAt | date:'short' }}</td>
-                      <td style="padding: 12px; border-right: 1px solid #eee;">{{ history.executedBy || '-' }}</td>
+                      <td style="padding: 12px; border-right: 1px solid #eee;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                          <div
+                            style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 0.85em; flex-shrink: 0;"
+                            [style.background-color]="getInitialColor(history.executorName)"
+                            [title]="history.executedBy">
+                            {{ getInitials(history.executorName) }}
+                          </div>
+                          <span [title]="history.executedBy">{{ history.executorName || '-' }}</span>
+                        </div>
+                      </td>
                       <td style="padding: 12px; text-align: right; border-right: 1px solid #eee;">¥{{ history.totalRevenue | number }}</td>
                       <td style="padding: 12px; text-align: right; border-right: 1px solid #eee;">¥{{ history.totalCost | number }}</td>
                       <td style="padding: 12px; text-align: right; border-right: 1px solid #eee;">¥{{ history.totalProfit | number }}</td>
@@ -669,6 +679,7 @@
             <div style="margin-bottom: 15px;">
               <label style="display: block; font-weight: bold; margin-bottom: 8px; color: #333;">データを貼り付け（タブ区切り形式）</label>
               <textarea
+                class="paste-data-placeholder"
                 [(ngModel)]="pasteDataText"
                 placeholder="社員番号	営業力	管理力	開拓力	育成力	人件費&#10;E001	80	70	60	50	5.0&#10;E002	75	65	70	55	4.8"
                 style="width: 100%; height: 150px; padding: 12px; border: 1px solid #bdc3c7; border-radius: 4px; font-family: monospace; font-size: 0.9em; box-sizing: border-box; resize: vertical;">
@@ -846,44 +857,44 @@
           </div>
 
           @if (simulationSummary()) {
-            <div class="company-summary-card" style="margin-bottom: 20px; padding: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px;">
-              <h4 style="margin: 0 0 10px 0;">全社合計</h4>
+            <div class="company-summary-card" style="margin-bottom: 20px; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
+              <h4 style="margin: 0 0 10px 0; color: #2c3e50;">全社合計</h4>
               <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
                 <div style="padding: 10px;">
-                  <p style="margin: 0 0 5px 0; opacity: 0.9;">全社売上</p>
-                  <p style="margin: 0; font-size: 1.5em; font-weight: bold;">¥{{ simulationSummary().totalCompanyRevenue | number }}</p>
+                  <p style="margin: 0 0 5px 0; color: #666; font-size: 0.9em;">全社売上</p>
+                  <p style="margin: 0; font-size: 1.5em; font-weight: bold; color: #9333ea;">¥{{ simulationSummary().totalCompanyRevenue | number }}</p>
                   @if (currentBaseline && currentBaseline.revenue !== undefined) {
                     <p style="margin: 5px 0 0 0; font-size: 0.9em;">
                       @if (simulationSummary().totalCompanyRevenue >= currentBaseline.revenue) {
-                        <span style="color: #90EE90; font-weight: bold;">↑ +¥{{ (simulationSummary().totalCompanyRevenue - currentBaseline.revenue) | number }}</span>
+                        <span style="color: #22c55e; font-weight: bold;">↑ +¥{{ (simulationSummary().totalCompanyRevenue - currentBaseline.revenue) | number }}</span>
                       } @else {
-                        <span style="color: #FFB6C1; font-weight: bold;">↓ -¥{{ (currentBaseline.revenue - simulationSummary().totalCompanyRevenue) | number }}</span>
+                        <span style="color: #ef4444; font-weight: bold;">↓ -¥{{ (currentBaseline.revenue - simulationSummary().totalCompanyRevenue) | number }}</span>
                       }
                     </p>
                   }
                 </div>
                 <div style="padding: 10px;">
-                  <p style="margin: 0 0 5px 0; opacity: 0.9;">全社コスト</p>
-                  <p style="margin: 0; font-size: 1.5em; font-weight: bold;">¥{{ simulationSummary().totalCompanyCost | number }}</p>
+                  <p style="margin: 0 0 5px 0; color: #666; font-size: 0.9em;">全社コスト</p>
+                  <p style="margin: 0; font-size: 1.5em; font-weight: bold; color: #9333ea;">¥{{ simulationSummary().totalCompanyCost | number }}</p>
                   @if (currentBaseline && currentBaseline.cost !== undefined) {
                     <p style="margin: 5px 0 0 0; font-size: 0.9em;">
                       @if (simulationSummary().totalCompanyCost <= currentBaseline.cost) {
-                        <span style="color: #90EE90; font-weight: bold;">↓ -¥{{ (currentBaseline.cost - simulationSummary().totalCompanyCost) | number }}</span>
+                        <span style="color: #22c55e; font-weight: bold;">↓ -¥{{ (currentBaseline.cost - simulationSummary().totalCompanyCost) | number }}</span>
                       } @else {
-                        <span style="color: #FFB6C1; font-weight: bold;">↑ +¥{{ (simulationSummary().totalCompanyCost - currentBaseline.cost) | number }}</span>
+                        <span style="color: #ef4444; font-weight: bold;">↑ +¥{{ (simulationSummary().totalCompanyCost - currentBaseline.cost) | number }}</span>
                       }
                     </p>
                   }
                 </div>
                 <div style="padding: 10px;">
-                  <p style="margin: 0 0 5px 0; opacity: 0.9;">全社利益</p>
-                  <p style="margin: 0; font-size: 1.5em; font-weight: bold;">¥{{ simulationSummary().totalCompanyProfit | number }}</p>
+                  <p style="margin: 0 0 5px 0; color: #666; font-size: 0.9em;">全社利益</p>
+                  <p style="margin: 0; font-size: 1.5em; font-weight: bold; color: #9333ea;">¥{{ simulationSummary().totalCompanyProfit | number }}</p>
                   @if (currentBaseline && currentBaseline.profit !== undefined) {
                     <p style="margin: 5px 0 0 0; font-size: 0.9em;">
                       @if (simulationSummary().totalCompanyProfit >= currentBaseline.profit) {
-                        <span style="color: #90EE90; font-weight: bold;">↑ +¥{{ (simulationSummary().totalCompanyProfit - currentBaseline.profit) | number }}</span>
+                        <span style="color: #22c55e; font-weight: bold;">↑ +¥{{ (simulationSummary().totalCompanyProfit - currentBaseline.profit) | number }}</span>
                       } @else {
-                        <span style="color: #FFB6C1; font-weight: bold;">↓ -¥{{ (currentBaseline.profit - simulationSummary().totalCompanyProfit) | number }}</span>
+                        <span style="color: #ef4444; font-weight: bold;">↓ -¥{{ (currentBaseline.profit - simulationSummary().totalCompanyProfit) | number }}</span>
                       }
                     </p>
                   }
@@ -891,18 +902,18 @@
               </div>
 
               @if (lastYearTotalRevenue > 0) {
-                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.3);">
-                  <p style="margin: 0 0 5px 0; opacity: 0.9; font-size: 0.9em;">昨年の全社売上（制約値）</p>
-                  <p style="margin: 0; font-size: 1.2em; font-weight: bold;">¥{{ lastYearTotalRevenue | number }}</p>
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e5e7eb;">
+                  <p style="margin: 0 0 5px 0; color: #666; font-size: 0.9em;">昨年の全社売上（制約値）</p>
+                  <p style="margin: 0; font-size: 1.2em; font-weight: bold; color: #9333ea;">¥{{ lastYearTotalRevenue | number }}</p>
                   @if (simulationSummary().totalCompanyRevenue >= lastYearTotalRevenue) {
-                    <p style="margin: 5px 0 0 0; font-size: 0.85em; background: rgba(76, 175, 80, 0.3); padding: 8px; border-radius: 4px; border-left: 3px solid #4caf50; display: flex; align-items: center; gap: 4px;">
+                    <p style="margin: 5px 0 0 0; font-size: 0.85em; background: #dcfce7; padding: 8px; border-radius: 4px; border-left: 3px solid #22c55e; display: flex; align-items: center; gap: 4px; color: #166534;">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="20 6 9 17 4 12"></polyline>
                       </svg>
                       制約条件を満たしています
                     </p>
                   } @else {
-                    <p style="margin: 5px 0 0 0; font-size: 0.85em; background: rgba(244, 67, 54, 0.3); padding: 8px; border-radius: 4px; border-left: 3px solid #f44336; display: flex; align-items: center; gap: 4px;">
+                    <p style="margin: 5px 0 0 0; font-size: 0.85em; background: #fee2e2; padding: 8px; border-radius: 4px; border-left: 3px solid #ef4444; display: flex; align-items: center; gap: 4px; color: #7f1d1d;">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="10"></circle>
                         <line x1="12" y1="8" x2="12" y2="12"></line>
@@ -951,9 +962,9 @@
                   </svg>
                   <label style="font-weight: bold; color: #2c3e50; margin: 0; font-size: 0.95em;">新卒</label>
                 </div>
-                <div style="display: flex; gap: 8px; align-items: center;">
-                  <input type="number" [(ngModel)]="newGradCount" min="0" max="50" placeholder="0" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em;">
-                  <span style="color: #666; font-weight: bold; font-size: 0.9em; white-space: nowrap;">名</span>
+                <div style="display: flex; gap: 0; align-items: stretch;">
+                  <input type="number" [(ngModel)]="newGradCount" min="0" max="50" placeholder="0" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px 0 0 4px; border-right: none; font-size: 1em;">
+                  <span style="background-color: #f3f4f6; color: #666; font-weight: bold; font-size: 0.9em; white-space: nowrap; padding: 8px 12px; border: 1px solid #ccc; border-left: none; border-radius: 0 4px 4px 0; display: flex; align-items: center;">名</span>
                 </div>
                 <p style="margin: 8px 0 0 0; font-size: 0.8em; color: #888;">Force: 10～30 | 年俸: 200～300万</p>
               </div>
@@ -967,9 +978,9 @@
                   </svg>
                   <label style="font-weight: bold; color: #2c3e50; margin: 0; font-size: 0.95em;">中途</label>
                 </div>
-                <div style="display: flex; gap: 8px; align-items: center;">
-                  <input type="number" [(ngModel)]="midCareerCount" min="0" max="50" placeholder="0" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em;">
-                  <span style="color: #666; font-weight: bold; font-size: 0.9em; white-space: nowrap;">名</span>
+                <div style="display: flex; gap: 0; align-items: stretch;">
+                  <input type="number" [(ngModel)]="midCareerCount" min="0" max="50" placeholder="0" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px 0 0 4px; border-right: none; font-size: 1em;">
+                  <span style="background-color: #f3f4f6; color: #666; font-weight: bold; font-size: 0.9em; white-space: nowrap; padding: 8px 12px; border: 1px solid #ccc; border-left: none; border-radius: 0 4px 4px 0; display: flex; align-items: center;">名</span>
                 </div>
                 <p style="margin: 8px 0 0 0; font-size: 0.8em; color: #888;">Force: 60～80 (特定) | 年俸: 500～700万</p>
               </div>
@@ -983,9 +994,9 @@
                     </svg>
                     <label style="font-weight: bold; color: #2c3e50; margin: 0; font-size: 0.95em;">幹部候補</label>
                   </div>
-                  <div style="display: flex; gap: 8px; align-items: center;">
-                    <input type="number" [(ngModel)]="executiveCandidateCount" min="0" max="50" placeholder="0" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em;">
-                    <span style="color: #666; font-weight: bold; font-size: 0.9em; white-space: nowrap;">名</span>
+                  <div style="display: flex; gap: 0; align-items: stretch;">
+                    <input type="number" [(ngModel)]="executiveCandidateCount" min="0" max="50" placeholder="0" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px 0 0 4px; border-right: none; font-size: 1em;">
+                    <span style="background-color: #f3f4f6; color: #666; font-weight: bold; font-size: 0.9em; white-space: nowrap; padding: 8px 12px; border: 1px solid #ccc; border-left: none; border-radius: 0 4px 4px 0; display: flex; align-items: center;">名</span>
                   </div>
                   <p style="margin: 8px 0 0 0; font-size: 0.8em; color: #888;">Force: 70～90 (全体) | 年俸: 800～1000万</p>
                 </div>
@@ -994,8 +1005,13 @@
 
             <!-- データ生成ボタン（プレビュー用テキストエリアにセット） -->
             <div style="margin-top: 15px; text-align: right;">
-              <button (click)="generateCandidatesByPersona()" style="padding: 12px 30px; background: linear-gradient(135deg, #ff9800 0%, #f39c12 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1em; box-shadow: 0 4px 8px rgba(255, 152, 0, 0.3); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-                📊 データを生成（プレビュー）
+              <button (click)="generateCandidatesByPersona()" style="padding: 12px 30px; background: linear-gradient(135deg, #ff9800 0%, #f39c12 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1em; box-shadow: 0 4px 8px rgba(255, 152, 0, 0.3); transition: transform 0.2s; display: flex; align-items: center; gap: 8px; justify-content: center; margin-left: auto;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" y1="2" x2="12" y2="22"></line>
+                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h.5"></path>
+                  <path d="M17 12H9.5a3.5 3.5 0 0 0 0 7H17"></path>
+                </svg>
+                データを生成（プレビュー）
               </button>
             </div>
           </div>
@@ -1070,11 +1086,30 @@
 
           <!-- ビューモード切り替えボタン -->
           <div style="display: flex; gap: 8px; margin-bottom: 20px;">
-            <button (click)="viewMode = 'dnd'" [style.background]="viewMode === 'dnd' ? 'linear-gradient(135deg, #f39c12 0%, #e67e22 100%)' : '#ffffff'" [style.color]="viewMode === 'dnd' ? 'white' : '#333'" [style.border]="viewMode === 'dnd' ? '2px solid #f39c12' : '2px solid #ddd'" style="padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-              ✋ ドラッグ&ドロップ
+            <button (click)="viewMode = 'dnd'" [style.background]="viewMode === 'dnd' ? 'linear-gradient(135deg, #f39c12 0%, #e67e22 100%)' : '#ffffff'" [style.color]="viewMode === 'dnd' ? 'white' : '#333'" [style.border]="viewMode === 'dnd' ? '2px solid #f39c12' : '2px solid #ddd'" style="padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 6px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="5" cy="5" r="1"></circle>
+                <circle cx="12" cy="5" r="1"></circle>
+                <circle cx="19" cy="5" r="1"></circle>
+                <circle cx="5" cy="12" r="1"></circle>
+                <circle cx="12" cy="12" r="1"></circle>
+                <circle cx="19" cy="12" r="1"></circle>
+                <path d="M5 8v8"></path>
+                <path d="M12 8v8"></path>
+                <path d="M19 8v8"></path>
+              </svg>
+              ドラッグ&ドロップ
             </button>
-             <button (click)="viewMode = 'tree'" [style.background]="viewMode === 'tree' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : '#ffffff'" [style.color]="viewMode === 'tree' ? 'white' : '#333'" [style.border]="viewMode === 'tree' ? '2px solid #667eea' : '2px solid #ddd'" style="padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-              🌳 ツリー表示
+             <button (click)="viewMode = 'tree'" [style.background]="viewMode === 'tree' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : '#ffffff'" [style.color]="viewMode === 'tree' ? 'white' : '#333'" [style.border]="viewMode === 'tree' ? '2px solid #667eea' : '2px solid #ddd'" style="padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 6px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2v4"></path>
+                <path d="M12 10v4"></path>
+                <path d="M12 18v4"></path>
+                <path d="M5 6h7"></path>
+                <path d="M5 14h14"></path>
+                <path d="M12 22h7"></path>
+              </svg>
+              ツリー表示
             </button>
           </div>
 
@@ -1119,7 +1154,7 @@
                   <div style="flex: 1 1 auto; min-width: 0; min-height: 0; overflow-x: hidden; background-color: white; border-radius: 4px; padding: 5px; border: 1px dashed #ddd; display: flex; flex-direction: column; gap: 4px;">
                     @if (Array.isArray(result.candidates) && result.candidates.length > 0) {
                       @for (emp of result.candidates; track emp.employeeNumber || emp.employeeId) {
-                        <div class="employee-card transition-all duration-150 hover:shadow-xl hover:scale-105 cursor-pointer" cdkDrag [cdkDragData]="emp" [style.display]="isMatch(emp, activeFilters[result.departmentId]) ? 'flex' : 'none'" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 6px; border-radius: 4px; cursor: move; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex-direction: column;" (click)="openEmployeeModal(emp)">
+                        <div class="employee-card transition-all duration-150 hover:shadow-xl hover:scale-105 cursor-pointer" cdkDrag [cdkDragData]="emp" [style.display]="isMatch(emp, activeFilters[result.departmentId]) ? 'flex' : 'none'" style="background: white; color: #1f2937; padding: 6px; border-radius: 4px; cursor: move; box-shadow: 0 1px 3px rgba(0,0,0,0.08); flex-direction: column; border-left: 4px solid #667eea;" (click)="openEmployeeModal(emp)">
                           <p style="margin: 0; font-weight: bold; font-size: 0.95em; line-height: 1.4; white-space: normal; word-break: break-all;">
                             {{ emp.employeeNumber ? emp.employeeNumber + ' ' : '' }}{{ getDisplayName(emp) }}
                             @if (currentUserRole === 'ADMIN' && emp.isExecutiveCandidate) { <span title="幹部候補" style="margin-left: 4px;">👑</span> }
@@ -1144,17 +1179,17 @@
                               }
                               @if (emp.tags && emp.tags.length > 0) {
                                 @for (tag of emp.tags; track tag) {
-                                  <span class="tag" style="background-color: rgba(255,255,255,0.3); font-size: 0.7em; padding: 3px 8px; border-radius: 12px; white-space: nowrap;">{{ tag }}</span>
+                                  <span class="tag" style="background-color: #f3f4f6; color: #374151; font-size: 0.7em; padding: 3px 8px; border-radius: 12px; white-space: nowrap; border: 1px solid #e5e7eb;">{{ tag }}</span>
                                 }
                               }
                             </div>
                           }
 
-                          <div class="ability-scores" style="font-size: 0.65em; margin-top: 4px;">
-                            <span style="padding: 2px;">営:{{ emp.salesForce || 0 }}</span>
-                            <span style="padding: 2px;">管:{{ emp.managementForce || 0 }}</span>
-                            <span style="padding: 2px;">開:{{ emp.explorationForce || 0 }}</span>
-                            <span style="padding: 2px;">育:{{ emp.developmentForce || 0 }}</span>
+                          <div class="ability-scores" style="font-size: 0.65em; margin-top: 4px; display: flex; gap: 8px; color: #6b7280;">
+                            <span style="padding: 2px 4px; background-color: #f3f4f6; border-radius: 3px; color: #4b5563;">営:{{ emp.salesForce || 0 }}</span>
+                            <span style="padding: 2px 4px; background-color: #f3f4f6; border-radius: 3px; color: #4b5563;">管:{{ emp.managementForce || 0 }}</span>
+                            <span style="padding: 2px 4px; background-color: #f3f4f6; border-radius: 3px; color: #4b5563;">開:{{ emp.explorationForce || 0 }}</span>
+                            <span style="padding: 2px 4px; background-color: #f3f4f6; border-radius: 3px; color: #4b5563;">育:{{ emp.developmentForce || 0 }}</span>
                           </div>
                         </div>
                       }

@@ -241,11 +241,14 @@ button {
 .employee-card {
   transition: all 0.2s ease;
   user-select: none;
+  background: white !important;
+  border-left: 4px solid #667eea !important;
 }
 
 .employee-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(118, 75, 162, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+  border-left-color: #764ba2 !important;
 }
 
 .adjustment-controls {
@@ -298,8 +301,9 @@ textarea.input-field {
 }
 
 .employee-card .tag {
-  background-color: rgba(255, 255, 255, 0.3);
-  color: #fff;
+  background-color: #f3f4f6 !important;
+  color: #374151 !important;
+  border: 1px solid #e5e7eb !important;
 }
 
 .employees-table .tag {
@@ -318,7 +322,8 @@ textarea.input-field {
 }
 
 .ability-scores span {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: #f3f4f6;
+  color: #4b5563;
   padding: 2px 6px;
   border-radius: 3px;
   white-space: nowrap;
@@ -387,4 +392,12 @@ input[type="number"]::-webkit-inner-spin-button {
 input[type="number"] {
   -moz-appearance: textfield;
   appearance: textfield;
+}
+
+/* =========================================
+   プレースホルダーカラー
+   ========================================= */
+.paste-data-placeholder::placeholder {
+  color: #9ca3af;
+  opacity: 1;
 }

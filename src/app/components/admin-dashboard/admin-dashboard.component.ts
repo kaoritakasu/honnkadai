@@ -165,6 +165,8 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
     this.setupRouteListener();
     this.handleInitialRoute();
+
+    this.activeTab.set('dashboard');
   }
 
   private setupRouteListener() {
@@ -411,9 +413,28 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   loadDashboard() {
     this.apiService.getDashboard().subscribe({
-      next: (data: any) => this.dashboard.set(data),
+      next: (data: any) => {
+        // simulationHistory に executorName を追加
+        if (data && Array.isArray(data.simulationHistory)) {
+          data.simulationHistory = data.simulationHistory.map((history: any) => ({
+            ...history,
+            executorName: history.executedBy ? this.convertEmailToName(history.executedBy) : '-'
+          }));
+        }
+        this.dashboard.set(data);
+      },
       error: (error: any) => this.error.set(error.error?.error || 'Failed to load dashboard')
     });
+  }
+
+  private convertEmailToName(email: string): string {
+    if (!email || typeof email !== 'string') return '-';
+    const beforeAt = email.split('@')[0];
+    if (!beforeAt) return '-';
+    const parts = beforeAt.split('.');
+    return parts
+      .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+      .join(' ');
   }
 
   loadDepartments() {
@@ -1155,11 +1176,14 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       ? this.simulationResults().reduce((sum: number, result: any) => sum + (result.cost || 0), 0)
       : (this.simulationResults().cost || 0);
 
+    const currentUser = this.getCurrentUserName();
+
     const payload = {
       results: this.simulationResults(),
       totalCompanyRevenue: summary ? summary.totalCompanyRevenue : 0,
       totalCompanyCost: totalCompanyCost,
-      totalCompanyProfit: summary ? summary.totalCompanyProfit : 0
+      totalCompanyProfit: summary ? summary.totalCompanyProfit : 0,
+      executorName: currentUser
     };
 
     this.apiService.saveSimulation(payload).subscribe({
@@ -1180,11 +1204,14 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       ? this.simulationResults().reduce((sum: number, result: any) => sum + (result.cost || 0), 0)
       : (this.simulationResults().cost || 0);
 
+    const currentUser = this.getCurrentUserName();
+
     const payload = {
       results: this.simulationResults(),
       totalCompanyRevenue: summary ? summary.totalCompanyRevenue : 0,
       totalCompanyCost: totalCompanyCost,
-      totalCompanyProfit: summary ? summary.totalCompanyProfit : 0
+      totalCompanyProfit: summary ? summary.totalCompanyProfit : 0,
+      executorName: currentUser
     };
 
     this.apiService.saveSimulation(payload).subscribe({
@@ -1265,11 +1292,14 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       ? this.simulationResults().reduce((sum: number, result: any) => sum + (result.cost || 0), 0)
       : (this.simulationResults().cost || 0);
 
+    const currentUser = this.getCurrentUserName();
+
     const payload = {
       results: this.simulationResults(),
       totalCompanyRevenue: summary ? summary.totalCompanyRevenue : 0,
       totalCompanyCost: totalCompanyCost,
-      totalCompanyProfit: summary ? summary.totalCompanyProfit : 0
+      totalCompanyProfit: summary ? summary.totalCompanyProfit : 0,
+      executorName: currentUser
     };
 
     this.apiService.saveSimulation(payload).subscribe({
@@ -2037,6 +2067,35 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       `${c.employeeNumber}\t${c.salesForce}\t${c.managementForce}\t${c.explorationForce}\t${c.developmentForce}\t${c.laborCost}`
     );
     return [header, ...rows].join('\n');
+  }
+
+  private getCurrentUserName(): string {
+    try {
+      const userStr = localStorage.getItem('currentUser');
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        return user.name || user.email || 'システム';
+      }
+    } catch (e) {
+      console.error('Error getting current user name:', e);
+    }
+    return 'システム';
+  }
+
+  getInitials(name: string): string {
+    if (!name) return '-';
+    const parts = name.split(' ').filter(p => p);
+    return parts.map(p => p.charAt(0).toUpperCase()).join('').slice(0, 2);
+  }
+
+  getInitialColor(name: string): string {
+    if (!name) return '#999';
+    const colors = ['#667eea', '#764ba2', '#f39c12', '#27ae60', '#3498db', '#e74c3c'];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash) % colors.length];
   }
 
   runSimulation() {
