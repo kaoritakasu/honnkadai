@@ -13,7 +13,6 @@ export class ApiService {
   public authToken$ = this.authTokenSubject.asObservable();
 
   constructor(private http: HttpClient) {
-    // Base URL を環境設定から取得し、フォールバックを設定
     this.apiUrl = this.getApiUrl();
   }
 
@@ -31,8 +30,6 @@ export class ApiService {
   getConfiguredApiUrl(): string {
     return this.apiUrl;
   }
-
-  constructor(private http: HttpClient) {}
 
   setAuthToken(token: string) {
     localStorage.setItem('auth_token', token);

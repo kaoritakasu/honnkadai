@@ -1608,9 +1608,8 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   }
 
   openNotificationConsultations() {
-    this.activeTab.set('hr-management');
     this.showNotificationMenu = false;
-    this.showConsultations = true;
+    this.router.navigate(['/admin/consultations']);
   }
 
   openNotificationReservations() {
