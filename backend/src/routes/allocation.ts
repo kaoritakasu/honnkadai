@@ -1078,6 +1078,24 @@ router.post('/save', authenticate, isAdmin, async (req: AuthRequest, res: Respon
   }
 });
 
+router.get('/', authenticate, isAdmin, async (req: AuthRequest, res: Response) => {
+  try {
+    const allocations = await prisma.allocation.findMany({
+      include: {
+        employee: {
+          include: { user: true }
+        },
+        department: true
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    res.json(allocations);
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+});
+
 router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
