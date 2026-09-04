@@ -49,7 +49,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/employees', employeeRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/departments', departmentRoutes);
-app.use('/api/allocations', allocationRoutes);
+app.use('/api/allocation', allocationRoutes);
 app.use('/api/consultations', consultationRoutes);
 app.use('/api/interview', interviewRoutes);
 

@@ -101,7 +101,7 @@ export class ApiService {
 
   // Allocations
   simulateAllocation(departmentId: string, numPositions: number): Observable<any> {
-    return this.http.post(`${this.apiUrl}/allocations/simulate`, { departmentId, numPositions }, { headers: this.getHeaders() });
+    return this.http.post(`${this.apiUrl}/allocation/simulate`, { departmentId, numPositions }, { headers: this.getHeaders() });
   }
 
   simulateMultiDepartment(departmentIds: string[], lastYearTotalRevenue?: number, simulationMode?: string): Observable<any> {
@@ -112,7 +112,7 @@ export class ApiService {
     if (simulationMode) {
       payload.simulationMode = simulationMode;
     }
-    return this.http.post(`${this.apiUrl}/allocations/simulate-multi`, payload, { headers: this.getHeaders() });
+    return this.http.post(`${this.apiUrl}/allocation/simulate-multi`, payload, { headers: this.getHeaders() });
   }
 
   simulateBatchAllocation(payloadData: any, lastYearTotalRevenue?: number, simulationMode?: string, previousSimulationId?: string): Observable<any> {
@@ -126,7 +126,7 @@ export class ApiService {
     if (previousSimulationId !== undefined) {
       payload.previousSimulationId = previousSimulationId;
     }
-    return this.http.post<any>(`${this.apiUrl}/allocations/simulate-batch`, payload, { headers: this.getHeaders() });
+    return this.http.post<any>(`${this.apiUrl}/allocation/simulate-batch`, payload, { headers: this.getHeaders() });
   }
 
   simulateMultiDepartmentWithEmployees(employees: any[], lastYearTotalRevenue?: number, simulationMode?: string, previousSimulationId?: string): Observable<any> {
@@ -140,27 +140,27 @@ export class ApiService {
     if (previousSimulationId) {
       payload.previousSimulationId = previousSimulationId;
     }
-    return this.http.post<any>(`${this.apiUrl}/allocations/simulate-batch`, payload, { headers: this.getHeaders() });
+    return this.http.post<any>(`${this.apiUrl}/allocation/simulate-batch`, payload, { headers: this.getHeaders() });
   }
 
   saveSimulation(payload: any): Observable<any> {
-    return this.http.post(`${this.apiUrl}/allocations/save`, payload, { headers: this.getHeaders() });
+    return this.http.post(`${this.apiUrl}/allocation/save`, payload, { headers: this.getHeaders() });
   }
 
   recalculateSimulation(adjustments: any): Observable<any> {
-    return this.http.post(`${this.apiUrl}/allocations/recalculate`, adjustments, { headers: this.getHeaders() });
+    return this.http.post(`${this.apiUrl}/allocation/recalculate`, adjustments, { headers: this.getHeaders() });
   }
 
   recalculate(data: any): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/allocations/recalculate`, data, { headers: this.getHeaders() });
+    return this.http.post<any>(`${this.apiUrl}/allocation/recalculate`, data, { headers: this.getHeaders() });
   }
 
   createAllocation(employeeId: string, departmentId: string, reason: string, recommendedLearning: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/allocations`, { employeeId, departmentId, reason, recommendedLearning }, { headers: this.getHeaders() });
+    return this.http.post(`${this.apiUrl}/allocation`, { employeeId, departmentId, reason, recommendedLearning }, { headers: this.getHeaders() });
   }
 
   confirmPlacement(payload: any): Observable<any> {
-    return this.http.post(`${this.apiUrl}/allocations/confirm`, payload, { headers: this.getHeaders() });
+    return this.http.post(`${this.apiUrl}/allocation/confirm`, payload, { headers: this.getHeaders() });
   }
 
   updatePreferences(userId: string, data: any): Observable<any> {
@@ -172,11 +172,15 @@ export class ApiService {
   }
 
   getMyAllocations(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/allocations/me`, { headers: this.getHeaders() });
+    return this.http.get<any[]>(`${this.apiUrl}/allocation/me`, { headers: this.getHeaders() });
   }
 
   getAllAllocations(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/allocations`, { headers: this.getHeaders() });
+    return this.http.get<any[]>(`${this.apiUrl}/allocation`, { headers: this.getHeaders() });
+  }
+
+  updateAllocationStatus(id: string, status: 'PENDING' | 'ASSIGNED' | 'REJECTED'): Observable<any> {
+    return this.http.put(`${this.apiUrl}/allocation/${id}`, { status }, { headers: this.getHeaders() });
   }
 
   // Admin
@@ -198,7 +202,7 @@ export class ApiService {
   }
 
   getMyLatestSimulation(): Observable<any> {
-    return this.http.get(`${this.apiUrl}/allocations/my-latest-simulation`, { headers: this.getHeaders() });
+    return this.http.get(`${this.apiUrl}/allocation/my-latest-simulation`, { headers: this.getHeaders() });
   }
 
   getAllConsultations(): Observable<any[]> {

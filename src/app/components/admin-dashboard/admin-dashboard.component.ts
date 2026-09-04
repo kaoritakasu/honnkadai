@@ -678,13 +678,19 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       if (empNoIdx !== undefined && cols[empNoIdx] && cols.length > 1) {
         const laborCostIdx = headerMap['人件費'];
         const laborCostValue = laborCostIdx !== undefined ? Number(cols[laborCostIdx]) : 0;
+        const empNum = cols[empNoIdx].trim();
+
+        // 既存の社員データに存在するかチェック
+        const existsInDb = this.employees().some((e: any) => e.employeeNumber === empNum);
+
         parsedEmployees.push({
-          employeeNumber: cols[empNoIdx],
+          employeeNumber: empNum,
           salesForce: Number(cols[headerMap['営業力']]) || 0,
           managementForce: Number(cols[headerMap['管理力']]) || 0,
           explorationForce: Number(cols[headerMap['開拓力']]) || 0,
           developmentForce: Number(cols[headerMap['育成力']]) || 0,
-          laborCost: !isNaN(laborCostValue) ? laborCostValue : 0
+          laborCost: !isNaN(laborCostValue) ? laborCostValue : 0,
+          isNew: !existsInDb // DBにいなければ新規（isNew: true）として扱い、保存時にDBへ自動登録させる
         });
       }
     }
@@ -1186,14 +1192,36 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       executorName: currentUser
     };
 
+    // 送信するペイロードの構造を確認
+    console.log('【saveSimulation】送信ペイロード確認');
+    console.log('  results型:', Array.isArray(payload.results) ? 'array' : typeof payload.results);
+    console.log('  results件数:', Array.isArray(payload.results) ? payload.results.length : 'N/A');
+    if (Array.isArray(payload.results) && payload.results.length > 0) {
+      payload.results.forEach((dept: any, idx: number) => {
+        console.log(`  [${idx}] ${dept.departmentName}: candidates=${Array.isArray(dept.candidates) ? dept.candidates.length : 'null'}件`);
+      });
+    }
+    console.log('  totalCompanyRevenue:', payload.totalCompanyRevenue);
+    console.log('  totalCompanyCost:', payload.totalCompanyCost);
+    console.log('  totalCompanyProfit:', payload.totalCompanyProfit);
+
     this.apiService.saveSimulation(payload).subscribe({
       next: (res: any) => {
         this.lastSimulationId = res?.id || null;
+        console.log('【saveSimulation】保存成功:', {
+          id: res?.id,
+          savedCount: res?.savedCount,
+          skippedCount: res?.skippedCount
+        });
         alert('配置案を保存し、社員への通知が完了しました！');
       },
-      error: (err: any) => {
-        console.error(err);
-        alert('保存に失敗しました。サーバーが立ち上がっているか確認してください。');
+      error: (error: any) => {
+        console.error('【配置案保存エラー】');
+        console.error('ステータスコード:', error?.status);
+        console.error('エラー内容:', error?.error);
+        console.error('詳細:', error?.message || error);
+        console.error('リクエストURL:', `${this.apiService.getConfiguredApiUrl()}/allocation/save`);
+        alert('保存に失敗しました。コンソール（F12）のエラーを確認してください。');
       }
     });
   }
@@ -1214,15 +1242,29 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       executorName: currentUser
     };
 
+    // 送信するペイロードの構造を確認
+    console.log('【saveSimulationHistory】送信ペイロード確認');
+    console.log('  results型:', Array.isArray(payload.results) ? 'array' : typeof payload.results);
+    console.log('  results件数:', Array.isArray(payload.results) ? payload.results.length : 'N/A');
+
     this.apiService.saveSimulation(payload).subscribe({
       next: (res: any) => {
         this.lastSimulationId = res?.id || null;
+        console.log('【saveSimulationHistory】保存成功:', {
+          id: res?.id,
+          savedCount: res?.savedCount,
+          skippedCount: res?.skippedCount
+        });
         alert('配置案を履歴に保存しました（社員への通知はありません）');
         this.resetSimulation();
       },
-      error: (err: any) => {
-        console.error(err);
-        alert('保存に失敗しました。サーバーが立ち上がっているか確認してください。');
+      error: (error: any) => {
+        console.error('【配置案履歴保存エラー】');
+        console.error('ステータスコード:', error?.status);
+        console.error('エラー内容:', error?.error);
+        console.error('詳細:', error?.message || error);
+        console.error('リクエストURL:', `${this.apiService.getConfiguredApiUrl()}/allocation/save`);
+        alert('保存に失敗しました。コンソール（F12）のエラーを確認してください。');
       }
     });
   }
@@ -1263,9 +1305,20 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       executorName: currentUser
     };
 
+    // 送信するペイロードの構造を確認
+    console.log('【confirmApplySimulation】送信ペイロード確認');
+    console.log('  results型:', Array.isArray(payload.results) ? 'array' : typeof payload.results);
+    console.log('  results件数:', Array.isArray(payload.results) ? payload.results.length : 'N/A');
+    console.log('  適用日:', this.applyDate);
+
     this.apiService.saveSimulation(payload).subscribe({
       next: (res: any) => {
         this.lastSimulationId = res?.id || null;
+        console.log('【confirmApplySimulation】保存成功:', {
+          id: res?.id,
+          savedCount: res?.savedCount,
+          skippedCount: res?.skippedCount
+        });
         alert('本番環境に反映（保存）しました！');
         this.closeApplyModal();
         this.viewingHistoryDetail = false;
@@ -1273,14 +1326,20 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         // 内示候補データをローカルストレージに保存
         this.apiService.getAllAllocations().subscribe({
           next: (allocations: any) => {
+            console.log('【confirmApplySimulation】内示データをローカルストレージに保存:', allocations?.length || 0, '件');
             localStorage.setItem('allocations', JSON.stringify(allocations));
           },
-          error: (err) => console.error('Failed to load allocations:', err)
+          error: (err) => console.error('【confirmApplySimulation】Failed to load allocations:', err)
         });
       },
-      error: (err: any) => {
-        console.error(err);
-        alert('保存に失敗しました');
+      error: (error: any) => {
+        console.error('【配置案本番反映エラー（発令予約）】');
+        console.error('ステータスコード:', error?.status);
+        console.error('エラー内容:', error?.error);
+        console.error('詳細:', error?.message || error);
+        console.error('リクエストURL:', `${this.apiService.getConfiguredApiUrl()}/allocation/save`);
+        console.error('適用日:', this.applyDate);
+        alert('保存に失敗しました。コンソール（F12）のエラーを確認してください。');
       }
     });
   }
@@ -1320,16 +1379,30 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       executorName: currentUser
     };
 
+    // 送信するペイロードの構造を確認
+    console.log('【applySimulation】送信ペイロード確認');
+    console.log('  results型:', Array.isArray(payload.results) ? 'array' : typeof payload.results);
+    console.log('  results件数:', Array.isArray(payload.results) ? payload.results.length : 'N/A');
+
     this.apiService.saveSimulation(payload).subscribe({
       next: (res: any) => {
         this.lastSimulationId = res?.id || null;
+        console.log('【applySimulation】保存成功:', {
+          id: res?.id,
+          savedCount: res?.savedCount,
+          skippedCount: res?.skippedCount
+        });
         alert('配置案を本番環境に反映し、社員への通知が完了しました！');
         this.resetSimulation();
         this.loadDashboard();
       },
-      error: (err: any) => {
-        console.error(err);
-        alert('反映に失敗しました。サーバーが立ち上がっているか確認してください。');
+      error: (error: any) => {
+        console.error('【過去配置案本番反映エラー】');
+        console.error('ステータスコード:', error?.status);
+        console.error('エラー内容:', error?.error);
+        console.error('詳細:', error?.message || error);
+        console.error('リクエストURL:', `${this.apiService.getConfiguredApiUrl()}/allocation/save`);
+        alert('反映に失敗しました。コンソール（F12）のエラーを確認してください。');
       }
     });
   }

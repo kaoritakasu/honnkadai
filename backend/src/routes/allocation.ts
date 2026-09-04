@@ -405,6 +405,11 @@ const validateSimulateBatchPayload = (data: any): boolean => {
 // Routes
 // =========================================
 
+// 【デバッグ用】ルートが登録されているか確認するエンドポイント
+router.get('/health', (req, res) => {
+  res.json({ status: 'allocation routes registered', routes: ['/simulate', '/simulate-multi', '/simulate-batch', '/recalculate', '/save', '/me', '/my-latest-simulation'] });
+});
+
 router.post('/simulate', authenticate, isAdmin, async (req: AuthRequest, res: Response) => {
   try {
     const isAdminUser = req.user?.role === 'ADMIN';
@@ -703,8 +708,9 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
       }
     }
 
-    // リクエストから送信された従業員を処理
+    // リクエストから送信された従業員を処理（isNewフラグで新規/既存を判別）
     const enrichedEmployees = employees.map((emp: any, index: number) => {
+      const isNewEmployee = emp.isNew === true;
       const result = {
         ...emp,
         id: emp.id || emp.employeeId || `temp_${Date.now()}_${index}`,
@@ -716,11 +722,12 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
         managementForce: emp.managementForce ?? 0,
         explorationForce: emp.explorationForce ?? 0,
         developmentForce: emp.developmentForce ?? 0,
-        laborCost: emp.laborCost !== undefined && emp.laborCost !== null ? emp.laborCost : (emp.isNew ? 5.0 : 0),
+        // 新規社員の場合はデフォルト人件費5.0、既存社員の場合は指定値
+        laborCost: emp.laborCost !== undefined && emp.laborCost !== null ? emp.laborCost : (isNewEmployee ? 5.0 : 0),
         score: emp.score ?? 0,
         skills: emp.skills || [],
         isExecutiveCandidate: ((emp.managementForce || 0) >= 70 && (emp.developmentForce || 0) >= 70),
-        isNew: emp.isNew || false
+        isNew: isNewEmployee
       };
       return result;
     });
@@ -731,8 +738,11 @@ router.post('/simulate-batch', authenticate, isAdmin, async (req: AuthRequest, r
     let allEmployeesForSimulation: any[] = [];
 
     if (addOnlyMode) {
-      // 追加配置モード：新規採用候補者（isNew: true）だけを配置対象にする
-      allEmployeesForSimulation = enrichedEmployees.filter((emp: any) => emp.isNew === true);
+      // 追加配置モード：isNew=true（新規採用候補者）のみを配置対象にする
+      // これにより既存社員の配置は固定され、新規社員のみ最適配置を行う
+      const newEmployeesOnly = enrichedEmployees.filter((emp: any) => emp.isNew === true);
+      console.log(`📌 追加配置モード: 新規社員 ${newEmployeesOnly.length}件を配置対象`);
+      allEmployeesForSimulation = newEmployeesOnly;
 
       // 前回の配置済み社員も追加（ただし配置先は固定される）
       for (const [deptId, candidates] of previousAllocationsByDept.entries()) {
@@ -972,7 +982,29 @@ router.post('/recalculate', authenticate, isAdmin, async (req: AuthRequest, res:
 
 router.post('/save', authenticate, isAdmin, async (req: AuthRequest, res: Response) => {
   try {
+    console.log('=== /allocation/save リクエスト受信 ===');
+    console.log('ユーザー:', req.user?.email || 'Unknown');
+
+    // リクエストボディの構造を詳細にログ
     const results: any[] = req.body.results || [];
+    console.log('リクエストボディ:', {
+      hasResults: !!req.body.results,
+      resultsType: Array.isArray(results) ? 'array' : typeof results,
+      resultsCount: results.length,
+      totalCompanyRevenue: req.body.totalCompanyRevenue,
+      totalCompanyCost: req.body.totalCompanyCost,
+      totalCompanyProfit: req.body.totalCompanyProfit
+    });
+
+    // 各部署のcandidates数をログ
+    let totalCandidatesCount = 0;
+    results.forEach((dept: any, idx: number) => {
+      const candCount = Array.isArray(dept?.candidates) ? dept.candidates.length : 0;
+      totalCandidatesCount += candCount;
+      console.log(`  部署[${idx}]: ${dept?.departmentName} - candidates: ${candCount}件`);
+    });
+    console.log(`  合計candidates: ${totalCandidatesCount}件`);
+
     const { totalCompanyRevenue, totalCompanyCost, totalCompanyProfit } = req.body;
     const executedBy = req.user?.email || 'Unknown';
 
@@ -988,8 +1020,18 @@ router.post('/save', authenticate, isAdmin, async (req: AuthRequest, res: Respon
     });
 
     // 2. req.body.results をループし、各 candidates について以下を実行
-    for (const dept of (results as any[])) {
-      for (const cand of ((dept as any).candidates as any[])) {
+    let savedCount = 0;
+    let skippedCount = 0;
+
+    for (const dept of results) {
+      if (!dept || !Array.isArray(dept.candidates)) {
+        console.warn(`⚠️ 部署「${dept?.departmentName}」にcandidates配列がありません`);
+        continue;
+      }
+
+      for (const cand of dept.candidates) {
+        console.log(`\n📋 候補者処理: ${cand.employeeNumber} (${cand.employeeName}) - isNew: ${cand.isNew ? '✅新規' : '❌既存'}`);
+
         // 3. employeeNumber または id で Employee を検索
         let dbEmp = null;
 
@@ -1007,6 +1049,7 @@ router.post('/save', authenticate, isAdmin, async (req: AuthRequest, res: Respon
 
         // 見つかった場合、配置を処理
         if (dbEmp) {
+          console.log(`  ✓ 既存社員を検出: DB内のID=${dbEmp.id}`);
           // 4. 重複エラー（P2002）を防ぐため、その社員の過去の Allocation をすべて削除してリセット
           await prisma.allocation.deleteMany({
             where: {
@@ -1016,13 +1059,13 @@ router.post('/save', authenticate, isAdmin, async (req: AuthRequest, res: Respon
 
           // 5. prisma.allocation.create で新規作成
           const topSkill = cand.tags?.[0] || '総合的な能力';
-          const reason = `${(dept as any).departmentName}の求める要件に対し、あなたの「${topSkill}」が高く評価されました。事業部の利益への高い貢献が期待されています。`;
+          const reason = `${dept.departmentName}の求める要件に対し、あなたの「${topSkill}」が高く評価されました。事業部の利益への高い貢献が期待されています。`;
 
           await prisma.allocation.create({
             data: {
               employeeId: dbEmp.id,
-              departmentId: (dept as any).departmentId,
-              status: 'ASSIGNED',
+              departmentId: dept.departmentId,
+              status: 'PENDING',
               reason: reason,
             }
           });
@@ -1031,17 +1074,23 @@ router.post('/save', authenticate, isAdmin, async (req: AuthRequest, res: Respon
           await prisma.employee.update({
             where: { id: dbEmp.id },
             data: {
-              currentDept: (dept as any).departmentName,
+              currentDept: dept.departmentName,
               laborCost: cand.laborCost !== undefined && cand.laborCost !== null ? cand.laborCost : (dbEmp.laborCost ?? 0)
             }
           });
+
+          savedCount++;
         } else if (cand.isNew) {
+          // 新規採用候補者を作成
+          const tempEmail = `temp_${cand.employeeNumber || Date.now()}@recruiting.local`;
+          console.log(`  🆕 新規社員作成: ${cand.employeeNumber} (${cand.employeeName})`);
+
           const newEmp = await prisma.employee.create({
             data: {
               employeeNumber: cand.employeeNumber || `NEW_${Date.now()}`,
               user: {
                 create: {
-                  email: `new_${Date.now()}@temp.local`,
+                  email: tempEmail,
                   password: '',
                   name: cand.employeeName || 'New Employee',
                   role: 'EMPLOYEE'
@@ -1052,26 +1101,35 @@ router.post('/save', authenticate, isAdmin, async (req: AuthRequest, res: Respon
               explorationForce: cand.explorationForce ?? 0,
               developmentForce: cand.developmentForce ?? 0,
               laborCost: cand.laborCost !== undefined && cand.laborCost !== null ? cand.laborCost : 0,
-              currentDept: (dept as any).departmentName
+              currentDept: dept.departmentName
             }
           });
 
           const topSkill = cand.tags?.[0] || '総合的な能力';
-          const reason = `${(dept as any).departmentName}の求める要件に対し、あなたの「${topSkill}」が高く評価されました。事業部の利益への高い貢献が期待されています。`;
+          const reason = `${dept.departmentName}の求める要件に対し、あなたの「${topSkill}」が高く評価されました。事業部の利益への高い貢献が期待されています。`;
 
           await prisma.allocation.create({
             data: {
               employeeId: newEmp.id,
-              departmentId: (dept as any).departmentId,
-              status: 'ASSIGNED',
+              departmentId: dept.departmentId,
+              status: 'PENDING',
               reason: reason,
             }
           });
+
+          console.log(`  ✅ 配置作成: ${newEmp.employeeNumber} → ${dept.departmentName}`);
+          savedCount++;
+        } else {
+          skippedCount++;
+          console.warn(`⚠️ スキップ: ${cand.employeeNumber} (既存社員で検索失敗、isNew=false)`);
         }
       }
     }
 
-    res.json({ success: true, message: 'Simulation saved successfully', id: simResult.id });
+    console.log('=== /allocation/save 処理完了 ===');
+    console.log(`✅ 保存: ${savedCount}件, ⚠️ スキップ: ${skippedCount}件`);
+
+    res.json({ success: true, message: 'Simulation saved successfully', id: simResult.id, savedCount, skippedCount });
   } catch (error) {
     console.error('--- SAVE ERROR ---', error);
     res.status(500).json({ error: (error as Error).message });
@@ -1080,6 +1138,9 @@ router.post('/save', authenticate, isAdmin, async (req: AuthRequest, res: Respon
 
 router.get('/', authenticate, isAdmin, async (req: AuthRequest, res: Response) => {
   try {
+    console.log('=== GET /allocation リクエスト受信 ===');
+    console.log('ユーザー:', req.user?.email || 'Unknown');
+
     const allocations = await prisma.allocation.findMany({
       include: {
         employee: {
@@ -1090,8 +1151,16 @@ router.get('/', authenticate, isAdmin, async (req: AuthRequest, res: Response) =
       orderBy: { createdAt: 'desc' }
     });
 
+    console.log(`✅ 内示データ取得: ${allocations.length}件`);
+    if (allocations.length > 0) {
+      allocations.slice(0, 3).forEach((alloc, idx) => {
+        console.log(`  [${idx}] ${alloc.employee?.user?.name} → ${alloc.department?.name} (${alloc.status})`);
+      });
+    }
+
     res.json(allocations);
   } catch (error) {
+    console.error('--- GET /allocation ERROR ---', error);
     res.status(400).json({ error: (error as Error).message });
   }
 });
@@ -1238,6 +1307,32 @@ router.get('/my-latest-simulation', authenticate, async (req: AuthRequest, res: 
     });
   } catch (error) {
     console.error('Error fetching latest simulation:', error);
+    res.status(400).json({ error: (error as Error).message });
+  }
+});
+
+router.put('/:id', authenticate, isAdmin, async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!status || !['PENDING', 'ASSIGNED', 'REJECTED'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status value' });
+    }
+
+    const allocation = await prisma.allocation.update({
+      where: { id },
+      data: { status },
+      include: {
+        employee: {
+          include: { user: true }
+        },
+        department: true
+      }
+    });
+
+    res.json(allocation);
+  } catch (error) {
     res.status(400).json({ error: (error as Error).message });
   }
 });

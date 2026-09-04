@@ -700,4 +700,28 @@ export class MyPageComponent implements OnInit {
     ];
     return Math.round(gaps.reduce((a, b) => a + b, 0) / gaps.length);
   }
+
+  getComprehensiveAchievementRate(gapData: any): number {
+    if (!gapData || !gapData.ideal || !gapData.actual) return 0;
+    const idealTotal = gapData.ideal.salesForce + gapData.ideal.managementForce +
+                      gapData.ideal.explorationForce + gapData.ideal.developmentForce;
+    const cappedActualTotal =
+      Math.min(gapData.actual.salesForce, gapData.ideal.salesForce) +
+      Math.min(gapData.actual.managementForce, gapData.ideal.managementForce) +
+      Math.min(gapData.actual.explorationForce, gapData.ideal.explorationForce) +
+      Math.min(gapData.actual.developmentForce, gapData.ideal.developmentForce);
+    if (idealTotal === 0) return 0;
+    return Math.round((cappedActualTotal / idealTotal) * 100);
+  }
+
+  getSkillBarColor(skillName: string, gapData: any): string {
+    if (!gapData || !gapData.ideal || !gapData.actual) return '#667eea';
+    const actual = gapData.actual[skillName] || 0;
+    const ideal = gapData.ideal[skillName] || 0;
+    return actual >= ideal ? '#10b981' : '#f97316';
+  }
+
+  getSkillBarWidth(skillValue: number): number {
+    return Math.min(skillValue, 100);
+  }
 }

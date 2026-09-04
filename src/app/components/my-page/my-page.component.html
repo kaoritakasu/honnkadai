@@ -97,108 +97,59 @@
 
       <!-- スキルギャップ (現在の配属先) -->
       @if (skillGapData()) {
-        <section style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-          <h2 style="margin: 0 0 20px 0; color: #2c3e50; font-size: 1.3em; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">📊 現在の所属部署とのスキルギャップ</h2>
-          <p style="margin: 0 0 20px 0; color: #666;">現在の所属部署（<strong>{{ skillGapData()?.deptName || '未設定' }}</strong>）で求められる要件と、あなたの現在のスキルの比較です。</p>
+        <div class="bg-white shadow border border-gray-200 rounded-lg p-6 mt-6">
+          <h2 class="text-xl font-bold mb-4 border-b pb-2">📊 現在の所属部署とのスキルギャップ</h2>
 
-          <div style="margin-bottom: 20px; padding: 15px; background: #f3f4f6; border-radius: 8px; border-left: 4px solid #9ca3af;">
-            <p style="margin: 0; color: #1f2937; font-weight: bold;">平均ギャップ: <span style="font-size: 1.3em; color: #667eea;">{{ getAverageGap(skillGapData()) }}</span> 点</p>
+          <div class="bg-blue-50 text-blue-800 p-4 rounded-lg font-bold text-lg mb-6 text-center">
+            総合達成率: <span class="text-2xl">{{ getComprehensiveAchievementRate(skillGapData()) }}</span> %
           </div>
 
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- 営業力 -->
-            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #eee;">
-              <div style="font-weight: bold; color: #333; margin-bottom: 12px;">営業力</div>
-              <div style="margin-bottom: 10px;">
-                <div style="display: flex; justify-content: space-between; font-size: 0.85em; color: #666; margin-bottom: 4px;">
-                  <span>目標</span>
-                  <span>{{ skillGapData()?.ideal?.salesForce || 0 }} 点</span>
-                </div>
-                <div style="width: 100%; height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden;">
-                  <div [style.width.%]="(skillGapData()?.ideal?.salesForce || 0)" style="height: 100%; background: #95a5a6; opacity: 0.7;"></div>
-                </div>
+            <div class="bg-gray-50 p-4 rounded-lg border border-gray-100">
+              <div class="flex justify-between items-end mb-2">
+                <span class="font-bold text-gray-700">🎯 営業力</span>
+                <span class="text-sm text-gray-600">目標 {{ skillGapData()?.ideal?.salesForce || 0 }} 点 / 現在 <span class="font-bold text-blue-600 text-base">{{ skillGapData()?.actual?.salesForce || 0 }} 点</span></span>
               </div>
-              <div>
-                <div style="display: flex; justify-content: space-between; font-size: 0.85em; color: #666; margin-bottom: 4px;">
-                  <span>現在</span>
-                  <span style="font-weight: bold; color: #667eea;">{{ skillGapData()?.actual?.salesForce || 0 }} 点</span>
-                </div>
-                <div style="width: 100%; height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden;">
-                  <div [style.width.%]="(skillGapData()?.actual?.salesForce || 0)" style="height: 100%; background: #667eea;"></div>
-                </div>
+              <div class="w-full bg-gray-200 rounded-full h-3">
+                <div class="bg-blue-500 h-3 rounded-full" [style.width.%]="skillGapData()?.actual?.salesForce || 0"></div>
               </div>
             </div>
 
             <!-- 管理力 -->
-            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #eee;">
-              <div style="font-weight: bold; color: #333; margin-bottom: 12px;">管理力</div>
-              <div style="margin-bottom: 10px;">
-                <div style="display: flex; justify-content: space-between; font-size: 0.85em; color: #666; margin-bottom: 4px;">
-                  <span>目標</span>
-                  <span>{{ skillGapData()?.ideal?.managementForce || 0 }} 点</span>
-                </div>
-                <div style="width: 100%; height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden;">
-                  <div [style.width.%]="(skillGapData()?.ideal?.managementForce || 0)" style="height: 100%; background: #95a5a6; opacity: 0.7;"></div>
-                </div>
+            <div class="bg-gray-50 p-4 rounded-lg border border-gray-100">
+              <div class="flex justify-between items-end mb-2">
+                <span class="font-bold text-gray-700">📋 管理力</span>
+                <span class="text-sm text-gray-600">目標 {{ skillGapData()?.ideal?.managementForce || 0 }} 点 / 現在 <span class="font-bold text-blue-600 text-base">{{ skillGapData()?.actual?.managementForce || 0 }} 点</span></span>
               </div>
-              <div>
-                <div style="display: flex; justify-content: space-between; font-size: 0.85em; color: #666; margin-bottom: 4px;">
-                  <span>現在</span>
-                  <span style="font-weight: bold; color: #667eea;">{{ skillGapData()?.actual?.managementForce || 0 }} 点</span>
-                </div>
-                <div style="width: 100%; height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden;">
-                  <div [style.width.%]="(skillGapData()?.actual?.managementForce || 0)" style="height: 100%; background: #667eea;"></div>
-                </div>
+              <div class="w-full bg-gray-200 rounded-full h-3">
+                <div class="bg-blue-500 h-3 rounded-full" [style.width.%]="skillGapData()?.actual?.managementForce || 0"></div>
               </div>
             </div>
 
             <!-- 開拓力 -->
-            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #eee;">
-              <div style="font-weight: bold; color: #333; margin-bottom: 12px;">開拓力</div>
-              <div style="margin-bottom: 10px;">
-                <div style="display: flex; justify-content: space-between; font-size: 0.85em; color: #666; margin-bottom: 4px;">
-                  <span>目標</span>
-                  <span>{{ skillGapData()?.ideal?.explorationForce || 0 }} 点</span>
-                </div>
-                <div style="width: 100%; height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden;">
-                  <div [style.width.%]="(skillGapData()?.ideal?.explorationForce || 0)" style="height: 100%; background: #95a5a6; opacity: 0.7;"></div>
-                </div>
+            <div class="bg-gray-50 p-4 rounded-lg border border-gray-100">
+              <div class="flex justify-between items-end mb-2">
+                <span class="font-bold text-gray-700">🚀 開拓力</span>
+                <span class="text-sm text-gray-600">目標 {{ skillGapData()?.ideal?.explorationForce || 0 }} 点 / 現在 <span class="font-bold text-blue-600 text-base">{{ skillGapData()?.actual?.explorationForce || 0 }} 点</span></span>
               </div>
-              <div>
-                <div style="display: flex; justify-content: space-between; font-size: 0.85em; color: #666; margin-bottom: 4px;">
-                  <span>現在</span>
-                  <span style="font-weight: bold; color: #667eea;">{{ skillGapData()?.actual?.explorationForce || 0 }} 点</span>
-                </div>
-                <div style="width: 100%; height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden;">
-                  <div [style.width.%]="(skillGapData()?.actual?.explorationForce || 0)" style="height: 100%; background: #667eea;"></div>
-                </div>
+              <div class="w-full bg-gray-200 rounded-full h-3">
+                <div class="bg-blue-500 h-3 rounded-full" [style.width.%]="skillGapData()?.actual?.explorationForce || 0"></div>
               </div>
             </div>
 
             <!-- 育成力 -->
-            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #eee;">
-              <div style="font-weight: bold; color: #333; margin-bottom: 12px;">育成力</div>
-              <div style="margin-bottom: 10px;">
-                <div style="display: flex; justify-content: space-between; font-size: 0.85em; color: #666; margin-bottom: 4px;">
-                  <span>目標</span>
-                  <span>{{ skillGapData()?.ideal?.developmentForce || 0 }} 点</span>
-                </div>
-                <div style="width: 100%; height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden;">
-                  <div [style.width.%]="(skillGapData()?.ideal?.developmentForce || 0)" style="height: 100%; background: #95a5a6; opacity: 0.7;"></div>
-                </div>
+            <div class="bg-gray-50 p-4 rounded-lg border border-gray-100">
+              <div class="flex justify-between items-end mb-2">
+                <span class="font-bold text-gray-700">👥 育成力</span>
+                <span class="text-sm text-gray-600">目標 {{ skillGapData()?.ideal?.developmentForce || 0 }} 点 / 現在 <span class="font-bold text-blue-600 text-base">{{ skillGapData()?.actual?.developmentForce || 0 }} 点</span></span>
               </div>
-              <div>
-                <div style="display: flex; justify-content: space-between; font-size: 0.85em; color: #666; margin-bottom: 4px;">
-                  <span>現在</span>
-                  <span style="font-weight: bold; color: #667eea;">{{ skillGapData()?.actual?.developmentForce || 0 }} 点</span>
-                </div>
-                <div style="width: 100%; height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden;">
-                  <div [style.width.%]="(skillGapData()?.actual?.developmentForce || 0)" style="height: 100%; background: #667eea;"></div>
-                </div>
+              <div class="w-full bg-gray-200 rounded-full h-3">
+                <div class="bg-blue-500 h-3 rounded-full" [style.width.%]="skillGapData()?.actual?.developmentForce || 0"></div>
               </div>
             </div>
           </div>
-        </section>
+        </div>
       }
     }
 
@@ -208,14 +159,18 @@
         <div>
           <!-- 未開封状態 -->
           @if (!isNoticeRevealed) {
-            <div style="background: #fff3cd; border: 2px solid #ffeeba; border-left: 8px solid #f39c12; padding: 40px 30px; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.05); text-align: center; max-width: 600px; margin: 40px auto;">
-              <div style="font-size: 3em; margin-bottom: 15px;">📨</div>
-              <h2 style="margin: 0 0 15px 0; color: #d35400; font-size: 1.6em;">【重要】次期異動の内示について</h2>
-              <p style="margin: 0 0 30px 0; color: #856404; font-size: 1.1em; line-height: 1.6; text-align: left; background: rgba(255,255,255,0.5); padding: 15px; border-radius: 8px;">
+            <div style="background: white; border-left: 4px solid #ef4444; padding: 40px 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; max-width: 600px; margin: 40px auto;">
+              <div style="margin-bottom: 15px;">
+                <h2 style="margin: 0 0 15px 0; color: #2c3e50; font-size: 1.6em; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                  <span style="font-size: 1.5em; color: #ef4444;">📨</span>
+                  【重要】次期異動の内示について
+                </h2>
+              </div>
+              <p style="margin: 0 0 30px 0; color: #666; font-size: 1.1em; line-height: 1.6; text-align: left; background: #f3f4f6; padding: 15px; border-radius: 8px;">
                 あなたへの新しい配置案（内示）が人事部より通知されています。<br>
                 内容を確認し、必ず人事担当者との面談を予約してください。
               </p>
-              <button (click)="revealNotice()" style="background: #f39c12; color: white; padding: 15px 40px; border: none; border-radius: 30px; font-weight: bold; font-size: 1.2em; cursor: pointer; box-shadow: 0 4px 15px rgba(243, 156, 18, 0.4); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+              <button (click)="revealNotice()" style="background: #f97316; color: white; padding: 15px 40px; border: none; border-radius: 6px; font-weight: bold; font-size: 1.2em; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#ea580c'" onmouseout="this.style.background='#f97316'">
                 🔒 厳秘：内示内容を確認する
               </button>
             </div>
@@ -279,7 +234,7 @@
                     <span style="background: #e7f3ff; color: #3498db; padding: 2px 8px; border-radius: 12px; font-size: 0.8em; font-weight: bold;">予約完了</span>
                   }
                 </div>
-                <button (click)="cancelReservation(res.id)" style="padding: 6px 12px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em; font-weight: bold;">キャンセル</button>
+                <button (click)="cancelReservation(res.id)" style="padding: 6px 12px; background: white; color: #e74c3c; border: 1px solid #e74c3c; border-radius: 4px; cursor: pointer; font-size: 0.9em; font-weight: bold; transition: all 0.2s;" onmouseover="this.style.backgroundColor='#ffebee'; this.style.boxShadow='0 2px 4px rgba(231, 76, 60, 0.2)'" onmouseout="this.style.backgroundColor='white'; this.style.boxShadow='none'">キャンセル</button>
               </div>
             }
           </div>
@@ -288,6 +243,7 @@
         <p style="margin: 0 0 15px 0; color: #666;">カレンダーから希望日を選択してください。</p>
 
         <!-- カレンダー UI -->
+        @if (myReservations.length === 0) {
         <div style="border: 1px solid #eaeaea; border-radius: 8px; overflow: hidden;">
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f8f9fa; border-bottom: 1px solid #eaeaea;">
             <button (click)="previousMonth()" style="padding: 8px 15px; background: white; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-weight: bold;">← 前月</button>
@@ -310,9 +266,7 @@
                       {{ dayCell.dayOfMonth }}
                     </div>
 
-                    @if (isDateUnavailable(dayCell.date)) {
-                      <div style="font-size: 0.75em; color: #999; text-align: center; margin-top: 10px; font-weight: bold; background: #f3f4f6; padding: 4px 8px; border-radius: 4px;">✕ 不可</div>
-                    } @else {
+                    @if (!isDateUnavailable(dayCell.date)) {
                       <div style="font-size: 0.8em; color: #2563eb; text-align: center; margin-top: 10px; font-weight: bold; background: #eff6ff; padding: 6px 8px; border-radius: 4px; cursor: pointer; transition: all 0.2s; border: 1px solid #93c5fd;" onmouseover="this.style.backgroundColor='#dbeafe'; this.style.boxShadow='0 2px 4px rgba(37, 99, 235, 0.2)'" onmouseout="this.style.backgroundColor='#eff6ff'; this.style.boxShadow='none'">＋ 予約可</div>
                     }
                   }
@@ -321,6 +275,11 @@
             }
           </div>
         </div>
+        } @else {
+        <div style="background: #fff3cd; border: 1px solid #ffc107; padding: 20px; border-radius: 8px; text-align: center; color: #856404;">
+          <p style="margin: 0; font-weight: bold; font-size: 1.05em;">※日程を変更する場合は、現在の予約をキャンセルしてから再度選択してください。</p>
+        </div>
+        }
       </section>
 
       <!-- 人事相談セクション -->
