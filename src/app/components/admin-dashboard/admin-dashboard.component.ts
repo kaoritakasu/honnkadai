@@ -55,7 +55,6 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   employeeSortKey: string = 'employeeNumber';
   simulationSortKey: string = 'employeeNumber';
   simulationMode: 'balanced' | 'sales_focus' | 'tech_focus' | 'management_focus' = 'balanced';
-  viewMode: 'tree' | 'dnd' = 'dnd';
   viewingHistoryDetail: boolean = false;
 
   // 人事権限判定
@@ -1249,23 +1248,41 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // シミュレーション結果を「異動候補」として追加
-    const newTransfers = [...this.pendingTransfers()];
-    newTransfers.push({
-      id: Date.now(),
-      employeeNumber: 'NEW',
-      employeeName: 'シミュレーション対象者',
-      fromDept: '-',
-      toDept: 'シミュレーション先',
-      applyDate: this.applyDate,
-      status: 'pending',
-      memo: this.applyMemo || 'シミュレーション結果からの自動追加'
-    });
-    this.pendingTransfers.set(newTransfers);
+    const summary = this.simulationSummary();
+    const totalCompanyCost = Array.isArray(this.simulationResults())
+      ? this.simulationResults().reduce((sum: number, result: any) => sum + (result.cost || 0), 0)
+      : (this.simulationResults().cost || 0);
 
-    alert(`【予約完了】\n配置案を「異動候補（未公開）」として保存しました。\n人事ダッシュボードの「異動候補・内示管理」から面談と確定処理を行ってください。`);
-    this.closeApplyModal();
-    this.viewingHistoryDetail = false;
+    const currentUser = this.getCurrentUserName();
+
+    const payload = {
+      results: this.simulationResults(),
+      totalCompanyRevenue: summary ? summary.totalCompanyRevenue : 0,
+      totalCompanyCost: totalCompanyCost,
+      totalCompanyProfit: summary ? summary.totalCompanyProfit : 0,
+      executorName: currentUser
+    };
+
+    this.apiService.saveSimulation(payload).subscribe({
+      next: (res: any) => {
+        this.lastSimulationId = res?.id || null;
+        alert('本番環境に反映（保存）しました！');
+        this.closeApplyModal();
+        this.viewingHistoryDetail = false;
+        this.loadDashboard();
+        // 内示候補データをローカルストレージに保存
+        this.apiService.getAllAllocations().subscribe({
+          next: (allocations: any) => {
+            localStorage.setItem('allocations', JSON.stringify(allocations));
+          },
+          error: (err) => console.error('Failed to load allocations:', err)
+        });
+      },
+      error: (err: any) => {
+        console.error(err);
+        alert('保存に失敗しました');
+      }
+    });
   }
 
   approveTransfer(transfer: any) {
@@ -1718,22 +1735,6 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     return { ...averages, employeeCount: count, averageSkill, maxSkill };
   }
 
-  // 管理力と育成力の合計が最も高い社員をリーダーとして取得
-  getDepartmentLeader(candidates: any[]): any {
-    if (!candidates || candidates.length === 0) return null;
-    return candidates.reduce((prev, current) => {
-      const prevScore = (Number(prev.managementForce) || 0) + (Number(prev.developmentForce) || 0);
-      const currScore = (Number(current.managementForce) || 0) + (Number(current.developmentForce) || 0);
-      return (prevScore > currScore) ? prev : current;
-    });
-  }
-
-  // リーダー以外のメンバーを取得
-  getDepartmentMembers(candidates: any[], leader: any): any[] {
-    if (!candidates || candidates.length === 0) return [];
-    if (!leader) return candidates;
-    return candidates.filter(c => c.employeeNumber !== leader.employeeNumber);
-  }
 
   getSkillGapData(dept: any): any {
     const averages = this.getDepartmentSkillAverages(dept.name);
@@ -1904,7 +1905,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     });
     this.updateDropListIds();
 
-    alert('新しい配置案をツリー図に反映しました！「新規採用候補」がどの部署に最適配置されたか確認できます。');
+    alert('新しい配置案を反映しました！「新規採用候補」がどの部署に最適配置されたか確認できます。');
     this.hiringSimulationResult = null;
     this.pendingNewHires = null;
   }
@@ -2151,7 +2152,6 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
           this.simulationSummary.set(null);
         }
         this.loading.set(false);
-        this.viewMode = 'tree';
         this.newCandidates = [];
       },
       error: (error: any) => {
