@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, BehaviorSubject, throwError } from 'rxjs';
+import { Observable, BehaviorSubject, throwError, timeout } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
@@ -176,7 +176,13 @@ export class ApiService {
   }
 
   getAllAllocations(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/allocation`, { headers: this.getHeaders() });
+    return this.http.get<any[]>(`${this.apiUrl}/allocation`, { headers: this.getHeaders() }).pipe(
+      timeout(15000),
+      catchError(err => {
+        console.error('getAllAllocations error:', err);
+        return throwError(() => err);
+      })
+    );
   }
 
   updateAllocationStatus(id: string, status: 'PENDING' | 'ASSIGNED' | 'REJECTED'): Observable<any> {

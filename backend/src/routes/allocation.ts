@@ -1140,18 +1140,36 @@ router.get('/', authenticate, isAdmin, async (req: AuthRequest, res: Response) =
   try {
     console.log('=== GET /allocation リクエスト受信 ===');
     console.log('ユーザー:', req.user?.email || 'Unknown');
+    const startTime = Date.now();
 
     const allocations = await prisma.allocation.findMany({
       include: {
         employee: {
-          include: { user: true }
+          select: {
+            id: true,
+            employeeNumber: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            }
+          }
         },
-        department: true
+        department: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
+      take: 500
     });
 
-    console.log(`✅ 内示データ取得: ${allocations.length}件`);
+    const duration = Date.now() - startTime;
+    console.log(`✅ 内示データ取得: ${allocations.length}件 (${duration}ms)`);
     if (allocations.length > 0) {
       allocations.slice(0, 3).forEach((alloc, idx) => {
         console.log(`  [${idx}] ${alloc.employee?.user?.name} → ${alloc.department?.name} (${alloc.status})`);

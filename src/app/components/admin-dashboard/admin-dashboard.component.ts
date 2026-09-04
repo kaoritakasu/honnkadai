@@ -1174,6 +1174,22 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     this.selectedEmployeeNode.set(null);
   }
 
+  private ensureIsNewFlag(results: any): any {
+    if (!results) return results;
+    const isArray = Array.isArray(results);
+    const resultsArray = isArray ? results : [results];
+
+    const processedArray = resultsArray.map((dept: any) => ({
+      ...dept,
+      candidates: (dept.candidates || []).map((cand: any) => ({
+        ...cand,
+        isNew: cand.isNew || (typeof cand.employeeId === 'string' && cand.employeeId.startsWith('NEW_'))
+      }))
+    }));
+
+    return isArray ? processedArray : processedArray[0];
+  }
+
   saveSimulation() {
     if (!confirm('現在の配置案を確定し、社員のマイページに通知します。よろしいですか？')) return;
 
@@ -1185,7 +1201,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     const currentUser = this.getCurrentUserName();
 
     const payload = {
-      results: this.simulationResults(),
+      results: this.ensureIsNewFlag(this.simulationResults()),
       totalCompanyRevenue: summary ? summary.totalCompanyRevenue : 0,
       totalCompanyCost: totalCompanyCost,
       totalCompanyProfit: summary ? summary.totalCompanyProfit : 0,
@@ -1235,7 +1251,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     const currentUser = this.getCurrentUserName();
 
     const payload = {
-      results: this.simulationResults(),
+      results: this.ensureIsNewFlag(this.simulationResults()),
       totalCompanyRevenue: summary ? summary.totalCompanyRevenue : 0,
       totalCompanyCost: totalCompanyCost,
       totalCompanyProfit: summary ? summary.totalCompanyProfit : 0,
@@ -1298,7 +1314,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     const currentUser = this.getCurrentUserName();
 
     const payload = {
-      results: this.simulationResults(),
+      results: this.ensureIsNewFlag(this.simulationResults()),
       totalCompanyRevenue: summary ? summary.totalCompanyRevenue : 0,
       totalCompanyCost: totalCompanyCost,
       totalCompanyProfit: summary ? summary.totalCompanyProfit : 0,
@@ -1372,7 +1388,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     const currentUser = this.getCurrentUserName();
 
     const payload = {
-      results: this.simulationResults(),
+      results: this.ensureIsNewFlag(this.simulationResults()),
       totalCompanyRevenue: summary ? summary.totalCompanyRevenue : 0,
       totalCompanyCost: totalCompanyCost,
       totalCompanyProfit: summary ? summary.totalCompanyProfit : 0,
