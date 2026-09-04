@@ -53,7 +53,7 @@
     <!-- TAB: プロフィール -->
     @if (activeTab() === 'profile') {
       <section style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 30px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #f0f4ff; padding-bottom: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">
           <h2 style="margin: 0; font-size: 1.3em; color: #2c3e50;">🌟 キャリア希望・働き方</h2>
           <button (click)="isEditing = !isEditing" style="padding: 8px 16px; background: #f8f9fa; color: #2c3e50; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; font-weight: bold;">
             {{ isEditing ? 'キャンセル' : '✏️ 編集する' }}
@@ -98,11 +98,11 @@
       <!-- スキルギャップ (現在の配属先) -->
       @if (skillGapData()) {
         <section style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-          <h2 style="margin: 0 0 20px 0; color: #2c3e50; font-size: 1.3em; border-bottom: 2px solid #f0f4ff; padding-bottom: 10px;">📊 現在の所属部署とのスキルギャップ</h2>
+          <h2 style="margin: 0 0 20px 0; color: #2c3e50; font-size: 1.3em; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">📊 現在の所属部署とのスキルギャップ</h2>
           <p style="margin: 0 0 20px 0; color: #666;">現在の所属部署（<strong>{{ skillGapData()?.deptName || '未設定' }}</strong>）で求められる要件と、あなたの現在のスキルの比較です。</p>
 
-          <div style="margin-bottom: 20px; padding: 15px; background: #f0f4ff; border-radius: 8px; border-left: 4px solid #667eea;">
-            <p style="margin: 0; color: #333; font-weight: bold;">平均ギャップ: <span style="font-size: 1.3em; color: #667eea;">{{ getAverageGap(skillGapData()) }}</span> 点</p>
+          <div style="margin-bottom: 20px; padding: 15px; background: #f3f4f6; border-radius: 8px; border-left: 4px solid #9ca3af;">
+            <p style="margin: 0; color: #1f2937; font-weight: bold;">平均ギャップ: <span style="font-size: 1.3em; color: #667eea;">{{ getAverageGap(skillGapData()) }}</span> 点</p>
           </div>
 
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
@@ -222,28 +222,28 @@
           }
           <!-- 開封済み状態 -->
           @else {
-            <div style="background: white; border: 2px solid #667eea; padding: 30px; border-radius: 12px; box-shadow: 0 8px 20px rgba(102, 126, 234, 0.15);">
-              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f0f4ff; padding-bottom: 15px; margin-bottom: 25px;">
+            <div style="background: white; border: 2px solid #d1d5db; padding: 30px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e5e7eb; padding-bottom: 15px; margin-bottom: 25px;">
                 <h2 style="margin: 0; color: #2c3e50; font-size: 1.5em; display: flex; align-items: center; gap: 10px;">📄 次期配置案（内示）</h2>
                 <span style="background: #e74c3c; color: white; padding: 6px 16px; border-radius: 20px; font-size: 0.9em; font-weight: bold; box-shadow: 0 2px 4px rgba(231,76,60,0.3);">面談必須</span>
               </div>
 
-              <div style="margin-bottom: 30px; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); padding: 30px; border-radius: 12px; text-align: center; border: 1px solid #e2e8f0;">
-                <p style="margin: 0 0 10px 0; color: #475569; font-weight: bold; font-size: 1.1em;">予定配属先</p>
-                <p style="margin: 0; font-size: 2.5em; color: #1e293b; font-weight: bold; text-shadow: 1px 1px 2px rgba(255,255,255,0.8);">{{ simulationSkillGapData?.deptName || allocations()[0]?.department?.name || '未定' }}</p>
+              <div style="margin-bottom: 30px; background: #f3f4f6; padding: 30px; border-radius: 12px; text-align: center; border: 1px solid #e5e7eb;">
+                <p style="margin: 0 0 10px 0; color: #6b7280; font-weight: bold; font-size: 1.1em;">予定配属先</p>
+                <p style="margin: 0; font-size: 2.5em; color: #1f2937; font-weight: bold;">{{ simulationSkillGapData?.deptName || allocations()[0]?.department?.name || '未定' }}</p>
               </div>
 
               <div style="margin-bottom: 30px;">
                 <h3 style="margin: 0 0 12px 0; color: #2c3e50; font-size: 1.2em; display: flex; align-items: center; gap: 8px;">💡 システムによる推薦理由</h3>
-                <div style="color: #166534; line-height: 1.7; background: #f0fdf4; padding: 20px; border-radius: 8px; border-left: 4px solid #27ae60; font-size: 1.05em;">
+                <div style="color: #4b5563; line-height: 1.7; background: #f3f4f6; padding: 20px; border-radius: 8px; border-left: 4px solid #9ca3af; font-size: 1.05em;">
                   <strong>{{ simulationSkillGapData?.deptName || allocations()[0]?.department?.name }}</strong> の求める要件に対し、あなたのスキルバランスが高く評価されました。<br>
                   事業部の成長への大きな貢献と、あなた自身の今後のキャリアアップが期待されています。
                 </div>
               </div>
 
               <!-- 面談誘導アクション -->
-              <div style="background: #fff8f0; padding: 25px; border-radius: 12px; text-align: center; border: 2px dashed #f39c12;">
-                <p style="margin: 0 0 20px 0; color: #b9770e; font-weight: bold; font-size: 1.1em; line-height: 1.5;">
+              <div style="background: #f3f4f6; padding: 25px; border-radius: 12px; text-align: center; border: 1px solid #d1d5db;">
+                <p style="margin: 0 0 20px 0; color: #4b5563; font-weight: bold; font-size: 1.1em; line-height: 1.5;">
                   この配置案について、人事担当者と面談を行って最終決定します。<br>以下のボタンから、速やかに面談枠を予約してください。
                 </p>
                 <button (click)="goToReservation()" style="background: #e67e22; color: white; padding: 15px 40px; border: none; border-radius: 30px; font-weight: bold; font-size: 1.2em; cursor: pointer; box-shadow: 0 4px 10px rgba(230, 126, 34, 0.3); transition: all 0.2s;" onmouseover="this.style.background='#d35400'" onmouseout="this.style.background='#e67e22'">
@@ -266,7 +266,7 @@
     @if (activeTab() === 'consultation') {
       <!-- 面談予約セクション -->
       <section style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 30px;">
-        <h2 style="margin: 0 0 20px 0; color: #2c3e50; font-size: 1.3em; border-bottom: 2px solid #f0f4ff; padding-bottom: 10px;">📅 人事との面談予約</h2>
+        <h2 style="margin: 0 0 20px 0; color: #2c3e50; font-size: 1.3em; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">📅 人事との面談予約</h2>
 
         @if (myReservations.length > 0) {
           <div style="margin-bottom: 25px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 15px; border-radius: 8px;">
@@ -311,9 +311,9 @@
                     </div>
 
                     @if (isDateUnavailable(dayCell.date)) {
-                      <div style="font-size: 0.75em; color: #e74c3c; text-align: center; margin-top: 10px; font-weight: bold;">✕ 不可</div>
+                      <div style="font-size: 0.75em; color: #999; text-align: center; margin-top: 10px; font-weight: bold; background: #f3f4f6; padding: 4px 8px; border-radius: 4px;">✕ 不可</div>
                     } @else {
-                      <div style="font-size: 0.8em; color: #3498db; text-align: center; margin-top: 10px; font-weight: bold; background: #e7f3ff; padding: 4px; border-radius: 4px;">＋ 予約可</div>
+                      <div style="font-size: 0.8em; color: #2563eb; text-align: center; margin-top: 10px; font-weight: bold; background: #eff6ff; padding: 6px 8px; border-radius: 4px; cursor: pointer; transition: all 0.2s; border: 1px solid #93c5fd;" onmouseover="this.style.backgroundColor='#dbeafe'; this.style.boxShadow='0 2px 4px rgba(37, 99, 235, 0.2)'" onmouseout="this.style.backgroundColor='#eff6ff'; this.style.boxShadow='none'">＋ 予約可</div>
                     }
                   }
                 </div>
@@ -325,7 +325,7 @@
 
       <!-- 人事相談セクション -->
       <section style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #f0f4ff; padding-bottom: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">
           <h2 style="margin: 0; color: #2c3e50; font-size: 1.3em;">💬 人事へのテキスト相談</h2>
           <button (click)="showConsultationForm = !showConsultationForm" style="padding: 6px 16px; background: #9b59b6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
             {{ showConsultationForm ? '閉じる' : '＋ 新規相談を作成' }}
@@ -354,7 +354,7 @@
         <div>
           <h3 style="margin: 0 0 15px 0; font-size: 1.05em; color: #555;">過去の相談履歴</h3>
           @if (myConsultations().length === 0) {
-            <p style="color: #999; text-align: center; padding: 20px; background: #f9f9f9; border-radius: 4px;">相談履歴はありません</p>
+            <div style="background: #f3f4f6; color: #6b7280; padding: 30px; border-radius: 8px; text-align: center; border: 1px solid #e5e7eb;">相談履歴はありません</div>
           } @else {
             <div style="display: grid; gap: 15px;">
               @for (consultation of myConsultations(); track consultation.id) {

@@ -1,10 +1,12 @@
-import { Component, signal, OnInit, HostListener } from '@angular/core';
+import { Component, signal, OnInit, HostListener, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute, NavigationEnd } from '@angular/router';
 import { ApiService } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
 import { CdkDragDrop, moveItemInArray, transferArrayItem, DragDropModule } from '@angular/cdk/drag-drop';
+import { filter, Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -13,7 +15,8 @@ import { CdkDragDrop, moveItemInArray, transferArrayItem, DragDropModule } from 
   templateUrl: './admin-dashboard.component.html',
   styleUrl: './admin-dashboard.component.scss'
 })
-export class AdminDashboardComponent implements OnInit {
+export class AdminDashboardComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
   private toLocalDateString(date: Date): string {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -131,7 +134,8 @@ export class AdminDashboardComponent implements OnInit {
   constructor(
     private apiService: ApiService,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private activatedRoute: ActivatedRoute
   ) {}
 
   ngOnInit() {
@@ -158,6 +162,43 @@ export class AdminDashboardComponent implements OnInit {
       this.loadAvailabilityExceptions();
       this.loadConsultations();
     }
+
+    this.setupRouteListener();
+    this.handleInitialRoute();
+  }
+
+  private setupRouteListener() {
+    this.router.events
+      .pipe(
+        filter(event => event instanceof NavigationEnd),
+        takeUntil(this.destroy$)
+      )
+      .subscribe(() => {
+        this.handleRouteChange();
+      });
+  }
+
+  private handleInitialRoute() {
+    this.handleRouteChange();
+  }
+
+  private handleRouteChange() {
+    const currentPath = this.router.url;
+    this.activeTab.set('hr-management');
+    this.showReservationCalendar = false;
+    this.showConsultations = false;
+
+    if (currentPath.includes('/admin/reservations')) {
+      this.showReservationCalendar = true;
+    } else if (currentPath.includes('/admin/consultations')) {
+      this.showConsultations = true;
+    } else if (currentPath.includes('/admin/naiji')) {
+    }
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   // トラックパッドやマウスホイールでの意図しない数値変更を防ぐ
@@ -183,6 +224,18 @@ export class AdminDashboardComponent implements OnInit {
 
   toggleConsultations() {
     this.showConsultations = !this.showConsultations;
+  }
+
+  navigateToReservations() {
+    this.router.navigate(['/admin/reservations']);
+  }
+
+  navigateToConsultations() {
+    this.router.navigate(['/admin/consultations']);
+  }
+
+  navigateToNaiji() {
+    this.router.navigate(['/admin/naiji']);
   }
 
   loadAllReservations() {

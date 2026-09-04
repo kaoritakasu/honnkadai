@@ -42,6 +42,8 @@ export class MyPageComponent implements OnInit {
   activeTab = signal<'profile' | 'allocations' | 'consultation'>('profile');
   isNoticeRevealed = false;
 
+  private noticeRevealedKey = 'noticeRevealed';
+
   // Consultation form
   showConsultationForm = false;
   consultationTitle = '';
@@ -91,6 +93,7 @@ export class MyPageComponent implements OnInit {
 
   ngOnInit() {
     this.authService.currentUser$.subscribe((u: any) => this.user = u);
+    this.loadNoticeRevealedState();
     this.loadAssignmentDetails();
     this.loadDepartments();
     this.loadMyAllocations();
@@ -610,7 +613,17 @@ export class MyPageComponent implements OnInit {
   revealNotice() {
     if (confirm('次期異動の内示内容を確認しますか？\n※確認後、必ず人事との面談予約を行ってください。')) {
       this.isNoticeRevealed = true;
+      this.saveNoticeRevealedState();
     }
+  }
+
+  private loadNoticeRevealedState() {
+    const saved = localStorage.getItem(this.noticeRevealedKey);
+    this.isNoticeRevealed = saved === 'true';
+  }
+
+  private saveNoticeRevealedState() {
+    localStorage.setItem(this.noticeRevealedKey, String(this.isNoticeRevealed));
   }
 
   goToReservation() {

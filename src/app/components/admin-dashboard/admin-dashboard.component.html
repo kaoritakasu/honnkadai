@@ -16,7 +16,10 @@
       <!-- 通知ベルアイコン（ドロップダウン対応） -->
       <div style="position: relative;">
         <div style="display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; cursor: pointer;" title="未対応タスク" (click)="toggleNotificationMenu()">
-          <span style="font-size: 24px;">🔔</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+          </svg>
           @if (pendingNotificationCount > 0) {
             <div style="position: absolute; top: -4px; right: -4px; background: #e74c3c; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); border: 2px solid white;">
               {{ pendingNotificationCount }}
@@ -29,7 +32,13 @@
           <div style="position: absolute; top: 100%; right: 0; margin-top: 8px; background: white; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.15); border: 1px solid #e0e0e0; width: 320px; z-index: 1000; min-width: 280px;">
             <!-- ヘッダー -->
             <div style="padding: 16px; border-bottom: 1px solid #e0e0e0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px 8px 0 0;">
-              <h3 style="margin: 0; color: white; font-size: 1em; font-weight: bold;">📬 通知</h3>
+              <h3 style="margin: 0; color: white; font-size: 1em; font-weight: bold; display: flex; align-items: center; gap: 6px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                  <path d="M4 6l8 5 8-5" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+                通知
+              </h3>
               <p style="margin: 4px 0 0 0; color: rgba(255,255,255,0.9); font-size: 0.85em;">{{ pendingNotificationCount }}件の対応待ち</p>
             </div>
 
@@ -38,7 +47,9 @@
               <!-- 人事相談 -->
               <div style="border-bottom: 1px solid #f0f0f0; padding: 0;">
                 <button (click)="openNotificationConsultations()" style="width: 100%; text-align: left; padding: 12px 16px; background: none; border: none; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: background-color 0.2s; font-size: 0.95em;">
-                  <span style="font-size: 1.3em;">💬</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle; flex-shrink: 0;">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                  </svg>
                   <div style="flex: 1;">
                     <p style="margin: 0; font-weight: 600; color: #2c3e50;">未返信の人事相談</p>
                     <p style="margin: 4px 0 0 0; color: #27ae60; font-weight: bold; font-size: 0.9em;">{{ pendingConsultationsCount }}件</p>
@@ -49,7 +60,12 @@
               <!-- 面談予約 -->
               <div style="border-bottom: 1px solid #f0f0f0; padding: 0;">
                 <button (click)="openNotificationReservations()" style="width: 100%; text-align: left; padding: 12px 16px; background: none; border: none; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: background-color 0.2s; font-size: 0.95em;">
-                  <span style="font-size: 1.3em;">📅</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle; flex-shrink: 0;">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
                   <div style="flex: 1;">
                     <p style="margin: 0; font-weight: 600; color: #2c3e50;">新しい面談予約</p>
                     <p style="margin: 4px 0 0 0; color: #3498db; font-weight: bold; font-size: 0.9em;">{{ upcomingReservationsCount }}件</p>
@@ -279,7 +295,12 @@
 
                   <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
                     <h4 style="margin: 0 0 15px 0; display: flex; align-items: center; gap: 8px; color: #2c3e50;">
-                      📊 組織の平均スキルバランス
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="2" x2="12" y2="22"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h.5"></path>
+                        <path d="M17 12H9.5a3.5 3.5 0 0 0 0 7H17"></path>
+                      </svg>
+                      組織の平均スキルバランス
                     </h4>
                     @if (getDepartmentSkillAverages(dept.name).employeeCount > 0) {
                       <div style="background: #ffffff; padding: 15px; border-radius: 8px; border: 1px solid #e8e8e8;">
@@ -325,7 +346,11 @@
                   <!-- スキルギャップ比較グラフセクション -->
                   <div style="margin-top: 25px; padding-top: 25px; border-top: 1px solid #eee;">
                     <h4 style="margin: 0 0 15px 0; display: flex; align-items: center; gap: 8px; color: #2c3e50;">
-                      📈 スキルギャップ比較グラフ
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                        <polyline points="17 6 23 6 23 12"></polyline>
+                      </svg>
+                      スキルギャップ比較グラフ
                     </h4>
                     @if (getSkillGapData(dept).employeeCount > 0) {
                       <div style="background: #ffffff; padding: 15px; border-radius: 8px; border: 1px solid #e8e8e8;">
@@ -344,7 +369,15 @@
                               <!-- 理想値（要件）のバー -->
                               <div style="margin-bottom: 15px;">
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                                  <span style="font-size: 0.85em; color: #666; font-weight: 500;">📋 要件比率</span>
+                                  <span style="font-size: 0.85em; color: #666; font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                      <polyline points="8 6 8 4 16 4 16 6"></polyline>
+                                      <rect x="3" y="2" width="18" height="20" rx="2"></rect>
+                                      <line x1="11" y1="11" x2="17" y2="11"></line>
+                                      <line x1="11" y1="15" x2="17" y2="15"></line>
+                                    </svg>
+                                    要件比率
+                                  </span>
                                   <span style="font-weight: bold; color: #555; font-size: 0.9em;">{{ idealValue }}%</span>
                                 </div>
                                 <div style="width: 100%; height: 20px; background-color: #e8e8e8; border-radius: 4px; overflow: hidden;">
@@ -355,7 +388,15 @@
                               <!-- 実際の値（配置メンバー）のバー -->
                               <div>
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                                  <span style="font-size: 0.85em; color: #666; font-weight: 500;">👥 実際の割合</span>
+                                  <span style="font-size: 0.85em; color: #666; font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                      <circle cx="9" cy="7" r="4"></circle>
+                                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                    </svg>
+                                    実際の割合
+                                  </span>
                                   <span style="font-weight: bold; color: #555; font-size: 0.9em;">{{ actualValue }}%</span>
                                 </div>
                                 <div style="width: 100%; height: 20px; background-color: #e8e8e8; border-radius: 4px; overflow: hidden;">
@@ -367,9 +408,21 @@
                               @let gap = idealValue - actualValue;
                               <div style="margin-top: 10px; padding: 8px; background: white; border-radius: 4px; text-align: center; border: 1px solid #ddd;">
                                 @if (gap > 0) {
-                                  <span style="font-size: 0.8em; color: #e74c3c; font-weight: bold;">⚠️ 不足: {{ gap }}%</span>
+                                  <span style="font-size: 0.8em; color: #e74c3c; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2">
+                                      <circle cx="12" cy="12" r="10"></circle>
+                                      <line x1="12" y1="8" x2="12" y2="12"></line>
+                                      <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                    </svg>
+                                    不足: {{ gap }}%
+                                  </span>
                                 } @else if (gap < 0) {
-                                  <span style="font-size: 0.8em; color: #27ae60; font-weight: bold;">✓ 過剰: {{ Math.abs(gap) }}%</span>
+                                  <span style="font-size: 0.8em; color: #27ae60; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                      <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                    過剰: {{ Math.abs(gap) }}%
+                                  </span>
                                 } @else {
                                   <span style="font-size: 0.8em; color: #f39c12; font-weight: bold;">= 均衡</span>
                                 }
@@ -380,7 +433,15 @@
 
                         <!-- ギャップサマリー -->
                         <div style="margin-top: 20px; padding: 15px; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); border-radius: 8px; border-left: 4px solid #667eea;">
-                          <h5 style="margin: 0 0 10px 0; color: #2c3e50; font-size: 0.95em;">📊 ギャップ分析サマリー</h5>
+                          <h5 style="margin: 0 0 10px 0; color: #2c3e50; font-size: 0.95em; display: flex; align-items: center; gap: 6px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                              <rect x="3" y="3" width="7" height="7"></rect>
+                              <rect x="14" y="3" width="7" height="7"></rect>
+                              <rect x="14" y="14" width="7" height="7"></rect>
+                              <rect x="3" y="14" width="7" height="7"></rect>
+                            </svg>
+                            ギャップ分析サマリー
+                          </h5>
                           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; font-size: 0.85em;">
                             <div style="background: white; padding: 10px; border-radius: 4px;">
                               <p style="margin: 0 0 4px 0; color: #666;">配置人数</p>
@@ -447,8 +508,11 @@
                       <td style="padding: 12px; text-align: right; border-right: 1px solid #eee;">¥{{ history.totalCost | number }}</td>
                       <td style="padding: 12px; text-align: right; border-right: 1px solid #eee;">¥{{ history.totalProfit | number }}</td>
                       <td style="padding: 12px; text-align: center;">
-                        <button (click)="loadHistoryDetail(history)" class="btn-history-detail" style="padding: 6px 16px; background-color: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s; white-space: nowrap;">
-                          👀 詳細を見る
+                        <button (click)="loadHistoryDetail(history)" class="btn-history-detail" style="padding: 6px 16px; background-color: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                          </svg>詳細を見る
                         </button>
                       </td>
                     </tr>
@@ -492,7 +556,14 @@
 
           <!-- 🎯 経営戦略（シミュレーションモード）セクション -->
           <div class="form-group" style="margin-top: 20px; padding: 20px; background-color: #fff8f0; border-radius: 8px; border-left: 4px solid #f39c12;">
-            <label style="display: block; font-weight: bold; margin-bottom: 3px; color: #333; font-size: 1.05em;">🎯 経営戦略（シミュレーションモード）</label>
+            <label style="display: block; font-weight: bold; margin-bottom: 3px; color: #333; font-size: 1.05em; display: flex; align-items: center; gap: 6px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="13" r="8"></circle>
+                <path d="M12 9v8"></path>
+                <path d="M9 12h6"></path>
+              </svg>
+              経営戦略（シミュレーションモード）
+            </label>
             <p style="margin: 0 0 15px 0; font-size: 0.9em; color: #666;">シミュレーションに適用する経営戦略を選択してください。選択した戦略に応じてアルゴリズムの重み付けが動的に変わります。</p>
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
@@ -505,7 +576,13 @@
                 [style.border]="simulationMode === 'balanced' ? '2px solid #667eea' : '2px solid #ddd'"
                 style="padding: 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: left; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"
               >
-                <p style="margin: 0 0 4px 0; font-weight: bold; font-size: 1em;">⚖️ 全社売上最大化</p>
+                <p style="margin: 0 0 4px 0; font-weight: bold; font-size: 1em; display: flex; align-items: center; gap: 6px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 5v14M5 12h14"></path>
+                    <circle cx="12" cy="12" r="9"></circle>
+                  </svg>
+                  全社売上最大化
+                </p>
                 <p style="margin: 0; font-size: 0.85em; opacity: 0.8;">すべてのスキルを均等に評価</p>
               </button>
 
@@ -518,7 +595,15 @@
                 [style.border]="simulationMode === 'management_focus' ? '2px solid #3498db' : '2px solid #ddd'"
                 style="padding: 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: left; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"
               >
-                <p style="margin: 0 0 4px 0; font-weight: bold; font-size: 1em;">👔 管理体制強化</p>
+                <p style="margin: 0 0 4px 0; font-weight: bold; font-size: 1em; display: flex; align-items: center; gap: 6px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                  </svg>
+                  管理体制強化
+                </p>
                 <p style="margin: 0; font-size: 0.85em; opacity: 0.8;">飽和事業の売上最大化</p>
               </button>
 
@@ -531,7 +616,15 @@
                 [style.border]="simulationMode === 'sales_focus' ? '2px solid #f39c12' : '2px solid #ddd'"
                 style="padding: 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: left; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"
               >
-                <p style="margin: 0 0 4px 0; font-weight: bold; font-size: 1em;">🚀 営業・開拓特化</p>
+                <p style="margin: 0 0 4px 0; font-weight: bold; font-size: 1em; display: flex; align-items: center; gap: 6px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4.5 16.5c-1.5-1.5-2-4-2-4L16 2l0 0c0 0 2.5.5 4 2s2 4 2 4L4.5 16.5z"></path>
+                    <polyline points="15 6 12 9"></polyline>
+                    <line x1="9" y1="20" x2="5" y2="20"></line>
+                    <line x1="12" y1="20" x2="12" y2="23"></line>
+                  </svg>
+                  営業・開拓特化
+                </p>
                 <p style="margin: 0; font-size: 0.85em; opacity: 0.8;">成長事業の利益最大化</p>
               </button>
 
@@ -544,7 +637,14 @@
                 [style.border]="simulationMode === 'tech_focus' ? '2px solid #27ae60' : '2px solid #ddd'"
                 style="padding: 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: left; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"
               >
-                <p style="margin: 0 0 4px 0; font-weight: bold; font-size: 1em;">🎓 育成・技術投資</p>
+                <p style="margin: 0 0 4px 0; font-weight: bold; font-size: 1em; display: flex; align-items: center; gap: 6px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 10v6M2 10v6M6 4h12v5H6z"></path>
+                    <path d="M9 9v.01"></path>
+                    <path d="M15 9v.01"></path>
+                  </svg>
+                  育成・技術投資
+                </p>
                 <p style="margin: 0; font-size: 0.85em; opacity: 0.8;">新規事業の売上最大化</p>
               </button>
 
@@ -557,7 +657,15 @@
           <!-- 📋 テキストデータから直接シミュレーション -->
           <!-- ============================================== -->
           <div class="form-group" style="margin-top: 20px; padding: 20px; background: linear-gradient(135deg, #f0f0f0 0%, #e8e8e8 100%); border-left: 4px solid #7f8c8d; border-radius: 8px;">
-            <label style="display: block; font-weight: bold; margin-bottom: 8px; color: #2c3e50; font-size: 1.05em;">📋 テキストデータから直接実行</label>
+            <label style="display: block; font-weight: bold; margin-bottom: 8px; color: #2c3e50; font-size: 1.05em; display: flex; align-items: center; gap: 6px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="8 6 8 4 16 4 16 6"></polyline>
+                <rect x="3" y="2" width="18" height="20" rx="2"></rect>
+                <line x1="11" y1="11" x2="17" y2="11"></line>
+                <line x1="11" y1="15" x2="17" y2="15"></line>
+              </svg>
+              テキストデータから直接実行
+            </label>
             <p style="margin: 0 0 15px 0; font-size: 0.9em; color: #555;">テキスト形式で社員データを貼り付けて、直接シミュレーションを実行できます。</p>
 
             <div style="margin-bottom: 15px;">
@@ -572,9 +680,24 @@
             <div style="text-align: right;">
               <button (click)="runPastedDataSimulation()" [disabled]="loading()" style="padding: 12px 30px; background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95em; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s;" [style.opacity]="loading() ? '0.7' : '1'" [style.cursor]="loading() ? 'not-allowed' : 'pointer'" onmouseover="!this.disabled && (this.style.transform='scale(1.02)')" onmouseout="this.style.transform='scale(1)'">
                 @if (loading()) {
-                  <span>⏳ 処理中...</span>
+                  <span style="display: flex; align-items: center; gap: 6px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                      <circle cx="12" cy="12" r="1"></circle>
+                      <circle cx="19" cy="12" r="1"></circle>
+                      <circle cx="5" cy="12" r="1"></circle>
+                    </svg>
+                    処理中...
+                  </span>
                 } @else {
-                  <span>🚀 シミュレーション実行</span>
+                  <span style="display: flex; align-items: center; gap: 6px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M4.5 16.5c-1.5-1.5-2-4-2-4L16 2l0 0c0 0 2.5.5 4 2s2 4 2 4L4.5 16.5z"></path>
+                      <polyline points="15 6 12 9"></polyline>
+                      <line x1="9" y1="20" x2="5" y2="20"></line>
+                      <line x1="12" y1="20" x2="12" y2="23"></line>
+                    </svg>
+                    シミュレーション実行
+                  </span>
                 }
               </button>
             </div>
@@ -585,9 +708,17 @@
         } @else {
           <div style="padding: 20px; background-color: #f0f9ff; border: 2px solid #3498db; border-radius: 8px; margin-bottom: 20px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-              <h3 style="margin: 0; color: #2c3e50;">📂 シミュレーション履歴 - 詳細表示</h3>
-              <button (click)="closeHistoryDetail()" class="btn-close-gray" style="padding: 8px 16px; background-color: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s;">
-                ✕ 閉じる
+              <h3 style="margin: 0; color: #2c3e50; display: flex; align-items: center; gap: 6px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                </svg>
+                シミュレーション履歴 - 詳細表示
+              </h3>
+              <button (click)="closeHistoryDetail()" class="btn-close-gray" style="padding: 8px 16px; background-color: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s; display: inline-flex; align-items: center; gap: 4px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>閉じる
               </button>
             </div>
             <p style="margin: 0; color: #666; font-size: 0.95em;">過去のシミュレーション結果を表示しています。履歴詳細から「新規実行」に戻るには、上の「閉じる」ボタンをクリックしてください。</p>
@@ -597,19 +728,31 @@
         @if (simulationResults()) {
           <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
             <div style="display: flex; gap: 10px;">
-              <button (click)="resetSimulation()" style="padding: 10px 15px; background-color: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: all 0.2s;">
-                🔙 {{ viewingHistoryDetail ? '履歴一覧に戻る' : '条件入力に戻る' }}
+              <button (click)="resetSimulation()" style="padding: 10px 15px; background-color: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: all 0.2s; display: inline-flex; align-items: center; gap: 4px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="23 4 23 10 17 10"></polyline>
+                  <path d="M20.49 15a9 9 0 1 1 1.64-8.49"></path>
+                </svg>{{ viewingHistoryDetail ? '履歴一覧に戻る' : '条件入力に戻る' }}
               </button>
 
               <!-- 履歴保存ボタンは常に表示（微調整後の再保存用） -->
-              <button (click)="saveSimulationHistory()" style="padding: 10px 20px; background-color: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: all 0.2s;">
-                💾 履歴に保存する (通知なし)
+              <button (click)="saveSimulationHistory()" style="padding: 10px 20px; background-color: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: all 0.2s; display: inline-flex; align-items: center; gap: 4px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                  <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                  <polyline points="7 3 7 8 15 8"></polyline>
+                </svg>履歴に保存する (通知なし)
               </button>
 
               <!-- 本番反映ボタンは履歴閲覧中のみ表示 -->
               @if (viewingHistoryDetail) {
-                <button (click)="openApplyModal()" style="padding: 10px 20px; background-color: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: all 0.2s;">
-                  🚀 この配置を本番環境に反映する
+                <button (click)="openApplyModal()" style="padding: 10px 20px; background-color: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: all 0.2s; display: inline-flex; align-items: center; gap: 4px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4.5 16.5c-1.5-1.5-2-4-2-4L16 2l0 0c0 0 2.5.5 4 2s2 4 2 4L4.5 16.5z"></path>
+                    <polyline points="15 6 12 9"></polyline>
+                    <line x1="9" y1="20" x2="5" y2="20"></line>
+                    <line x1="12" y1="20" x2="12" y2="23"></line>
+                  </svg>この配置を本番環境に反映する
                 </button>
               }
             </div>
@@ -630,7 +773,13 @@
                 [style.border]="simulationMode === 'balanced' ? '2px solid #667eea' : '2px solid #ddd'"
                 style="padding: 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: left; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"
               >
-                <p style="margin: 0 0 4px 0; font-weight: bold; font-size: 1em;">⚖️ 全社売上最大化</p>
+                <p style="margin: 0 0 4px 0; font-weight: bold; font-size: 1em; display: flex; align-items: center; gap: 6px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 5v14M5 12h14"></path>
+                    <circle cx="12" cy="12" r="9"></circle>
+                  </svg>
+                  全社売上最大化
+                </p>
                 <p style="margin: 0; font-size: 0.85em; opacity: 0.8;">すべてのスキルを均等に評価</p>
               </button>
 
@@ -643,7 +792,15 @@
                 [style.border]="simulationMode === 'management_focus' ? '2px solid #3498db' : '2px solid #ddd'"
                 style="padding: 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: left; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"
               >
-                <p style="margin: 0 0 4px 0; font-weight: bold; font-size: 1em;">👔 管理体制強化</p>
+                <p style="margin: 0 0 4px 0; font-weight: bold; font-size: 1em; display: flex; align-items: center; gap: 6px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                  </svg>
+                  管理体制強化
+                </p>
                 <p style="margin: 0; font-size: 0.85em; opacity: 0.8;">飽和事業の売上最大化</p>
               </button>
 
@@ -656,7 +813,15 @@
                 [style.border]="simulationMode === 'sales_focus' ? '2px solid #f39c12' : '2px solid #ddd'"
                 style="padding: 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: left; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"
               >
-                <p style="margin: 0 0 4px 0; font-weight: bold; font-size: 1em;">🚀 営業・開拓特化</p>
+                <p style="margin: 0 0 4px 0; font-weight: bold; font-size: 1em; display: flex; align-items: center; gap: 6px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4.5 16.5c-1.5-1.5-2-4-2-4L16 2l0 0c0 0 2.5.5 4 2s2 4 2 4L4.5 16.5z"></path>
+                    <polyline points="15 6 12 9"></polyline>
+                    <line x1="9" y1="20" x2="5" y2="20"></line>
+                    <line x1="12" y1="20" x2="12" y2="23"></line>
+                  </svg>
+                  営業・開拓特化
+                </p>
                 <p style="margin: 0; font-size: 0.85em; opacity: 0.8;">成長事業の利益最大化</p>
               </button>
 
@@ -669,7 +834,14 @@
                 [style.border]="simulationMode === 'tech_focus' ? '2px solid #27ae60' : '2px solid #ddd'"
                 style="padding: 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: left; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"
               >
-                <p style="margin: 0 0 4px 0; font-weight: bold; font-size: 1em;">🎓 育成・技術投資</p>
+                <p style="margin: 0 0 4px 0; font-weight: bold; font-size: 1em; display: flex; align-items: center; gap: 6px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 10v6M2 10v6M6 4h12v5H6z"></path>
+                    <path d="M9 9v.01"></path>
+                    <path d="M15 9v.01"></path>
+                  </svg>
+                  育成・技術投資
+                </p>
                 <p style="margin: 0; font-size: 0.85em; opacity: 0.8;">新規事業の売上最大化</p>
               </button>
             </div>
@@ -725,9 +897,21 @@
                   <p style="margin: 0 0 5px 0; opacity: 0.9; font-size: 0.9em;">昨年の全社売上（制約値）</p>
                   <p style="margin: 0; font-size: 1.2em; font-weight: bold;">¥{{ lastYearTotalRevenue | number }}</p>
                   @if (simulationSummary().totalCompanyRevenue >= lastYearTotalRevenue) {
-                    <p style="margin: 5px 0 0 0; font-size: 0.85em; background: rgba(76, 175, 80, 0.3); padding: 8px; border-radius: 4px; border-left: 3px solid #4caf50;">✓ 制約条件を満たしています</p>
+                    <p style="margin: 5px 0 0 0; font-size: 0.85em; background: rgba(76, 175, 80, 0.3); padding: 8px; border-radius: 4px; border-left: 3px solid #4caf50; display: flex; align-items: center; gap: 4px;">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      制約条件を満たしています
+                    </p>
                   } @else {
-                    <p style="margin: 5px 0 0 0; font-size: 0.85em; background: rgba(244, 67, 54, 0.3); padding: 8px; border-radius: 4px; border-left: 3px solid #f44336;">⚠️ 制約値を下回っています</p>
+                    <p style="margin: 5px 0 0 0; font-size: 0.85em; background: rgba(244, 67, 54, 0.3); padding: 8px; border-radius: 4px; border-left: 3px solid #f44336; display: flex; align-items: center; gap: 4px;">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                      </svg>
+                      制約値を下回っています
+                    </p>
                   }
                 </div>
               }
@@ -742,7 +926,15 @@
           <div style="margin-bottom: 25px; padding: 20px; background: linear-gradient(135deg, #fff5e6 0%, #ffe0b2 100%); border-left: 4px solid #ff9800; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 15px;">
               <div style="flex: 1; min-width: 300px;">
-                <h4 style="margin: 0 0 8px 0; color: #2c3e50; font-size: 1.05em;">👥 ペルソナ別採用候補一括生成</h4>
+                <h4 style="margin: 0 0 8px 0; color: #2c3e50; font-size: 1.05em; display: flex; align-items: center; gap: 6px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                  </svg>
+                  ペルソナ別採用候補一括生成
+                </h4>
                 <p style="margin: 0; font-size: 0.9em; color: #555; line-height: 1.4;">
                   「新卒」「中途」「幹部候補」のペルソナごとに採用候補者を一括生成します。各ペルソナの能力値とコストは基準に従って設定されます。
                 </p>
@@ -754,7 +946,11 @@
               <!-- 新卒 -->
               <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #3498db; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-                  <span style="font-size: 1.5em;">🎓</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 10v6M2 10v6M6 4h12v5H6z"></path>
+                    <path d="M9 9v.01"></path>
+                    <path d="M15 9v.01"></path>
+                  </svg>
                   <label style="font-weight: bold; color: #2c3e50; margin: 0; font-size: 0.95em;">新卒</label>
                 </div>
                 <div style="display: flex; gap: 8px; align-items: center;">
@@ -767,7 +963,10 @@
               <!-- 中途 -->
               <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #27ae60; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-                  <span style="font-size: 1.5em;">💼</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                    <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"></path>
+                  </svg>
                   <label style="font-weight: bold; color: #2c3e50; margin: 0; font-size: 0.95em;">中途</label>
                 </div>
                 <div style="display: flex; gap: 8px; align-items: center;">
@@ -781,7 +980,9 @@
               @if (currentUserRole === 'ADMIN') {
                 <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #e74c3c; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
                   <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-                    <span style="font-size: 1.5em;">👑</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12 1l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l8.91-1.01L12 1z"></path>
+                    </svg>
                     <label style="font-weight: bold; color: #2c3e50; margin: 0; font-size: 0.95em;">幹部候補</label>
                   </div>
                   <div style="display: flex; gap: 8px; align-items: center;">
@@ -1183,7 +1384,10 @@
         <div class="employees-controls" style="margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
           <div style="flex: 1; min-width: 200px;">
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span>🔍</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+              </svg>
               <input
                 type="text"
                 [(ngModel)]="employeeSearchText"
@@ -1254,8 +1458,8 @@
               <h3 style="margin: 0; color: #2c3e50;">📅 面談予約・受付ルール管理</h3>
               <p style="margin: 5px 0 0 0; color: #666; font-size: 0.9em;">面談予約のスケジュール、カレンダー例外設定、基本的な受付ルールの管理はここから行えます。</p>
             </div>
-            <button (click)="toggleReservationCalendar()" style="padding: 8px 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: all 0.2s; box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 4px 8px rgba(102, 126, 234, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(102, 126, 234, 0.3)'">
-              {{ showReservationCalendar ? '設定とカレンダーを閉じる' : '設定とカレンダーを見る' }}
+            <button (click)="navigateToReservations()" style="padding: 8px 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: all 0.2s; box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 4px 8px rgba(102, 126, 234, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(102, 126, 234, 0.3)'">
+              📅 設定とカレンダーを見る
             </button>
           </div>
 
@@ -1388,64 +1592,6 @@
           }
         </div>
 
-       <!-- 異動候補・内示管理セクション -->
-<div class="hr-section" style="margin-bottom: 30px; padding: 20px; background-color: #fffbf0; border-radius: 8px; border-left: 4px solid #f39c12; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-    <div>
-      <h3 style="margin: 0; color: #d35400;">🔄 異動候補・内示管理 (ワークフロー)</h3>
-      <p style="margin: 5px 0 0 0; color: #666; font-size: 0.9em;">シミュレーションから予約された異動候補です。面談を実施し、合意が取れたら「確定（公開）」を押してください。</p>
-    </div>
-  </div>
-
-  @if (pendingTransfers().length === 0) {
-    <div style="padding: 20px; background: white; border-radius: 4px; text-align: center; color: #999; border: 1px dashed #ddd;">
-      現在、未公開の異動候補はありません。
-    </div>
-  } @else {
-    <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 4px; overflow: hidden; border: 1px solid #eaeaea;">
-      <thead style="background: #fdf5e6;">
-        <tr>
-          <th style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; color: #d35400;">対象者</th>
-          <th style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; color: #d35400;">異動内容</th>
-          <th style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; color: #d35400;">発令予定日</th>
-          <th style="padding: 12px; text-align: center; border-bottom: 1px solid #ddd; color: #d35400;">ステータス</th>
-          <th style="padding: 12px; text-align: center; border-bottom: 1px solid #ddd; color: #d35400;">操作</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (transfer of pendingTransfers(); track transfer.id) {
-          <tr style="border-bottom: 1px solid #eaeaea;">
-            <td style="padding: 12px; font-weight: bold; color: #2c3e50;">
-              👤 {{ transfer.employeeName }} <span style="font-size: 0.8em; color: #999; font-weight: normal;">({{ transfer.employeeNumber }})</span>
-            </td>
-            <td style="padding: 12px;">
-              <span style="color: #7f8c8d;">{{ transfer.fromDept }}</span>
-              <span style="margin: 0 8px; color: #3498db;">➔</span>
-              <span style="font-weight: bold; color: #3498db;">{{ transfer.toDept }}</span>
-              <div style="font-size: 0.8em; color: #666; margin-top: 4px;">📝 {{ transfer.memo }}</div>
-            </td>
-            <td style="padding: 12px; font-weight: bold; color: #555;">{{ transfer.applyDate }}</td>
-            <td style="padding: 12px; text-align: center;">
-              @if (transfer.status === 'pending') {
-                <span style="background: #fff3cd; color: #856404; padding: 4px 10px; border-radius: 12px; font-size: 0.8em; font-weight: bold;">未公開（面談待ち）</span>
-              } @else {
-                <span style="background: #d4edda; color: #155724; padding: 4px 10px; border-radius: 12px; font-size: 0.8em; font-weight: bold;">✓ 確定（公開済み）</span>
-              }
-            </td>
-            <td style="padding: 12px; text-align: center;">
-              @if (transfer.status === 'pending') {
-                <div style="display: flex; gap: 8px; justify-content: center;">
-                  <button (click)="approveTransfer(transfer)" style="padding: 6px 12px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: 0.2s;">確定(公開)</button>
-                  <button (click)="rejectTransfer(transfer)" style="padding: 6px 12px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: bold;">見送り</button>
-                </div>
-              }
-            </td>
-          </tr>
-        }
-      </tbody>
-    </table>
-  }
-</div>
 
         <!-- 人事相談一覧セクション -->
         <div class="hr-section" style="margin-bottom: 30px; padding: 20px; background-color: #f8f9fa; border-radius: 8px; border-left: 4px solid #27ae60;">
@@ -1454,8 +1600,8 @@
               <h3 style="margin: 0; color: #2c3e50;">💬 人事相談一覧</h3>
               <p style="margin: 5px 0 0 0; color: #666; font-size: 0.9em;">社員からの相談内容を確認・管理できます。</p>
             </div>
-            <button (click)="toggleConsultations()" style="padding: 8px 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: all 0.2s; box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 4px 8px rgba(102, 126, 234, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(102, 126, 234, 0.3)'">
-              {{ showConsultations ? '相談を閉じる' : '相談を見る' }}
+            <button (click)="navigateToConsultations()" style="padding: 8px 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: all 0.2s; box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 4px 8px rgba(102, 126, 234, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(102, 126, 234, 0.3)'">
+              💬 相談を見る
             </button>
           </div>
 
@@ -1549,8 +1695,8 @@
               <h3 style="margin: 0; color: #2c3e50;">📋 異動候補・内示管理</h3>
               <p style="margin: 5px 0 0 0; color: #666; font-size: 0.9em;">配置シミュレーション結果を異動候補として管理し、面談後に確定処理を行えます。</p>
             </div>
-            <button style="padding: 8px 16px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: background 0.2s;">
-              内示一覧を見る
+            <button (click)="navigateToNaiji()" style="padding: 8px 16px; background: linear-gradient(135deg, #3b82f6 0%, #9333ea 100%); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: background 0.2s; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 4px 8px rgba(59, 130, 246, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(59, 130, 246, 0.3)'">
+              📋 内示一覧を見る
             </button>
           </div>
         </div>
