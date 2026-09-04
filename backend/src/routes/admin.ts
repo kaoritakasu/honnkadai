@@ -197,6 +197,11 @@ router.get('/dashboard', authenticate, isAdmin, async (req: AuthRequest, res: Re
 // Get all consultations
 router.get('/consultations', authenticate, isAdmin, async (req: AuthRequest, res: Response) => {
   try {
+    console.log('[Admin Consultations API] Request received:', {
+      userId: req.user?.id,
+      timestamp: new Date().toISOString()
+    });
+
     const consultations = await prisma.consultation.findMany({
       include: {
         employee: {
@@ -206,8 +211,18 @@ router.get('/consultations', authenticate, isAdmin, async (req: AuthRequest, res
       orderBy: { createdAt: 'desc' }
     });
 
+    console.log('[Admin Consultations API] Retrieved consultations:', {
+      count: consultations.length,
+      firstCreatedAt: consultations[0]?.createdAt,
+      statuses: consultations.reduce((acc: any, c) => {
+        acc[c.status] = (acc[c.status] || 0) + 1;
+        return acc;
+      }, {})
+    });
+
     res.json(consultations);
   } catch (error) {
+    console.error('[Admin Consultations API] Error:', error);
     res.status(400).json({ error: (error as Error).message });
   }
 });

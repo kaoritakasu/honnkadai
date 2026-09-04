@@ -1,0 +1,226 @@
+<div class="admin-container" style="padding: 20px; max-width: 1200px; margin: 0 auto;">
+  <button (click)="goBack()" style="padding: 8px 16px; background: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer; margin-bottom: 20px; font-weight: bold;">
+    ← 戻る
+  </button>
+
+  <div style="background-color: #f8f9fa; border-radius: 8px; border-left: 4px solid #3498db; padding: 20px; margin-bottom: 30px;">
+    <h2 style="margin: 0 0 10px 0; color: #2c3e50;">📅 面談予約・受付ルール管理</h2>
+    <p style="margin: 0 0 20px 0; color: #666; font-size: 0.9em;">面談予約のスケジュール、カレンダー例外設定、基本的な受付ルールの管理はここから行えます。</p>
+
+    <!-- 面談可能日（予約枠ルール）設定 -->
+    <div style="margin-bottom: 30px; padding: 20px; background-color: #ffffff; border-radius: 8px; border: 1px solid #eaeaea; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <div>
+          <h3 style="margin: 0; color: #2c3e50;">⚙️ 基本の面談受付ルール</h3>
+          <p style="margin: 5px 0 0 0; color: #666; font-size: 0.9em;">社員が予約できる曜日と時間帯のデフォルト設定です。</p>
+        </div>
+        <button (click)="toggleAvailabilityForm()" style="padding: 8px 16px; background: #9b59b6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: background 0.2s;">
+          {{ showAvailabilityForm() ? '閉じる' : '＋ ルールを追加' }}
+        </button>
+      </div>
+
+      @if (showAvailabilityForm()) {
+        <div style="background: #fdfafb; padding: 15px; border-radius: 8px; border: 1px solid #e8daef; margin-bottom: 20px;">
+          <h4 style="margin-top: 0; color: #2c3e50;">新規ルールの追加</h4>
+          <div style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 120px;">
+              <label style="display: block; font-size: 0.9em; font-weight: bold; margin-bottom: 5px; color: #555;">曜日</label>
+              <select [(ngModel)]="newRule.dayOfWeek" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+                <option [value]="1">月曜日</option>
+                <option [value]="2">火曜日</option>
+                <option [value]="3">水曜日</option>
+                <option [value]="4">木曜日</option>
+                <option [value]="5">金曜日</option>
+                <option [value]="6">土曜日</option>
+                <option [value]="0">日曜日</option>
+              </select>
+            </div>
+            <div style="flex: 1; min-width: 120px;">
+              <label style="display: block; font-size: 0.9em; font-weight: bold; margin-bottom: 5px; color: #555;">開始時間</label>
+              <input type="time" [(ngModel)]="newRule.startTime" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+            </div>
+            <div style="flex: 1; min-width: 120px;">
+              <label style="display: block; font-size: 0.9em; font-weight: bold; margin-bottom: 5px; color: #555;">終了時間</label>
+              <input type="time" [(ngModel)]="newRule.endTime" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+            </div>
+            <div style="flex: 0 0 auto;">
+              <button (click)="saveAvailabilityRule()" [disabled]="isSavingRule()" style="padding: 9px 20px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                {{ isSavingRule() ? '保存中...' : '保存する' }}
+              </button>
+            </div>
+          </div>
+          @if (ruleError()) {
+            <p style="color: #e74c3c; margin: 10px 0 0 0; font-size: 0.9em; font-weight: bold;">{{ ruleError() }}</p>
+          }
+        </div>
+      }
+
+      <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 4px; overflow: hidden; border: 1px solid #eaeaea;">
+        <thead style="background: #f1f5f9;">
+          <tr>
+            <th style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; color: #2c3e50;">曜日</th>
+            <th style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; color: #2c3e50;">時間帯</th>
+            <th style="padding: 12px; text-align: center; border-bottom: 1px solid #ddd; color: #2c3e50;">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (rule of availabilityRules(); track rule.id) {
+            <tr style="border-bottom: 1px solid #eaeaea;">
+              <td style="padding: 12px; font-weight: bold;">{{ getDayOfWeekLabel(rule.dayOfWeek) }}曜日</td>
+              <td style="padding: 12px;">{{ rule.startTime }} 〜 {{ rule.endTime }}</td>
+              <td style="padding: 12px; text-align: center;">
+                <button (click)="deleteAvailabilityRule(rule.id)" style="padding: 6px 12px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: bold;">削除</button>
+              </td>
+            </tr>
+          }
+          @if (availabilityRules().length === 0) {
+            <tr>
+              <td colspan="3" style="padding: 20px; text-align: center; color: #999;">受付ルールが設定されていません。基本の営業時間（9:00〜17:00等）が適用されます。</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- カレンダー本体 -->
+    <div style="background: #ffffff; padding: 20px; border-radius: 8px; border: 1px solid #eaeaea; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+      <h3 style="margin: 0 0 15px 0; color: #2c3e50;">📅 予約カレンダー（例外設定）</h3>
+
+      <!-- 月切り替えナビゲーション -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <button (click)="previousMonth()" style="padding: 8px 12px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">← 前月</button>
+        <h3 style="margin: 0; font-size: 1.2em; color: #2c3e50;">{{ getMonthYearDisplay() }}</h3>
+        <button (click)="nextMonth()" style="padding: 8px 12px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">次月 →</button>
+      </div>
+
+      <!-- 曜日ヘッダー -->
+      <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #eaeaea; margin-bottom: 1px;">
+        @for (day of ['日', '月', '火', '水', '木', '金', '土']; track day) {
+          <div style="background: #f8f9fa; color: #6b7280; padding: 12px; text-align: center; font-weight: bold;">{{ day }}</div>
+        }
+      </div>
+
+      <!-- カレンダー本体（日付マス） -->
+      <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #eaeaea;">
+        @for (week of calendarWeeks(); track $index) {
+          @for (dayCell of week; track $index) {
+            <div [style.background]="isDateUnavailable(dayCell?.date) ? '#ffe6e6' : '#ffffff'" style="padding: 10px; border: 1px solid #f9f9f9; min-height: 90px; overflow-y: auto; position: relative;" class="calendar-cell">
+              @if (dayCell) {
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                  <div style="font-weight: bold; color: #6b7280;">{{ dayCell.dayOfMonth }}</div>
+                  <button (click)="openExceptionModal(dayCell.date); $event.stopPropagation()" class="btn-exception-icon" title="例外設定" style="padding: 4px 6px; font-size: 0.85em; background: none; color: #9ca3af; border: none; border-radius: 3px; cursor: pointer; opacity: 0; transition: opacity 0.2s;">⚙️</button>
+                </div>
+
+                @if (getExceptionForDate(dayCell.date)) {
+                  <div [style.border-left-color]="getExceptionForDate(dayCell.date).type === 'UNAVAILABLE' ? '#ef4444' : '#10b981'" style="padding: 4px 6px; margin: 4px 0; border-left: 4px solid; border-radius: 2px; background: #f3f4f6; font-size: 0.7em; color: #374151; font-weight: 500;">
+                    {{ getExceptionForDate(dayCell.date).type === 'UNAVAILABLE' ? '予約不可' : 'カスタム時間' }}
+                  </div>
+                }
+
+                @for (res of getReservationsForDate(dayCell.date); track res.id) {
+                  <div (click)="openReservationDetail(res); $event.stopPropagation()" class="reservation-badge-hover" style="padding: 6px; margin: 4px 0; border-left: 3px solid #667eea; border-radius: 4px; background: #e7f3ff; font-size: 0.8em; line-height: 1.3; color: #2c3e50; cursor: pointer; transition: background 0.2s;">
+                    <p style="margin: 0; font-weight: bold;">{{ res.timeSlot }}</p>
+                    <p style="margin: 2px 0 0 0; color: #667eea; font-weight: bold;">{{ res.employee?.user?.name || res.employee?.employeeNumber || '社員' }}</p>
+                  </div>
+                }
+              }
+            </div>
+          }
+        }
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 例外設定モーダル -->
+@if (showExceptionModal && selectedExceptionDate) {
+<div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1001;" (click)="closeExceptionModal()">
+  <div style="background: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 450px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);" (click)="$event.stopPropagation()">
+    <h3 style="margin-top: 0; border-bottom: 2px solid #f39c12; padding-bottom: 15px; color: #2c3e50;">{{ formatExceptionDate(selectedExceptionDate) }} の例外設定</h3>
+
+    <div style="margin: 20px 0;">
+      <p style="margin: 0 0 15px 0; color: #666; font-size: 0.9em;">この日付について予約の可否または時短対応を設定できます。</p>
+
+      <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <label style="flex: 1; display: flex; align-items: center; padding: 12px; border: 2px solid #ddd; border-radius: 4px; cursor: pointer;" [style.border-color]="exceptionType === 'none' ? '#667eea' : '#ddd'" [style.background]="exceptionType === 'none' ? '#f0f4ff' : '#fff'">
+          <input type="radio" [(ngModel)]="exceptionType" value="none" style="margin-right: 8px;" (change)="onExceptionTypeChange()"/>
+          <span style="font-weight: bold;">設定なし</span>
+        </label>
+        <label style="flex: 1; display: flex; align-items: center; padding: 12px; border: 2px solid #ddd; border-radius: 4px; cursor: pointer;" [style.border-color]="exceptionType === 'unavailable' ? '#e74c3c' : '#ddd'" [style.background]="exceptionType === 'unavailable' ? '#fadbd8' : '#fff'">
+          <input type="radio" [(ngModel)]="exceptionType" value="unavailable" style="margin-right: 8px;" (change)="onExceptionTypeChange()"/>
+          <span style="font-weight: bold;">予約不可</span>
+        </label>
+        <label style="flex: 1; display: flex; align-items: center; padding: 12px; border: 2px solid #ddd; border-radius: 4px; cursor: pointer;" [style.border-color]="exceptionType === 'custom' ? '#27ae60' : '#ddd'" [style.background]="exceptionType === 'custom' ? '#d5f4e6' : '#fff'">
+          <input type="radio" [(ngModel)]="exceptionType" value="custom" style="margin-right: 8px;" (change)="onExceptionTypeChange()"/>
+          <span style="font-weight: bold;">時短対応</span>
+        </label>
+      </div>
+
+      @if (exceptionType === 'custom') {
+        <div style="background: #f8f9fa; padding: 15px; border-radius: 4px; border-left: 4px solid #27ae60; margin-bottom: 15px;">
+          <p style="margin: 0 0 10px 0; font-weight: bold; color: #555;">対応可能時間</p>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <div style="flex: 1;">
+              <label style="display: block; font-size: 0.85em; margin-bottom: 4px; color: #555;">開始時間</label>
+              <input type="time" [(ngModel)]="exceptionStartTime" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;" />
+            </div>
+            <div style="flex: 1;">
+              <label style="display: block; font-size: 0.85em; margin-bottom: 4px; color: #555;">終了時間</label>
+              <input type="time" [(ngModel)]="exceptionEndTime" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;" />
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    @if (exceptionError()) {
+      <div style="padding: 10px; background: #fadbd8; border-left: 3px solid #e74c3c; border-radius: 4px; margin-bottom: 15px; color: #c0392b; font-size: 0.9em;">
+        {{ exceptionError() }}
+      </div>
+    }
+
+    <div style="display: flex; gap: 10px; margin-top: 25px;">
+      <button (click)="saveException()" [disabled]="isSavingException()" style="flex: 1; padding: 10px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;" [style.opacity]="isSavingException() ? '0.6' : '1'">
+        {{ isSavingException() ? '保存中...' : '保存する' }}
+      </button>
+      @if (getExceptionForDate(selectedExceptionDate)) {
+        <button (click)="deleteException()" [disabled]="isSavingException()" style="flex: 1; padding: 10px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;" [style.opacity]="isSavingException() ? '0.6' : '1'">
+          削除する
+        </button>
+      }
+      <button (click)="closeExceptionModal()" style="flex: 1; padding: 10px; background: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">キャンセル</button>
+    </div>
+  </div>
+</div>
+}
+
+<!-- 面談予約詳細モーダル (人事用) -->
+@if (showReservationDetailModal && selectedReservationDetail) {
+<div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000;" (click)="closeReservationDetail()">
+  <div style="background: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 500px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);" (click)="$event.stopPropagation()">
+    <h3 style="margin-top: 0; border-bottom: 2px solid #667eea; padding-bottom: 15px; color: #2c3e50;">面談予約の詳細</h3>
+
+    <div style="margin: 20px 0; line-height: 1.8; color: #333;">
+      <p><strong>社員名：</strong> {{ selectedReservationDetail.employee?.user?.name || selectedReservationDetail.employee?.employeeNumber || '不明' }}</p>
+      <p><strong>日時：</strong> {{ formatReservationDate(selectedReservationDetail.date) }} {{ selectedReservationDetail.timeSlot }}</p>
+      <p><strong>ステータス：</strong>
+        @switch (selectedReservationDetail.status) {
+          @case ('RESERVED') { <span style="color: #ff9800; font-weight: bold;">予約済み</span> }
+          @case ('COMPLETED') { <span style="color: #4caf50; font-weight: bold;">完了</span> }
+          @case ('CANCELLED') { <span style="color: #f44336; font-weight: bold;">キャンセル済み</span> }
+        }
+      </p>
+      <p><strong>相談内容：</strong></p>
+      <div style="background: #f9f9f9; padding: 12px; border-radius: 4px; border: 1px solid #eee; white-space: pre-wrap;">{{ selectedReservationDetail.reason || '未記入' }}</div>
+    </div>
+
+    <div style="display: flex; gap: 10px; margin-top: 25px;">
+      @if (selectedReservationDetail.status === 'RESERVED') {
+        <button (click)="updateReservationStatus(selectedReservationDetail.id, 'COMPLETED')" style="flex: 1; padding: 10px; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">完了にする</button>
+        <button (click)="updateReservationStatus(selectedReservationDetail.id, 'CANCELLED')" style="flex: 1; padding: 10px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">キャンセル</button>
+      }
+      <button (click)="closeReservationDetail()" style="flex: 1; padding: 10px; background: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">閉じる</button>
+    </div>
+  </div>
+</div>
+}

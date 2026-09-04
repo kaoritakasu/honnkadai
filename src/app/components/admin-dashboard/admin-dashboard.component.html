@@ -1323,12 +1323,12 @@
               <thead>
                 <tr>
                   <th>部署名</th>
-                  <th>割り当て人数</th>
-                  <th>充足率(%)</th>
-                  <th>基本売上</th>
-                  <th>最終売上</th>
-                  <th>コスト</th>
-                  <th>利益</th>
+                  <th class="text-right">割り当て人数</th>
+                  <th class="text-right">充足率(%)</th>
+                  <th class="text-right">基本売上</th>
+                  <th class="text-right">最終売上</th>
+                  <th class="text-right">コスト</th>
+                  <th class="text-right">利益</th>
                 </tr>
               </thead>
               <tbody>
@@ -1336,23 +1336,23 @@
                   @for (result of simulationResults(); track $index) {
                     <tr>
                       <td>{{ result.departmentName || result.department?.name || '-' }}</td>
-                      <td>{{ result.allocatedCount || result.candidates?.length || 0 }}</td>
-                      <td>{{ result.fulfillmentRate || '-' }}</td>
-                      <td>¥{{ (result.baseRevenue || 0) | number }}</td>
-                      <td>¥{{ (result.finalRevenue || result.totalExpectedRevenue || 0) | number }}</td>
-                      <td>¥{{ (result.cost || 0) | number }}</td>
-                      <td>¥{{ (result.profit || (result.finalRevenue - result.cost) || 0) | number }}</td>
+                      <td class="text-right">{{ result.allocatedCount || result.candidates?.length || 0 }}</td>
+                      <td class="text-right">{{ result.fulfillmentRate || '-' }}</td>
+                      <td class="text-right">¥{{ (result.baseRevenue || 0) | number }}</td>
+                      <td class="text-right">¥{{ (result.finalRevenue || result.totalExpectedRevenue || 0) | number }}</td>
+                      <td class="text-right">¥{{ (result.cost || 0) | number }}</td>
+                      <td class="text-right">¥{{ (result.profit || (result.finalRevenue - result.cost) || 0) | number }}</td>
                     </tr>
                   }
                 } @else {
                   <tr>
                     <td>{{ simulationResults().departmentName || simulationResults().department?.name || '-' }}</td>
-                    <td>{{ simulationResults().allocatedCount || simulationResults().candidates?.length || 0 }}</td>
-                    <td>{{ simulationResults().fulfillmentRate || '-' }}</td>
-                    <td>¥{{ (simulationResults().baseRevenue || 0) | number }}</td>
-                    <td>¥{{ (simulationResults().finalRevenue || simulationResults().totalExpectedRevenue || 0) | number }}</td>
-                    <td>¥{{ (simulationResults().cost || 0) | number }}</td>
-                    <td>¥{{ (simulationResults().profit || (simulationResults().finalRevenue - simulationResults().cost) || 0) | number }}</td>
+                    <td class="text-right">{{ simulationResults().allocatedCount || simulationResults().candidates?.length || 0 }}</td>
+                    <td class="text-right">{{ simulationResults().fulfillmentRate || '-' }}</td>
+                    <td class="text-right">¥{{ (simulationResults().baseRevenue || 0) | number }}</td>
+                    <td class="text-right">¥{{ (simulationResults().finalRevenue || simulationResults().totalExpectedRevenue || 0) | number }}</td>
+                    <td class="text-right">¥{{ (simulationResults().cost || 0) | number }}</td>
+                    <td class="text-right">¥{{ (simulationResults().profit || (simulationResults().finalRevenue - simulationResults().cost) || 0) | number }}</td>
                   </tr>
                 }
               </tbody>

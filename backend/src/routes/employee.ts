@@ -178,8 +178,17 @@ router.post('/:id/consultation', authenticate, async (req: AuthRequest, res: Res
   try {
     const employeeId = req.params.id;
     const { inquiry } = req.body;
+    const userId = req.user?.id;
+
+    console.log('[Consultation API] Received submission:', {
+      employeeId,
+      inquiryLength: inquiry?.length,
+      userId,
+      timestamp: new Date().toISOString()
+    });
 
     if (!inquiry || inquiry.trim() === '') {
+      console.log('[Consultation API] Empty inquiry rejected');
       return res.status(400).json({ error: 'Inquiry cannot be empty' });
     }
 
@@ -194,8 +203,15 @@ router.post('/:id/consultation', authenticate, async (req: AuthRequest, res: Res
     });
 
     if (!employee) {
+      console.log('[Consultation API] Employee not found for ID:', employeeId);
       return res.status(404).json({ error: 'Employee not found' });
     }
+
+    console.log('[Consultation API] Found employee:', {
+      id: employee.id,
+      userId: employee.userId,
+      employeeNumber: employee.employeeNumber
+    });
 
     // Create consultation
     const consultation = await prisma.consultation.create({
@@ -207,9 +223,16 @@ router.post('/:id/consultation', authenticate, async (req: AuthRequest, res: Res
       }
     });
 
+    console.log('[Consultation API] Consultation created:', {
+      id: consultation.id,
+      employeeId: consultation.employeeId,
+      status: consultation.status,
+      createdAt: consultation.createdAt
+    });
+
     res.status(201).json(consultation);
   } catch (error) {
-    console.error('Error submitting consultation:', error);
+    console.error('[Consultation API] Error submitting consultation:', error);
     res.status(500).json({ error: (error as Error).message });
   }
 });

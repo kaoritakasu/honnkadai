@@ -251,13 +251,21 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   }
 
   loadConsultations() {
+    console.log('[AdminDashboard] Loading consultations...');
+    console.log('[AdminDashboard] API URL:', this.apiService.getConfiguredApiUrl());
     this.apiService.getAllConsultations().subscribe({
       next: (data: any[]) => {
+        console.log('[AdminDashboard] Consultations loaded:', data?.length || 0, 'items');
         const sorted = this.sortConsultations(data);
         this.allConsultations.set(sorted);
       },
       error: (err: any) => {
-        console.error('Error loading consultations:', err);
+        console.error('[AdminDashboard] Error loading consultations:', err);
+        console.error('[AdminDashboard] Error details:', {
+          status: err.status,
+          statusText: err.statusText,
+          message: err.error?.error || err.message
+        });
         this.allConsultations.set([]);
       }
     });
@@ -691,17 +699,10 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
     this.loading.set(true);
 
-    let baseEmployees = [];
-    if (this.simulationResults() && Array.isArray(this.simulationResults())) {
-      baseEmployees = this.simulationResults().flatMap((dept: any) => dept.candidates);
-    } else {
-      baseEmployees = this.employees().filter((emp: any) => emp.user?.role !== 'ADMIN');
-    }
-    const employeesWithParsedData = [...baseEmployees, ...parsedEmployees];
-
+    // テキストデータから直接実行する場合は、テキストデータのみを使用（既存データは無視）
     const payload = {
       departmentIds: this.selectedDepartments().length > 0 ? this.selectedDepartments() : this.departments().map(d => d.id),
-      employees: employeesWithParsedData,
+      employees: parsedEmployees,
       lastYearTotalRevenue: this.lastYearTotalRevenue,
       simulationMode: this.simulationMode
     };

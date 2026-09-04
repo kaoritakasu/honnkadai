@@ -232,12 +232,21 @@ export class MyPageComponent implements OnInit {
 
     if (!this.user?.id) {
       alert('ユーザー情報が見つかりません。もう一度ログインしてください');
+      console.error('[MyPage] User ID missing:', this.user);
       return;
     }
+
+    console.log('[MyPage] Submitting consultation:', {
+      userId: this.user.id,
+      descriptionLength: description.length,
+      timestamp: new Date().toISOString(),
+      apiUrl: this.apiService.getConfiguredApiUrl()
+    });
 
     this.isSubmittingConsultation = true;
     this.apiService.submitConsultation(this.user.id, description).subscribe({
       next: () => {
+        console.log('[MyPage] Consultation submitted successfully');
         this.success.set('人事へ相談を送信しました');
         this.consultationTitle = '';
         this.consultationDescription = '';
@@ -249,7 +258,12 @@ export class MyPageComponent implements OnInit {
         this.cdr.detectChanges();
       },
       error: (err: any) => {
-        console.error('Error submitting consultation:', err);
+        console.error('[MyPage] Consultation submission failed:', {
+          status: err.status,
+          statusText: err.statusText,
+          message: err.message,
+          errorDetail: err.error
+        });
         this.error.set(err.error?.error || '相談の送信に失敗しました');
         this.isSubmittingConsultation = false;
         setTimeout(() => this.error.set(''), 3000);

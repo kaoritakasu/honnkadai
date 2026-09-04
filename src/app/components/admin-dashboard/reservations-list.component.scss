@@ -1,0 +1,83 @@
+/* =========================================
+   テーマカラー設定
+   ========================================= */
+:host {
+  display: block;
+  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --primary-color: #667eea;
+  --primary-dark: #764ba2;
+  --primary-light: #f4f2f9;
+  --bg-color: #f8f9fa;
+  --card-bg: #ffffff;
+  --text-main: #333333;
+  --text-muted: #666666;
+  --border-color: #e0e0e0;
+  --success: #2e7d32;
+  --danger: #d32f2f;
+}
+
+/* =========================================
+   入力フォーム・ボタン
+   ========================================= */
+.input-field {
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 10px 12px;
+  font-size: 1rem;
+  transition: all 0.3s;
+  background-color: #fafafa;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+  background-color: #fff;
+}
+
+button {
+  border: none;
+  border-radius: 4px;
+  padding: 10px 20px;
+  font-size: 1rem;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s;
+}
+
+.calendar-cell {
+  &:hover .btn-exception-icon {
+    opacity: 1 !important;
+  }
+}
+
+.btn-exception-icon:hover {
+  opacity: 1 !important;
+  color: #6b7280;
+}
+
+.reservation-badge-hover:hover {
+  background-color: #d4ebff !important;
+}
+
+/* =========================================
+   input type="number" のスピンボタン（上下矢印）を非表示にする
+   ========================================= */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* =========================================
+   プレースホルダーカラー
+   ========================================= */
+textarea.paste-data-placeholder::placeholder {
+  color: #9ca3af;
+  opacity: 1;
+}

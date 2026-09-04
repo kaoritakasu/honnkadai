@@ -1,15 +1,36 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, BehaviorSubject } from 'rxjs';
+import { Observable, BehaviorSubject, throwError } from 'rxjs';
+import { tap, catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ApiService {
-  private apiUrl = environment.apiUrl;
+  private apiUrl: string;
   private authTokenSubject = new BehaviorSubject<string | null>(localStorage.getItem('auth_token'));
   public authToken$ = this.authTokenSubject.asObservable();
+
+  constructor(private http: HttpClient) {
+    // Base URL を環境設定から取得し、フォールバックを設定
+    this.apiUrl = this.getApiUrl();
+  }
+
+  private getApiUrl(): string {
+    // 環境設定から取得
+    if (environment.apiUrl) {
+      return environment.apiUrl;
+    }
+    // フォールバック：現在のホスト名に基づいて動的に決定
+    const protocol = window.location.protocol;
+    const hostname = window.location.hostname;
+    return `${protocol}//${hostname}:3000/api`;
+  }
+
+  getConfiguredApiUrl(): string {
+    return this.apiUrl;
+  }
 
   constructor(private http: HttpClient) {}
 
@@ -184,15 +205,90 @@ export class ApiService {
   }
 
   getAllConsultations(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/admin/consultations`, { headers: this.getHeaders() });
+    const url = `${this.apiUrl}/admin/consultations`;
+    console.log(`[ApiService] Fetching all consultations from: ${url}`);
+    return this.http.get<any[]>(url, { headers: this.getHeaders() }).pipe(
+      tap(result => {
+        console.log('[ApiService] Consultations retrieved successfully:', {
+          count: result?.length || 0,
+          items: result?.slice(0, 2).map(c => ({ id: c.id, status: c.status }))
+        });
+      }),
+      catchError(error => {
+        console.error('[ApiService] Failed to retrieve consultations:', {
+          status: error.status,
+          statusText: error.statusText,
+          url: url,
+          error: error.error
+        });
+        return throwError(() => error);
+      })
+    );
   }
 
   respondToConsultation(id: string, response: string, status: string): Observable<any> {
-    return this.http.put(`${this.apiUrl}/consultations/${id}`, { response, status }, { headers: this.getHeaders() });
+    const url = `${this.apiUrl}/consultations/${id}`;
+    console.log(`[ApiService] Responding to consultation ${id} at: ${url}`);
+    return this.http.put(url, { response, status }, { headers: this.getHeaders() }).pipe(
+      tap(result => {
+        console.log('[ApiService] Consultation response sent successfully:', { id, status });
+      }),
+      catchError(error => {
+        console.error('[ApiService] Failed to respond to consultation:', {
+          status: error.status,
+          url: url,
+          error: error.error
+        });
+        return throwError(() => error);
+      })
+    );
   }
 
   submitConsultation(userId: string | number, inquiry: string) {
-    return this.http.post(`${this.apiUrl}/employees/${userId}/consultation`, { inquiry }, { headers: this.getHeaders() });
+    const url = `${this.apiUrl}/employees/${userId}/consultation`;
+    console.log(`[ApiService] Submitting consultation for user ${userId} to: ${url}`);
+    return this.http.post(url, { inquiry }, { headers: this.getHeaders() }).pipe(
+      tap(result => {
+        console.log('[ApiService] Consultation submitted successfully:', result);
+      }),
+      catchError(error => {
+        console.error('[ApiService] Consultation submission failed:', {
+          status: error.status,
+          statusText: error.statusText,
+          url: url,
+          error: error.error
+        });
+        return throwError(() => error);
+      })
+    );
+  }
+
+  // Diagnostic methods
+  testApiConnection(): Observable<any> {
+    console.log(`[ApiService] Testing API connection to: ${this.apiUrl}/health`);
+    return this.http.get(`${this.apiUrl}/health`).pipe(
+      tap(result => console.log('[ApiService] Health check OK:', result)),
+      catchError(error => {
+        console.error('[ApiService] Health check failed:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  getApiDiagnostics(): Observable<any> {
+    console.log(`[ApiService] Current API configuration:`, {
+      apiUrl: this.apiUrl,
+      hostname: window.location.hostname,
+      port: window.location.port,
+      protocol: window.location.protocol
+    });
+    return this.http.get(`${this.apiUrl}/health`).pipe(
+      tap(result => console.log('[ApiService] API is healthy:', result)),
+      catchError(error => {
+        console.error('[ApiService] API health check failed:', error);
+        return throwError(() => error);
+      })
+    );
   }
 
   // Interview Reservations
