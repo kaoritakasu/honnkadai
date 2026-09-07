@@ -1,4 +1,4 @@
-import { Component, signal, OnInit, HostListener, OnDestroy } from '@angular/core';
+import { Component, signal, OnInit, HostListener, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, NavigationEnd } from '@angular/router';
@@ -134,7 +134,8 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     private apiService: ApiService,
     private authService: AuthService,
     private router: Router,
-    private activatedRoute: ActivatedRoute
+    private activatedRoute: ActivatedRoute,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -241,10 +242,14 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   loadAllReservations() {
     this.apiService.getAllReservations().subscribe({
-      next: (data: any[]) => this.allReservations.set(data),
+      next: (data: any[]) => {
+        this.allReservations.set(data);
+        this.cdr.detectChanges();
+      },
       error: (err: any) => {
         console.error('Error loading reservations:', err);
         this.allReservations.set([]);
+        this.cdr.detectChanges();
       }
     });
   }
@@ -293,10 +298,12 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         alert('ステータスを更新しました');
         this.loadAllReservations();
         this.closeReservationDetail();
+        this.cdr.detectChanges();
       },
       error: (err: any) => {
-        console.error('Error updating reservation:', err);
+        console.error('Error updating reservation status:', err);
         alert('更新に失敗しました');
+        this.cdr.detectChanges();
       }
     });
   }

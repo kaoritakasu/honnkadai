@@ -7,7 +7,7 @@ interface Allocation {
   id: string;
   employeeId: string;
   departmentId: string;
-  status: 'PENDING' | 'ASSIGNED' | 'REJECTED';
+  status: 'PENDING' | 'INTERVIEWED' | 'ASSIGNED' | 'REJECTED';
   reason: string;
   createdAt: string;
   employee: {
@@ -54,28 +54,38 @@ interface Allocation {
           @if (!isLoading) {
             @if (allocations.length > 0) {
             <input type="text" (input)="updateSearch($event)" placeholder="社員番号・社員名で検索..." style="padding: 10px; font-size: 1em; border: 1px solid #ddd; border-radius: 4px; width: 300px; margin-bottom: 20px;">
+            <select (change)="updateStatusFilter($event)" style="padding: 10px; font-size: 1em; border: 1px solid #ddd; border-radius: 4px; margin-left: 10px; margin-bottom: 20px;">
+              <option value="">すべて</option>
+              <option value="PENDING">面談待ち</option>
+              <option value="INTERVIEWED">面談完了</option>
+              <option value="ASSIGNED">確定</option>
+              <option value="REJECTED">見送り</option>
+            </select>
             <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
               <thead>
                 <tr style="background-color: #f5f5f5; border-bottom: 2px solid #ddd;">
-                  <th style="padding: 12px; text-align: left; font-weight: bold; color: #2c3e50;">社員番号</th>
-                  <th style="padding: 12px; text-align: left; font-weight: bold; color: #2c3e50;">社員名</th>
-                  <th style="padding: 12px; text-align: left; font-weight: bold; color: #2c3e50;">配置先部署</th>
-                  <th style="padding: 12px; text-align: left; font-weight: bold; color: #2c3e50;">ステータス</th>
+                  <th style="padding: 12px; text-align: left; font-weight: bold; color: #2c3e50; white-space: nowrap;">社員番号</th>
+                  <th style="padding: 12px; text-align: left; font-weight: bold; color: #2c3e50; white-space: nowrap;">社員名</th>
+                  <th style="padding: 12px; text-align: left; font-weight: bold; color: #2c3e50; white-space: nowrap;">配置先部署</th>
+                  <th style="padding: 12px; text-align: left; font-weight: bold; color: #2c3e50; white-space: nowrap;">ステータス</th>
                   <th style="padding: 12px; text-align: left; font-weight: bold; color: #2c3e50;">理由</th>
-                  <th style="padding: 12px; text-align: left; font-weight: bold; color: #2c3e50;">作成日</th>
-                  <th style="padding: 12px; text-align: center; font-weight: bold; color: #2c3e50;">操作</th>
+                  <th style="padding: 12px; text-align: left; font-weight: bold; color: #2c3e50; white-space: nowrap;">作成日</th>
+                  <th style="padding: 12px; text-align: center; font-weight: bold; color: #2c3e50; white-space: nowrap;">操作</th>
                 </tr>
               </thead>
               <tbody>
                 @for (allocation of filteredAllocations; track allocation.id) {
                   <tr style="border-bottom: 1px solid #eee;">
-                    <td style="padding: 12px;">{{ allocation.employee?.employeeNumber || '未設定' }}</td>
-                    <td style="padding: 12px;">{{ allocation.employee?.user?.name || '名前未設定' }}</td>
-                    <td style="padding: 12px;">{{ allocation.department?.name || '未設定' }}</td>
-                    <td style="padding: 12px;">
+                    <td style="padding: 12px; white-space: nowrap;">{{ allocation.employee?.employeeNumber || '未設定' }}</td>
+                    <td style="padding: 12px; white-space: nowrap;">{{ allocation.employee?.user?.name || '名前未設定' }}</td>
+                    <td style="padding: 12px; white-space: nowrap;">{{ allocation.department?.name || '未設定' }}</td>
+                    <td style="padding: 12px; white-space: nowrap;">
                       @switch (allocation.status) {
                         @case ('PENDING') {
                           <span style="background-color: #fff3cd; color: #856404; padding: 4px 8px; border-radius: 4px; font-size: 0.9em; font-weight: bold;">面談待ち</span>
+                        }
+                        @case ('INTERVIEWED') {
+                          <span style="background-color: #cce5ff; color: #004085; padding: 4px 8px; border-radius: 4px; font-size: 0.9em; font-weight: bold;">面談完了</span>
                         }
                         @case ('ASSIGNED') {
                           <span style="background-color: #d4edda; color: #155724; padding: 4px 8px; border-radius: 4px; font-size: 0.9em; font-weight: bold;">確定</span>
@@ -89,13 +99,13 @@ interface Allocation {
                       }
                     </td>
                     <td style="padding: 12px; font-size: 0.9em;">{{ allocation.reason }}</td>
-                    <td style="padding: 12px; font-size: 0.9em;">{{ allocation.createdAt | date: 'yyyy-MM-dd HH:mm' }}</td>
-                    <td style="padding: 12px; text-align: center;">
-                      @if (allocation.status === 'PENDING') {
-                        <button (click)="updateStatus(allocation.id, 'ASSIGNED')" style="margin-right: 8px; padding: 6px 12px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                    <td style="padding: 12px; font-size: 0.9em; white-space: nowrap;">{{ allocation.createdAt | date: 'yyyy-MM-dd HH:mm' }}</td>
+                    <td style="padding: 12px; text-align: center; white-space: nowrap;">
+                      @if (allocation.status === 'PENDING' || allocation.status === 'INTERVIEWED') {
+                        <button (click)="updateStatus(allocation.id, 'ASSIGNED')" style="margin-right: 8px; padding: 6px 12px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; white-space: nowrap; min-width: 80px;">
                           ✅ 確定
                         </button>
-                        <button (click)="updateStatus(allocation.id, 'REJECTED')" style="padding: 6px 12px; background-color: white; color: #dc3545; border: 1px solid #dc3545; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                        <button (click)="updateStatus(allocation.id, 'REJECTED')" style="padding: 6px 12px; background-color: white; color: #dc3545; border: 1px solid #dc3545; border-radius: 4px; cursor: pointer; font-weight: bold; white-space: nowrap; min-width: 80px;">
                           ❌ 見送り
                         </button>
                       }
@@ -122,6 +132,7 @@ export class NaijiListComponent implements OnInit {
   isLoading = true;
   errorMessage: string | null = null;
   searchQuery: string = '';
+  statusFilter: string = '';
 
   constructor(private router: Router, private apiService: ApiService, private cdr: ChangeDetectorRef) {}
 
@@ -143,6 +154,11 @@ export class NaijiListComponent implements OnInit {
       });
     }
 
+    // フィルタ処理：statusFilter がある場合
+    if (this.statusFilter) {
+      result = result.filter((allocation) => allocation.status === this.statusFilter);
+    }
+
     // ソート処理：社員番号の昇順
     return result.sort((a, b) => {
       const numA = a.employee?.employeeNumber || '';
@@ -153,6 +169,10 @@ export class NaijiListComponent implements OnInit {
 
   updateSearch(event: any): void {
     this.searchQuery = event.target.value;
+  }
+
+  updateStatusFilter(event: any): void {
+    this.statusFilter = event.target.value;
   }
 
   loadAllocations(): void {
@@ -202,6 +222,7 @@ export class NaijiListComponent implements OnInit {
         next: () => {
           alert(`ステータスを「${actionName}」に更新しました。`);
           this.loadAllocations();
+          this.cdr.detectChanges();
         },
         error: (err: any) => {
           console.error(err);

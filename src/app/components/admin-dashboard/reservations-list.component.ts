@@ -1,4 +1,4 @@
-import { Component, signal, OnInit, OnDestroy } from '@angular/core';
+import { Component, signal, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -51,7 +51,8 @@ export class ReservationsListComponent implements OnInit, OnDestroy {
 
   constructor(
     private router: Router,
-    private apiService: ApiService
+    private apiService: ApiService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -185,10 +186,14 @@ export class ReservationsListComponent implements OnInit, OnDestroy {
     this.apiService.getAllReservations()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (data: any[]) => this.allReservations.set(data),
+        next: (data: any[]) => {
+          this.allReservations.set(data);
+          this.cdr.detectChanges();
+        },
         error: (err: any) => {
           console.error('Error loading reservations:', err);
           this.allReservations.set([]);
+          this.cdr.detectChanges();
         }
       });
   }
@@ -219,10 +224,12 @@ export class ReservationsListComponent implements OnInit, OnDestroy {
           alert('ステータスを更新しました');
           this.loadAllReservations();
           this.closeReservationDetail();
+          this.cdr.detectChanges();
         },
         error: (err: any) => {
-          console.error('Error updating reservation:', err);
+          console.error('Error updating reservation status:', err);
           alert('更新に失敗しました');
+          this.cdr.detectChanges();
         }
       });
   }

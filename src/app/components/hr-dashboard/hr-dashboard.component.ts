@@ -1,4 +1,4 @@
-import { Component, signal, OnInit } from '@angular/core';
+import { Component, signal, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -45,7 +45,8 @@ export class HrDashboardComponent implements OnInit {
   constructor(
     private apiService: ApiService,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -74,10 +75,12 @@ export class HrDashboardComponent implements OnInit {
     this.apiService.getAllReservations().subscribe({
       next: (data: any[]) => {
         this.allReservations.set(data);
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Error loading reservations:', err);
         this.allReservations.set([]);
+        this.cdr.detectChanges();
       }
     });
   }
@@ -95,10 +98,12 @@ export class HrDashboardComponent implements OnInit {
       next: () => {
         alert('ステータスを更新しました');
         this.loadAllReservations();
+        this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error('Error updating reservation:', err);
+        console.error('Error updating reservation status:', err);
         alert('更新に失敗しました');
+        this.cdr.detectChanges();
       }
     });
   }

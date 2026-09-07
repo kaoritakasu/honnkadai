@@ -309,10 +309,22 @@ router.put('/admin/reservation/:id', authenticate, isAdmin, async (req: AuthRequ
   try {
     const { status } = req.body;
 
-    const updated = await prisma.interviewReservation.update({
-      where: { id: req.params.id },
-      data: { status },
-      include: { employee: { include: { user: true } } },
+    const [updated] = await prisma.$transaction(async (tx) => {
+      const reservation = await tx.interviewReservation.update({
+        where: { id: req.params.id },
+        data: { status },
+        include: { employee: { include: { user: true } } },
+      });
+
+      // 面談完了に伴い、対象社員の内示(Allocation)ステータスも連動して更新する
+      if (status === 'COMPLETED') {
+        await tx.allocation.updateMany({
+          where: { employeeId: reservation.employeeId, status: 'PENDING' },
+          data: { status: 'INTERVIEWED' },
+        });
+      }
+
+      return [reservation];
     });
 
     res.json(updated);

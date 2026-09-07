@@ -63,7 +63,6 @@ export class MyPageComponent implements OnInit {
   isLoadingSlots: boolean = false;
   isBookingReservation: boolean = false;
   showReservationForm: boolean = false;
-  showReservationModal: boolean = false;
   modalDate: string = '';
   modalTimeSlot: string = '';
   modalReason: string = '';
@@ -354,6 +353,16 @@ export class MyPageComponent implements OnInit {
     });
   }
 
+  // 「面談待ち」「確定」などアクティブな予約のみを対象とする（面談完了・見送り・キャンセルは履歴扱い）
+  get activeReservations(): any[] {
+    return this.myReservations.filter(r => r.status !== 'COMPLETED' && r.status !== 'CANCELLED');
+  }
+
+  // 面談完了・見送り・キャンセル済みの予約は履歴として表示する
+  get reservationHistory(): any[] {
+    return this.myReservations.filter(r => r.status === 'COMPLETED' || r.status === 'CANCELLED');
+  }
+
   cancelReservation(reservationId: string) {
     if (confirm('この予約をキャンセルしてもよろしいですか？')) {
       this.apiService.cancelReservation(reservationId).subscribe({
@@ -493,7 +502,7 @@ export class MyPageComponent implements OnInit {
     this.modalTimeSlot = '';
     this.modalReason = '';
     this.modalAvailableSlots = [];
-    this.showReservationModal = true;
+    this.showReservationForm = true;
     this.loadModalAvailableSlots();
   }
 
@@ -547,7 +556,7 @@ export class MyPageComponent implements OnInit {
   }
 
   closeReservationModal() {
-    this.showReservationModal = false;
+    this.showReservationForm = false;
     this.modalDate = '';
     this.selectedTimeSlot = '';
     this.reservationReason = '';
