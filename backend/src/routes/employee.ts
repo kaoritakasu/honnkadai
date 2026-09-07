@@ -50,7 +50,6 @@ router.get('/', authenticate, isAdmin, async (req: AuthRequest, res: Response) =
         id: true,
         employeeNumber: true,
         userId: true,
-        score: true,
         desiredDept: true,
         currentDept: true,
         status: true,

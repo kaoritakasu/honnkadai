@@ -864,11 +864,11 @@
             <div class="company-summary-card" style="margin-bottom: 20px; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
               <h4 style="margin: 0 0 10px 0; color: #2c3e50;">全社合計</h4>
               <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
-                <div style="padding: 10px;">
+                <div style="padding: 10px; min-width: 0;">
                   <p style="margin: 0 0 5px 0; color: #666; font-size: 0.9em;">全社売上</p>
-                  <p style="margin: 0; font-size: 1.5em; font-weight: bold; color: #9333ea;">¥{{ simulationSummary().totalCompanyRevenue | number }}</p>
+                  <p style="margin: 0; font-size: 1.2em; font-weight: bold; color: #9333ea; overflow-wrap: break-word; word-break: break-word;">¥{{ simulationSummary().totalCompanyRevenue | number }}</p>
                   @if (currentBaseline && currentBaseline.revenue !== undefined) {
-                    <p style="margin: 5px 0 0 0; font-size: 0.9em;">
+                    <p style="margin: 5px 0 0 0; font-size: 0.9em; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px;">
                       @if (simulationSummary().totalCompanyRevenue >= currentBaseline.revenue) {
                         <span style="color: #22c55e; font-weight: bold;">↑ +¥{{ (simulationSummary().totalCompanyRevenue - currentBaseline.revenue) | number }}</span>
                       } @else {
@@ -876,12 +876,23 @@
                       }
                     </p>
                   }
+                  @if (originalTotalMetrics) {
+                    <p style="margin: 3px 0 0 0; font-size: 0.8em; color: #666; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px;">移動前比:
+                      @if (getTotalRevenueDiff() > 0) {
+                        <span style="color: green; font-size: 0.8em;">(+¥{{ getTotalRevenueDiff() | number }})</span>
+                      } @else if (getTotalRevenueDiff() < 0) {
+                        <span style="color: red; font-size: 0.8em;">(¥{{ getTotalRevenueDiff() | number }})</span>
+                      } @else {
+                        <span style="font-size: 0.8em;">(±¥0)</span>
+                      }
+                    </p>
+                  }
                 </div>
-                <div style="padding: 10px;">
+                <div style="padding: 10px; min-width: 0;">
                   <p style="margin: 0 0 5px 0; color: #666; font-size: 0.9em;">全社コスト</p>
-                  <p style="margin: 0; font-size: 1.5em; font-weight: bold; color: #9333ea;">¥{{ simulationSummary().totalCompanyCost | number }}</p>
+                  <p style="margin: 0; font-size: 1.2em; font-weight: bold; color: #9333ea; overflow-wrap: break-word; word-break: break-word;">¥{{ simulationSummary().totalCompanyCost | number }}</p>
                   @if (currentBaseline && currentBaseline.cost !== undefined) {
-                    <p style="margin: 5px 0 0 0; font-size: 0.9em;">
+                    <p style="margin: 5px 0 0 0; font-size: 0.9em; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px;">
                       @if (simulationSummary().totalCompanyCost <= currentBaseline.cost) {
                         <span style="color: #22c55e; font-weight: bold;">↓ -¥{{ (currentBaseline.cost - simulationSummary().totalCompanyCost) | number }}</span>
                       } @else {
@@ -889,16 +900,38 @@
                       }
                     </p>
                   }
+                  @if (originalTotalMetrics) {
+                    <p style="margin: 3px 0 0 0; font-size: 0.8em; color: #666; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px;">移動前比:
+                      @if (getTotalCostDiff() > 0) {
+                        <span style="color: red; font-size: 0.8em;">(+¥{{ getTotalCostDiff() | number }})</span>
+                      } @else if (getTotalCostDiff() < 0) {
+                        <span style="color: green; font-size: 0.8em;">(¥{{ getTotalCostDiff() | number }})</span>
+                      } @else {
+                        <span style="font-size: 0.8em;">(±¥0)</span>
+                      }
+                    </p>
+                  }
                 </div>
-                <div style="padding: 10px;">
+                <div style="padding: 10px; min-width: 0;">
                   <p style="margin: 0 0 5px 0; color: #666; font-size: 0.9em;">全社利益</p>
-                  <p style="margin: 0; font-size: 1.5em; font-weight: bold; color: #9333ea;">¥{{ simulationSummary().totalCompanyProfit | number }}</p>
+                  <p style="margin: 0; font-size: 1.2em; font-weight: bold; color: #9333ea; overflow-wrap: break-word; word-break: break-word;">¥{{ simulationSummary().totalCompanyProfit | number }}</p>
                   @if (currentBaseline && currentBaseline.profit !== undefined) {
-                    <p style="margin: 5px 0 0 0; font-size: 0.9em;">
+                    <p style="margin: 5px 0 0 0; font-size: 0.9em; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px;">
                       @if (simulationSummary().totalCompanyProfit >= currentBaseline.profit) {
                         <span style="color: #22c55e; font-weight: bold;">↑ +¥{{ (simulationSummary().totalCompanyProfit - currentBaseline.profit) | number }}</span>
                       } @else {
                         <span style="color: #ef4444; font-weight: bold;">↓ -¥{{ (currentBaseline.profit - simulationSummary().totalCompanyProfit) | number }}</span>
+                      }
+                    </p>
+                  }
+                  @if (originalTotalMetrics) {
+                    <p style="margin: 3px 0 0 0; font-size: 0.8em; color: #666; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px;">移動前比:
+                      @if (getTotalProfitDiff() > 0) {
+                        <span style="color: green; font-size: 0.8em;">(+¥{{ getTotalProfitDiff() | number }})</span>
+                      } @else if (getTotalProfitDiff() < 0) {
+                        <span style="color: red; font-size: 0.8em;">(¥{{ getTotalProfitDiff() | number }})</span>
+                      } @else {
+                        <span style="font-size: 0.8em;">(±¥0)</span>
                       }
                     </p>
                   }
@@ -1123,7 +1156,18 @@
                   </div>
 
                   <p style="margin: 0 0 5px 0; font-size: 0.9em; color: #666;"><strong>充足率:</strong> {{ result.fulfillmentRate || '-' }}%</p>
-                  <p style="margin: 0 0 15px 0; font-size: 0.9em; color: #666;"><strong>利益:</strong> ¥{{ (result.profit || (result.finalRevenue - result.cost) || 0) | number }}</p>
+                  <p style="margin: 0 0 15px 0; font-size: 0.9em; color: #666; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px;">
+                    <strong>利益:</strong> ¥{{ (result.profit || (result.finalRevenue - result.cost) || 0) | number }}
+                    @if (originalDeptMetrics[result.departmentId]) {
+                      @if (getDeptProfitDiff(result) > 0) {
+                        <span style="color: green; font-size: 0.8em;">(+¥{{ getDeptProfitDiff(result) | number }})</span>
+                      } @else if (getDeptProfitDiff(result) < 0) {
+                        <span style="color: red; font-size: 0.8em;">(¥{{ getDeptProfitDiff(result) | number }})</span>
+                      } @else {
+                        <span style="font-size: 0.8em;">(±¥0)</span>
+                      }
+                    }
+                  </p>
 
                   <div style="flex: 1 1 auto; min-width: 0; min-height: 0; overflow-x: hidden; background-color: white; border-radius: 4px; padding: 5px; border: 1px dashed #ddd; display: flex; flex-direction: column; gap: 4px;">
                     @if (Array.isArray(result.candidates) && result.candidates.length > 0) {
@@ -1202,7 +1246,18 @@
                       <td class="text-right">¥{{ (result.baseRevenue || 0) | number }}</td>
                       <td class="text-right">¥{{ (result.finalRevenue || result.totalExpectedRevenue || 0) | number }}</td>
                       <td class="text-right">¥{{ (result.cost || 0) | number }}</td>
-                      <td class="text-right">¥{{ (result.profit || (result.finalRevenue - result.cost) || 0) | number }}</td>
+                      <td class="text-right" style="white-space: normal;">
+                        <div style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: flex-end; gap: 4px;">
+                        ¥{{ (result.profit || (result.finalRevenue - result.cost) || 0) | number }}
+                        @if (originalDeptMetrics[result.departmentId]) {
+                          @if (getDeptProfitDiff(result) > 0) {
+                            <span style="color: green; font-size: 0.8em;">(+¥{{ getDeptProfitDiff(result) | number }})</span>
+                          } @else if (getDeptProfitDiff(result) < 0) {
+                            <span style="color: red; font-size: 0.8em;">(¥{{ getDeptProfitDiff(result) | number }})</span>
+                          }
+                        }
+                        </div>
+                      </td>
                     </tr>
                   }
                 } @else {
@@ -1715,7 +1770,7 @@
             @if (emp.isNew) {
               <input type="text" [(ngModel)]="emp.employeeName" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em; font-weight: bold;" />
             } @else {
-              <p style="margin: 0; font-size: 1.1em; color: #2c3e50; font-weight: bold;">{{ emp.employeeName || 'N/A' }}</p>
+              <p style="margin: 0; font-size: 1.1em; color: #2c3e50; font-weight: bold;">{{ getDisplayName(emp) || 'N/A' }}</p>
             }
           </div>
 

@@ -130,6 +130,10 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   // --- シミュレーション比較用 ---
   currentBaseline: any = null;
 
+  // --- ドラッグ&ドロップ移動前の指標（差分表示用） ---
+  originalTotalMetrics: { revenue: number; cost: number; profit: number } | null = null;
+  originalDeptMetrics: { [departmentId: string]: { revenue: number; cost: number; profit: number } } = {};
+
   constructor(
     private apiService: ApiService,
     private authService: AuthService,
@@ -511,6 +515,9 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     if (!this.currentBaseline) {
       this.updateBaseline();
     }
+    // 新しいシミュレーション実行のため、ドラッグ&ドロップの差分基準をリセット
+    this.originalTotalMetrics = null;
+    this.originalDeptMetrics = {};
 
     this.loading.set(true);
 
@@ -586,6 +593,9 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       return;
     }
 
+    this.originalTotalMetrics = null;
+    this.originalDeptMetrics = {};
+
     this.loading.set(true);
     // 💡 修正箇所：引数を3つに増やしました
     this.apiService.simulateBatchAllocation(parsed, this.lastYearTotalRevenue, this.simulationMode).subscribe({
@@ -650,6 +660,8 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     if (!this.currentBaseline) {
       this.updateBaseline();
     }
+    this.originalTotalMetrics = null;
+    this.originalDeptMetrics = {};
 
     const lines = this.pasteDataText.trim().split(/\r?\n/);
     const parsedEmployees = [];
@@ -885,6 +897,11 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   }
 
   drop(event: CdkDragDrop<any[]>, targetIndex?: number) {
+    // 移動前の指標を保持（未保持の場合のみ。以降のドラッグ操作は常にこの値との差分を表示する）
+    if (!this.originalTotalMetrics) {
+      this.captureOriginalMetrics();
+    }
+
     if (event.previousContainer === event.container) {
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
     } else {
@@ -915,12 +932,68 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
             }
             this.updateDropListIds();
           }
+          this.cdr.detectChanges();
         },
         error: (err: any) => {
           this.error.set('再計算に失敗しました');
+          this.cdr.detectChanges();
         }
       });
     }
+  }
+
+  // 現在表示中の全社・各事業部の指標を「移動前の基準値」として保持する
+  private captureOriginalMetrics() {
+    const summary = this.simulationSummary();
+    if (summary) {
+      this.originalTotalMetrics = {
+        revenue: summary.totalCompanyRevenue || 0,
+        cost: summary.totalCompanyCost || 0,
+        profit: summary.totalCompanyProfit || 0
+      };
+    }
+
+    const results = this.simulationResults();
+    this.originalDeptMetrics = {};
+    if (Array.isArray(results)) {
+      results.forEach((result: any) => {
+        if (!result.departmentId) return;
+        const revenue = result.finalRevenue || result.totalExpectedRevenue || 0;
+        const cost = result.cost || 0;
+        this.originalDeptMetrics[result.departmentId] = {
+          revenue,
+          cost,
+          profit: result.profit || (revenue - cost)
+        };
+      });
+    }
+  }
+
+  getTotalRevenueDiff(): number {
+    const summary = this.simulationSummary();
+    if (!this.originalTotalMetrics || !summary) return 0;
+    return (summary.totalCompanyRevenue || 0) - this.originalTotalMetrics.revenue;
+  }
+
+  getTotalCostDiff(): number {
+    const summary = this.simulationSummary();
+    if (!this.originalTotalMetrics || !summary) return 0;
+    return (summary.totalCompanyCost || 0) - this.originalTotalMetrics.cost;
+  }
+
+  getTotalProfitDiff(): number {
+    const summary = this.simulationSummary();
+    if (!this.originalTotalMetrics || !summary) return 0;
+    return (summary.totalCompanyProfit || 0) - this.originalTotalMetrics.profit;
+  }
+
+  getDeptProfitDiff(result: any): number {
+    const original = this.originalDeptMetrics[result?.departmentId];
+    if (!original) return 0;
+    const revenue = result.finalRevenue || result.totalExpectedRevenue || 0;
+    const cost = result.cost || 0;
+    const currentProfit = result.profit || (revenue - cost);
+    return currentProfit - original.profit;
   }
 
   onDrop(event: CdkDragDrop<any[]>) {
@@ -1489,6 +1562,8 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     this.simulationResults.set(null);
     this.simulationSummary.set(null);
     this.viewingHistoryDetail = false;
+    this.originalTotalMetrics = null;
+    this.originalDeptMetrics = {};
   }
 
   updateBaseline() {
