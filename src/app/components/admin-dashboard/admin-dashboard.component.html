@@ -108,16 +108,12 @@
         <h2>全体指標</h2>
         <div class="metrics-grid">
           <div class="metric-card">
-            <h3>総社員数</h3>
-            <p class="metric-value">{{ dashboard().totalEmployees }}</p>
-          </div>
-          <div class="metric-card">
-            <h3>総配置数</h3>
-            <p class="metric-value">{{ dashboard().totalAllocations }}</p>
+            <h3>配置人数</h3>
+            <p class="metric-value">{{ dashboard().totalAllocations }} / {{ dashboard().totalEmployees }} 名</p>
           </div>
           <div class="metric-card">
             <h3>予想総収益</h3>
-            <p class="metric-value">¥{{ dashboard().totalRevenue | number }}</p>
+            <p class="metric-value">{{ dashboard().totalRevenue / 100000000 | number:'1.1-1' }} 億円</p>
           </div>
           <div class="metric-card">
             <h3>配置率</h3>
@@ -252,7 +248,7 @@
                 <div class="dept-view" style="padding: 15px; border: 1px solid #eee; border-radius: 4px;">
                   <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
                     <div><label style="display: block; font-weight: bold; margin-bottom: 5px;">状態</label><p style="margin: 0;">{{ dept.status || '-' }}</p></div>
-                    <div><label style="display: block; font-weight: bold; margin-bottom: 5px;">説明</label><p style="margin: 0;">{{ dept.description || '-' }}</p></div>
+                    <div style="grid-column: span 2; word-break: keep-all;"><label style="display: block; font-weight: bold; margin-bottom: 5px;">説明</label><p style="margin: 0;">{{ dept.description || '-' }}</p></div>
                     <div><label style="display: block; font-weight: bold; margin-bottom: 5px;">適性人数</label><p style="margin: 0;">{{ dept.optimalHeadcount || '-' }}</p></div>
                     <div><label style="display: block; font-weight: bold; margin-bottom: 5px;">最低配置人数</label><p style="margin: 0;">{{ dept.minHeadcount || '-' }}</p></div>
                     <div><label style="display: block; font-weight: bold; margin-bottom: 5px;">営業力の重み</label><p style="margin: 0;">{{ dept.weightSales || '-' }}</p></div>
@@ -321,16 +317,16 @@
                           </div>
                         }
 
-                        <div style="margin-top: 15px; padding-top: 12px; border-top: 1px solid #f0f0f0;">
+                        <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #f0f0f0;">
                           <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; font-size: 0.85em;">
                             <div style="text-align: center; padding: 8px; background: #f8f9fa; border-radius: 6px;">
-                              <p style="margin: 0; color: #666; font-size: 0.8em;">平均値</p>
+                              <p style="margin: 0; color: #666; font-weight: bold; font-size: 0.8em;">平均値</p>
                               <p style="margin: 3px 0 0 0; font-weight: bold; color: #9333ea;">
                                 {{ getDepartmentSkillAverages(dept.name).averageSkill }}/100
                               </p>
                             </div>
                             <div style="text-align: center; padding: 8px; background: #f8f9fa; border-radius: 6px;">
-                              <p style="margin: 0; color: #666; font-size: 0.8em;">最高スキル</p>
+                              <p style="margin: 0; color: #666; font-weight: bold; font-size: 0.8em;">最高スキル</p>
                               <p style="margin: 3px 0 0 0; font-weight: bold; color: #9333ea;">
                                 {{ getDepartmentSkillAverages(dept.name).maxSkill }}/100
                               </p>
@@ -410,7 +406,7 @@
                               @let gap = idealValue - actualValue;
                               <div style="margin-top: 10px; padding: 8px; background: white; border-radius: 4px; text-align: center; border: 1px solid #ddd;">
                                 @if (gap > 0) {
-                                  <span style="font-size: 0.8em; color: #e74c3c; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                                  <span style="font-size: 0.8em; color: #d32f2f; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 4px;">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2">
                                       <circle cx="12" cy="12" r="10"></circle>
                                       <line x1="12" y1="8" x2="12" y2="12"></line>
@@ -419,7 +415,7 @@
                                     不足: {{ gap }}%
                                   </span>
                                 } @else if (gap < 0) {
-                                  <span style="font-size: 0.8em; color: #27ae60; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                                  <span style="font-size: 0.8em; color: #1976d2; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 4px;">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                                       <polyline points="20 6 9 17 4 12"></polyline>
                                     </svg>
@@ -489,16 +485,16 @@
         @if (dashboard().simulationHistory && dashboard().simulationHistory.length > 0) {
           <div class="simulation-history-section" style="margin-top: 30px; padding: 20px; background-color: #f8f9fa; border-radius: 8px; border-left: 4px solid #667eea; border: 1px solid #e0e0e0;">
             <h2>過去の配置シミュレーション履歴</h2>
-            <div class="history-table-container" style="overflow-x: auto;">
+            <div class="history-table-container" style="overflow-x: auto; max-height: 300px; overflow-y: auto; display: block;">
               <table class="history-table" style="width: 100%; border-collapse: collapse; background: white; border-radius: 4px; overflow: hidden;">
                 <thead>
                   <tr style="background-color: #f5f5f5; border-bottom: 2px solid #ddd;">
-                    <th style="padding: 12px; text-align: left; font-weight: bold; border-right: 1px solid #eee;">実行日時</th>
-                    <th style="padding: 12px; text-align: left; font-weight: bold; border-right: 1px solid #eee;">実行者</th>
-                    <th style="padding: 12px; text-align: right; font-weight: bold; border-right: 1px solid #eee;">全社売上</th>
-                    <th style="padding: 12px; text-align: right; font-weight: bold; border-right: 1px solid #eee;">全社コスト</th>
-                    <th style="padding: 12px; text-align: right; font-weight: bold; border-right: 1px solid #eee;">全社利益</th>
-                    <th style="padding: 12px; text-align: center; font-weight: bold;">操作</th>
+                    <th style="padding: 12px; text-align: left; font-weight: bold; border-right: 1px solid #eee; background-color: #f5f5f5; position: sticky; top: 0; z-index: 1;">実行日時</th>
+                    <th style="padding: 12px; text-align: left; font-weight: bold; border-right: 1px solid #eee; background-color: #f5f5f5; position: sticky; top: 0; z-index: 1;">実行者</th>
+                    <th style="padding: 12px; text-align: right; font-weight: bold; border-right: 1px solid #eee; background-color: #f5f5f5; position: sticky; top: 0; z-index: 1;">全社売上</th>
+                    <th style="padding: 12px; text-align: right; font-weight: bold; border-right: 1px solid #eee; background-color: #f5f5f5; position: sticky; top: 0; z-index: 1;">全社コスト</th>
+                    <th style="padding: 12px; text-align: right; font-weight: bold; border-right: 1px solid #eee; background-color: #f5f5f5; position: sticky; top: 0; z-index: 1;">全社利益</th>
+                    <th style="padding: 12px; text-align: center; font-weight: bold; background-color: #f5f5f5; position: sticky; top: 0; z-index: 1;">操作</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -516,9 +512,9 @@
                           <span [title]="history.executedBy">{{ history.executorName || '-' }}</span>
                         </div>
                       </td>
-                      <td style="padding: 12px; text-align: right; border-right: 1px solid #eee;">¥{{ history.totalRevenue | number }}</td>
-                      <td style="padding: 12px; text-align: right; border-right: 1px solid #eee;">¥{{ history.totalCost | number }}</td>
-                      <td style="padding: 12px; text-align: right; border-right: 1px solid #eee;">¥{{ history.totalProfit | number }}</td>
+                      <td style="padding: 12px; text-align: right; border-right: 1px solid #eee;">{{ history.totalRevenue / 100000000 | number:'1.1-1' }} 億円</td>
+                      <td style="padding: 12px; text-align: right; border-right: 1px solid #eee;">{{ history.totalCost / 100000000 | number:'1.1-1' }} 億円</td>
+                      <td style="padding: 12px; text-align: right; border-right: 1px solid #eee;">{{ history.totalProfit / 100000000 | number:'1.1-1' }} 億円</td>
                       <td style="padding: 12px; text-align: center;">
                         <button (click)="loadHistoryDetail(history)" class="btn-history-detail" style="padding: 6px 16px; background-color: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;">
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -866,7 +862,10 @@
               <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
                 <div style="padding: 10px; min-width: 0;">
                   <p style="margin: 0 0 5px 0; color: #666; font-size: 0.9em;">全社売上</p>
-                  <p style="margin: 0; font-size: 1.2em; font-weight: bold; color: #9333ea; overflow-wrap: break-word; word-break: break-word;">¥{{ simulationSummary().totalCompanyRevenue | number }}</p>
+                  <p style="margin: 0; font-size: 1.2em; font-weight: bold; color: #333; overflow-wrap: break-word; word-break: break-word;">{{ simulationSummary().totalCompanyRevenue / 100000000 | number:'1.1-1' }} 億円</p>
+                  @if (lastYearTotalRevenue > 0) {
+                    <div style="font-size: 0.8em; color: #888;">(目標/昨年実績: {{ lastYearTotalRevenue / 100000000 | number:'1.1-1' }} 億円)</div>
+                  }
                   @if (currentBaseline && currentBaseline.revenue !== undefined) {
                     <p style="margin: 5px 0 0 0; font-size: 0.9em; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px;">
                       @if (simulationSummary().totalCompanyRevenue >= currentBaseline.revenue) {
@@ -890,7 +889,7 @@
                 </div>
                 <div style="padding: 10px; min-width: 0;">
                   <p style="margin: 0 0 5px 0; color: #666; font-size: 0.9em;">全社コスト</p>
-                  <p style="margin: 0; font-size: 1.2em; font-weight: bold; color: #9333ea; overflow-wrap: break-word; word-break: break-word;">¥{{ simulationSummary().totalCompanyCost | number }}</p>
+                  <p style="margin: 0; font-size: 1.2em; font-weight: bold; color: #666; overflow-wrap: break-word; word-break: break-word;">{{ simulationSummary().totalCompanyCost / 100000000 | number:'1.1-1' }} 億円</p>
                   @if (currentBaseline && currentBaseline.cost !== undefined) {
                     <p style="margin: 5px 0 0 0; font-size: 0.9em; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px;">
                       @if (simulationSummary().totalCompanyCost <= currentBaseline.cost) {
@@ -914,7 +913,7 @@
                 </div>
                 <div style="padding: 10px; min-width: 0;">
                   <p style="margin: 0 0 5px 0; color: #666; font-size: 0.9em;">全社利益</p>
-                  <p style="margin: 0; font-size: 1.2em; font-weight: bold; color: #9333ea; overflow-wrap: break-word; word-break: break-word;">¥{{ simulationSummary().totalCompanyProfit | number }}</p>
+                  <p style="margin: 0; font-size: 2em; font-weight: bold; color: #9333ea; overflow-wrap: break-word; word-break: break-word;">{{ simulationSummary().totalCompanyProfit / 100000000 | number:'1.1-1' }} 億円</p>
                   @if (currentBaseline && currentBaseline.profit !== undefined) {
                     <p style="margin: 5px 0 0 0; font-size: 0.9em; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px;">
                       @if (simulationSummary().totalCompanyProfit >= currentBaseline.profit) {
@@ -940,8 +939,6 @@
 
               @if (lastYearTotalRevenue > 0) {
                 <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e5e7eb;">
-                  <p style="margin: 0 0 5px 0; color: #666; font-size: 0.9em;">昨年の全社売上（制約値）</p>
-                  <p style="margin: 0; font-size: 1.2em; font-weight: bold; color: #9333ea;">¥{{ lastYearTotalRevenue | number }}</p>
                   @if (simulationSummary().totalCompanyRevenue >= lastYearTotalRevenue) {
                     <p style="margin: 5px 0 0 0; font-size: 0.85em; background: #dcfce7; padding: 8px; border-radius: 4px; border-left: 3px solid #22c55e; display: flex; align-items: center; gap: 4px; color: #166534;">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
@@ -999,9 +996,9 @@
                   </svg>
                   <label style="font-weight: bold; color: #2c3e50; margin: 0; font-size: 0.95em;">新卒</label>
                 </div>
-                <div style="display: flex; gap: 0; align-items: stretch;">
-                  <input type="number" [(ngModel)]="newGradCount" min="0" max="50" placeholder="0" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px 0 0 4px; border-right: none; font-size: 1em;">
-                  <span style="background-color: #f3f4f6; color: #666; font-weight: bold; font-size: 0.9em; white-space: nowrap; padding: 8px 12px; border: 1px solid #ccc; border-left: none; border-radius: 0 4px 4px 0; display: flex; align-items: center;">名</span>
+                <div style="display: flex; align-items: center;">
+                  <input type="number" [(ngModel)]="newGradCount" min="0" max="50" placeholder="0" style="width: 80px; text-align: right; margin-right: 8px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em;">
+                  <span style="color: #666; font-weight: bold; font-size: 0.9em;">名</span>
                 </div>
                 <p style="margin: 8px 0 0 0; font-size: 0.8em; color: #888;">Force: 10～30 | 年俸: 200～300万</p>
               </div>
@@ -1015,9 +1012,9 @@
                   </svg>
                   <label style="font-weight: bold; color: #2c3e50; margin: 0; font-size: 0.95em;">中途</label>
                 </div>
-                <div style="display: flex; gap: 0; align-items: stretch;">
-                  <input type="number" [(ngModel)]="midCareerCount" min="0" max="50" placeholder="0" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px 0 0 4px; border-right: none; font-size: 1em;">
-                  <span style="background-color: #f3f4f6; color: #666; font-weight: bold; font-size: 0.9em; white-space: nowrap; padding: 8px 12px; border: 1px solid #ccc; border-left: none; border-radius: 0 4px 4px 0; display: flex; align-items: center;">名</span>
+                <div style="display: flex; align-items: center;">
+                  <input type="number" [(ngModel)]="midCareerCount" min="0" max="50" placeholder="0" style="width: 80px; text-align: right; margin-right: 8px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em;">
+                  <span style="color: #666; font-weight: bold; font-size: 0.9em;">名</span>
                 </div>
                 <p style="margin: 8px 0 0 0; font-size: 0.8em; color: #888;">Force: 60～80 (特定) | 年俸: 500～700万</p>
               </div>
@@ -1031,9 +1028,9 @@
                     </svg>
                     <label style="font-weight: bold; color: #2c3e50; margin: 0; font-size: 0.95em;">幹部候補</label>
                   </div>
-                  <div style="display: flex; gap: 0; align-items: stretch;">
-                    <input type="number" [(ngModel)]="executiveCandidateCount" min="0" max="50" placeholder="0" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px 0 0 4px; border-right: none; font-size: 1em;">
-                    <span style="background-color: #f3f4f6; color: #666; font-weight: bold; font-size: 0.9em; white-space: nowrap; padding: 8px 12px; border: 1px solid #ccc; border-left: none; border-radius: 0 4px 4px 0; display: flex; align-items: center;">名</span>
+                  <div style="display: flex; align-items: center;">
+                    <input type="number" [(ngModel)]="executiveCandidateCount" min="0" max="50" placeholder="0" style="width: 80px; text-align: right; margin-right: 8px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em;">
+                    <span style="color: #666; font-weight: bold; font-size: 0.9em;">名</span>
                   </div>
                   <p style="margin: 8px 0 0 0; font-size: 0.8em; color: #888;">Force: 70～90 (全体) | 年俸: 800～1000万</p>
                 </div>
@@ -1140,9 +1137,9 @@
                   <!-- 絞り込みと並び替え -->
                   <div class="dept-controls" style="margin-bottom: 8px; display: flex; flex-direction: column; gap: 4px; flex-wrap: wrap;">
                     <div style="display: flex; gap: 4px; margin-bottom: 8px;">
-                      <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
-                        <span>🔍</span>
-                        <input type="text" placeholder="名前/タグ..." [(ngModel)]="filterInputs[result.departmentId]" style="flex: 1; font-size: 0.7em; padding: 4px; box-sizing: border-box;">
+                      <div style="position: relative; flex: 1;">
+                        <span style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-size: 0.8em; opacity: 0.6; pointer-events: none;">🔍</span>
+                        <input type="text" placeholder="名前/タグ..." [(ngModel)]="filterInputs[result.departmentId]" style="width: 100%; font-size: 0.7em; padding: 4px 4px 4px 22px; box-sizing: border-box;">
                       </div>
                       <button (click)="applyFilter(result.departmentId)" style="font-size: 0.7em; padding: 4px 8px; background-color: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer;">絞り込む</button>
                     </div>
@@ -1157,7 +1154,7 @@
 
                   <p style="margin: 0 0 5px 0; font-size: 0.9em; color: #666;"><strong>充足率:</strong> {{ result.fulfillmentRate || '-' }}%</p>
                   <p style="margin: 0 0 15px 0; font-size: 0.9em; color: #666; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px;">
-                    <strong>利益:</strong> ¥{{ (result.profit || (result.finalRevenue - result.cost) || 0) | number }}
+                    <strong>利益:</strong> {{ (result.profit || (result.finalRevenue - result.cost) || 0) / 100000000 | number:'1.1-1' }} 億円
                     @if (originalDeptMetrics[result.departmentId]) {
                       @if (getDeptProfitDiff(result) > 0) {
                         <span style="color: green; font-size: 0.8em;">(+¥{{ getDeptProfitDiff(result) | number }})</span>
@@ -1243,17 +1240,17 @@
                       <td>{{ result.departmentName || result.department?.name || '-' }}</td>
                       <td class="text-right">{{ result.allocatedCount || result.candidates?.length || 0 }}</td>
                       <td class="text-right">{{ result.fulfillmentRate || '-' }}</td>
-                      <td class="text-right">¥{{ (result.baseRevenue || 0) | number }}</td>
-                      <td class="text-right">¥{{ (result.finalRevenue || result.totalExpectedRevenue || 0) | number }}</td>
-                      <td class="text-right">¥{{ (result.cost || 0) | number }}</td>
+                      <td class="text-right">{{ (result.baseRevenue || 0) / 100000000 | number:'1.1-1' }} 億円</td>
+                      <td class="text-right">{{ (result.finalRevenue || result.totalExpectedRevenue || 0) / 100000000 | number:'1.1-1' }} 億円</td>
+                      <td class="text-right">{{ (result.cost || 0) / 100000000 | number:'1.1-1' }} 億円</td>
                       <td class="text-right" style="white-space: normal;">
                         <div style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: flex-end; gap: 4px;">
-                        ¥{{ (result.profit || (result.finalRevenue - result.cost) || 0) | number }}
+                        {{ (result.profit || (result.finalRevenue - result.cost) || 0) / 100000000 | number:'1.1-1' }} 億円
                         @if (originalDeptMetrics[result.departmentId]) {
                           @if (getDeptProfitDiff(result) > 0) {
-                            <span style="color: green; font-size: 0.8em;">(+¥{{ getDeptProfitDiff(result) | number }})</span>
+                            <span style="color: green; font-size: 0.8em;">(+{{ getDeptProfitDiff(result) / 100000000 | number:'1.1-1' }} 億円)</span>
                           } @else if (getDeptProfitDiff(result) < 0) {
-                            <span style="color: red; font-size: 0.8em;">(¥{{ getDeptProfitDiff(result) | number }})</span>
+                            <span style="color: red; font-size: 0.8em;">({{ getDeptProfitDiff(result) / 100000000 | number:'1.1-1' }} 億円)</span>
                           }
                         }
                         </div>
@@ -1265,10 +1262,10 @@
                     <td>{{ simulationResults().departmentName || simulationResults().department?.name || '-' }}</td>
                     <td class="text-right">{{ simulationResults().allocatedCount || simulationResults().candidates?.length || 0 }}</td>
                     <td class="text-right">{{ simulationResults().fulfillmentRate || '-' }}</td>
-                    <td class="text-right">¥{{ (simulationResults().baseRevenue || 0) | number }}</td>
-                    <td class="text-right">¥{{ (simulationResults().finalRevenue || simulationResults().totalExpectedRevenue || 0) | number }}</td>
-                    <td class="text-right">¥{{ (simulationResults().cost || 0) | number }}</td>
-                    <td class="text-right">¥{{ (simulationResults().profit || (simulationResults().finalRevenue - simulationResults().cost) || 0) | number }}</td>
+                    <td class="text-right">{{ (simulationResults().baseRevenue || 0) / 100000000 | number:'1.1-1' }} 億円</td>
+                    <td class="text-right">{{ (simulationResults().finalRevenue || simulationResults().totalExpectedRevenue || 0) / 100000000 | number:'1.1-1' }} 億円</td>
+                    <td class="text-right">{{ (simulationResults().cost || 0) / 100000000 | number:'1.1-1' }} 億円</td>
+                    <td class="text-right">{{ (simulationResults().profit || (simulationResults().finalRevenue - simulationResults().cost) || 0) / 100000000 | number:'1.1-1' }} 億円</td>
                   </tr>
                 }
               </tbody>
@@ -1332,8 +1329,8 @@
         <!-- 検索・並び替えコントロール -->
         <div class="employees-controls" style="margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
           <div style="flex: 1; min-width: 200px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <div style="position: relative;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #999;">
                 <circle cx="11" cy="11" r="8"></circle>
                 <path d="m21 21-4.35-4.35"></path>
               </svg>
@@ -1341,7 +1338,7 @@
                 type="text"
                 [(ngModel)]="employeeSearchText"
                 placeholder="名前・社員番号・部署で検索..."
-                style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;"
+                style="width: 100%; padding: 8px 12px 8px 36px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;"
               />
             </div>
           </div>
@@ -1360,35 +1357,43 @@
           </div>
         </div>
 
-        <table class="employees-table">
-          <thead>
-            <tr>
-              <th>社員番号</th>
-              <th>名前</th>
-              <th>現在の部署</th>
-              <th>希望部署</th>
-              <th>ステータス</th>
-              <th>最終更新日時</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (emp of getFilteredAndSortedEmployees(); track emp.id) {
+        <div style="max-height: 600px; overflow-y: auto; display: block; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-radius: 8px;">
+          <table class="employees-table">
+            <thead>
               <tr>
-                <td>{{ emp.employeeNumber || '-' }}</td>
-                <td>
-                  {{ emp.user?.name || emp.name || '-' }}
-                  @if (currentUserRole === 'ADMIN' && emp.isExecutiveCandidate) {
-                    <span title="幹部候補" style="margin-left: 5px;">👑</span>
-                  }
-                </td>
-                <td>{{ emp.currentDept || '-' }}</td>
-                <td>{{ emp.desiredDept || emp.careerDesire || emp.careerGoals || '-' }}</td>
-                <td>{{ emp.status || '-' }}</td>
-                <td>{{ emp.lastUpdated | date: 'yyyy/MM/dd HH:mm' }}</td>
+                <th style="position: sticky; top: 0; z-index: 10;">社員番号</th>
+                <th style="position: sticky; top: 0; z-index: 10;">名前</th>
+                <th style="position: sticky; top: 0; z-index: 10;">現在の部署</th>
+                <th style="position: sticky; top: 0; z-index: 10;">希望部署</th>
+                <th style="position: sticky; top: 0; z-index: 10;">ステータス</th>
+                <th style="position: sticky; top: 0; z-index: 10;">最終更新日時</th>
               </tr>
-            }
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              @for (emp of getFilteredAndSortedEmployees(); track emp.id) {
+                <tr>
+                  <td>{{ emp.employeeNumber || '-' }}</td>
+                  <td>
+                    {{ emp.user?.name || emp.name || '-' }}
+                    @if (currentUserRole === 'ADMIN' && emp.isExecutiveCandidate) {
+                      <span title="幹部候補" style="margin-left: 5px;">👑</span>
+                    }
+                  </td>
+                  <td>{{ emp.currentDept || '-' }}</td>
+                  <td>{{ emp.desiredDept || emp.careerDesire || emp.careerGoals || '-' }}</td>
+                  <td>
+                    @if (emp.status === 'active') {
+                      <span style="background: #dcfce7; color: #166534; padding: 4px 12px; border-radius: 20px; font-size: 0.85em; font-weight: bold; display: inline-block;">{{ emp.status }}</span>
+                    } @else {
+                      {{ emp.status || '-' }}
+                    }
+                  </td>
+                  <td>{{ emp.lastUpdated | date: 'yyyy/MM/dd HH:mm' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
       </div>
     }
 
@@ -1407,7 +1412,7 @@
               <h3 style="margin: 0; color: #2c3e50;">📅 面談予約・受付ルール管理</h3>
               <p style="margin: 5px 0 0 0; color: #666; font-size: 0.9em;">面談予約のスケジュール、カレンダー例外設定、基本的な受付ルールの管理はここから行えます。</p>
             </div>
-            <button (click)="navigateToReservations()" style="padding: 8px 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: all 0.2s; box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 4px 8px rgba(102, 126, 234, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(102, 126, 234, 0.3)'">
+            <button (click)="navigateToReservations()" style="padding: 8px 16px; background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: all 0.2s; box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 4px 8px rgba(52, 152, 219, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(52, 152, 219, 0.3)'">
               📅 設定とカレンダーを見る
             </button>
           </div>
@@ -1496,15 +1501,15 @@
 
               <!-- 月切り替えナビゲーション -->
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <button (click)="previousMonth()" style="padding: 8px 12px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">← 前月</button>
+                <button (click)="previousMonth()" style="padding: 8px 16px; background: white; color: #4b5563; border: 1px solid #d1d5db; border-radius: 4px; cursor: pointer; font-weight: bold; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">← 前月</button>
                 <h3 style="margin: 0; font-size: 1.2em; color: #2c3e50;">{{ getMonthYearDisplay() }}</h3>
-                <button (click)="nextMonth()" style="padding: 8px 12px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">次月 →</button>
+                <button (click)="nextMonth()" style="padding: 8px 16px; background: white; color: #4b5563; border: 1px solid #d1d5db; border-radius: 4px; cursor: pointer; font-weight: bold; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">次月 →</button>
               </div>
 
               <!-- 曜日ヘッダー -->
               <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #eaeaea; margin-bottom: 1px;">
-                @for (day of ['日', '月', '火', '水', '木', '金', '土']; track day) {
-                  <div style="background: #f8f9fa; color: #6b7280; padding: 12px; text-align: center; font-weight: bold; font-size: 0.9em;">{{ day }}</div>
+                @for (day of ['日', '月', '火', '水', '木', '金', '土']; track day; let i = $index) {
+                  <div [style.color]="i === 0 ? '#e74c3c' : i === 6 ? '#3498db' : '#6b7280'" style="background: #f8f9fa; padding: 12px; text-align: center; font-weight: bold; font-size: 0.9em;">{{ day }}</div>
                 }
               </div>
 
@@ -1512,11 +1517,16 @@
               <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #eaeaea;">
                 @for (week of calendarWeeks(); track $index) {
                   @for (dayCell of week; track $index) {
-                    <div [style.background]="isDateUnavailable(dayCell?.date) ? '#fff5f5' : '#ffffff'" style="padding: 10px; border: 1px solid #f9f9f9; min-height: 90px; overflow-y: auto; position: relative;">
+                    <div [style.background]="isDateUnavailable(dayCell?.date) ? '#fff5f5' : isToday(dayCell?.date) ? '#fffbeb' : '#ffffff'" style="padding: 10px; border: 1px solid #f9f9f9; min-height: 90px; overflow-y: auto; position: relative;">
                       @if (dayCell) {
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-                          <div style="font-weight: bold; color: #4b5563;">{{ dayCell.dayOfMonth }}</div>
-                          <button (click)="openExceptionModal(dayCell.date); $event.stopPropagation()" title="例外設定" style="padding: 4px; font-size: 1em; background: transparent; color: #d1d5db; border: none; border-radius: 4px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.color='#4b5563'; this.style.backgroundColor='#f3f4f6'" onmouseout="this.style.color='#d1d5db'; this.style.backgroundColor='transparent'">⚙️</button>
+                          <div [style.background]="isToday(dayCell.date) ? '#667eea' : 'transparent'" [style.color]="isToday(dayCell.date) ? 'white' : '#4b5563'" [style.border-radius]="isToday(dayCell.date) ? '50%' : '0'" [style.width]="isToday(dayCell.date) ? '24px' : 'auto'" [style.height]="isToday(dayCell.date) ? '24px' : 'auto'" style="font-weight: bold; display: flex; align-items: center; justify-content: center;">{{ dayCell.dayOfMonth }}</div>
+                          <button (click)="openExceptionModal(dayCell.date); $event.stopPropagation()" title="例外設定" style="padding: 4px; display: flex; align-items: center; justify-content: center; background: transparent; border: none; border-radius: 4px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.backgroundColor='#f3f4f6'" onmouseout="this.style.backgroundColor='transparent'">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                              <circle cx="12" cy="12" r="3"></circle>
+                              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                            </svg>
+                          </button>
                         </div>
 
                         @if (getExceptionForDate(dayCell.date)) {
@@ -1548,7 +1558,7 @@
               <h3 style="margin: 0; color: #2c3e50;">💬 人事相談一覧</h3>
               <p style="margin: 5px 0 0 0; color: #666; font-size: 0.9em;">社員からの相談内容を確認・管理できます。</p>
             </div>
-            <button (click)="navigateToConsultations()" style="padding: 8px 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: all 0.2s; box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 4px 8px rgba(102, 126, 234, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(102, 126, 234, 0.3)'">
+            <button (click)="navigateToConsultations()" style="padding: 8px 16px; background: linear-gradient(135deg, #27ae60 0%, #219653 100%); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: all 0.2s; box-shadow: 0 2px 4px rgba(39, 174, 96, 0.3);" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 4px 8px rgba(39, 174, 96, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(39, 174, 96, 0.3)'">
               💬 相談を見る
             </button>
           </div>
@@ -1643,7 +1653,7 @@
               <h3 style="margin: 0; color: #2c3e50;">📋 異動候補・内示管理</h3>
               <p style="margin: 5px 0 0 0; color: #666; font-size: 0.9em;">配置シミュレーション結果を異動候補として管理し、面談後に確定処理を行えます。</p>
             </div>
-            <button (click)="navigateToNaiji()" style="padding: 8px 16px; background: linear-gradient(135deg, #3b82f6 0%, #9333ea 100%); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: background 0.2s; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 4px 8px rgba(59, 130, 246, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(59, 130, 246, 0.3)'">
+            <button (click)="navigateToNaiji()" style="padding: 8px 16px; background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: background 0.2s; box-shadow: 0 2px 4px rgba(243, 156, 18, 0.3);" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 4px 8px rgba(243, 156, 18, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(243, 156, 18, 0.3)'">
               📋 内示一覧を見る
             </button>
           </div>
@@ -1848,10 +1858,11 @@
 <!-- 配置シミュレーション適用（予約）モーダル -->
 <!-- ============================================== -->
 @if (showApplyModal) {
-  <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center;">
-    <div style="background: white; border-radius: 12px; padding: 30px; max-width: 500px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
-      <h2 style="margin: 0 0 20px 0; color: #2c3e50; font-size: 1.5em; display: flex; align-items: center; gap: 10px;">
-        📋 配置案を発令予約する
+  <div (click)="closeApplyModal()" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center;">
+    <div (click)="$event.stopPropagation()" style="background: white; border-radius: 12px; padding: 30px; max-width: 500px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+      <h2 style="margin: 0 0 20px 0; color: #2c3e50; font-size: 1.5em; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+        <span style="display: flex; align-items: center; gap: 10px;">📋 配置案を発令予約する</span>
+        <button (click)="closeApplyModal()" style="background: none; border: none; font-size: 1.2em; line-height: 1; cursor: pointer; color: #999; padding: 4px;">✖</button>
       </h2>
 
       <p style="margin: 0 0 20px 0; color: #666; line-height: 1.6;">
@@ -1872,8 +1883,8 @@
       </div>
 
       <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 25px; padding-top: 20px; border-top: 1px solid #eee;">
-        <button (click)="closeApplyModal()" style="padding: 10px 25px; background-color: #95a5a6; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: all 0.2s;">
-          キャンセル
+        <button (click)="closeApplyModal()" style="padding: 10px 25px; background: white; color: #4b5563; border: 1px solid #d1d5db; border-radius: 6px; cursor: pointer; font-weight: bold; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s;">
+          ← 戻る
         </button>
         <button (click)="confirmApplySimulation()" style="padding: 10px 30px; background-color: #e74c3c; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: all 0.2s;">
           予約を確定する

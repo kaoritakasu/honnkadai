@@ -31,7 +31,7 @@ interface Allocation {
   template: `
     <div style="padding: 20px; background-color: #f8f9fa; min-height: 100vh;">
       <div style="max-width: 1200px; margin: 0 auto;">
-        <button (click)="goBack()" style="margin-bottom: 20px; padding: 10px 20px; background-color: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+        <button (click)="goBack()" style="margin-bottom: 20px; padding: 8px 16px; background: white; color: #4b5563; border: 1px solid #d1d5db; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); font-weight: bold; cursor: pointer;">
           ← 戻る
         </button>
 
@@ -53,14 +53,21 @@ interface Allocation {
 
           @if (!isLoading) {
             @if (allocations.length > 0) {
-            <input type="text" (input)="updateSearch($event)" placeholder="社員番号・社員名で検索..." style="padding: 10px; font-size: 1em; border: 1px solid #ddd; border-radius: 4px; width: 300px; margin-bottom: 20px;">
-            <select (change)="updateStatusFilter($event)" style="padding: 10px; font-size: 1em; border: 1px solid #ddd; border-radius: 4px; margin-left: 10px; margin-bottom: 20px;">
-              <option value="">すべて</option>
-              <option value="PENDING">面談待ち</option>
-              <option value="INTERVIEWED">面談完了</option>
-              <option value="ASSIGNED">確定</option>
-              <option value="REJECTED">見送り</option>
-            </select>
+            <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 20px;">
+              <div style="position: relative;">
+                <svg style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #9ca3af; width: 16px; height: 16px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />
+                </svg>
+                <input type="text" (input)="updateSearch($event)" placeholder="社員番号・社員名で検索..." style="padding: 10px 10px 10px 36px; font-size: 1em; border: 1px solid #ddd; border-radius: 4px; width: 300px;">
+              </div>
+              <select (change)="updateStatusFilter($event)" style="padding: 10px; font-size: 1em; border: 1px solid #ddd; border-radius: 4px;">
+                <option value="">すべて</option>
+                <option value="PENDING">面談待ち</option>
+                <option value="INTERVIEWED">面談完了</option>
+                <option value="ASSIGNED">確定</option>
+                <option value="REJECTED">見送り</option>
+              </select>
+            </div>
             <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
               <thead>
                 <tr style="background-color: #f5f5f5; border-bottom: 2px solid #ddd;">
@@ -100,14 +107,16 @@ interface Allocation {
                     </td>
                     <td style="padding: 12px; font-size: 0.9em;">{{ allocation.reason }}</td>
                     <td style="padding: 12px; font-size: 0.9em; white-space: nowrap;">{{ allocation.createdAt | date: 'yyyy-MM-dd HH:mm' }}</td>
-                    <td style="padding: 12px; text-align: center; white-space: nowrap;">
+                    <td style="padding: 12px; text-align: center;">
                       @if (allocation.status === 'PENDING' || allocation.status === 'INTERVIEWED') {
-                        <button (click)="updateStatus(allocation.id, 'ASSIGNED')" style="margin-right: 8px; padding: 6px 12px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; white-space: nowrap; min-width: 80px;">
-                          ✅ 確定
-                        </button>
-                        <button (click)="updateStatus(allocation.id, 'REJECTED')" style="padding: 6px 12px; background-color: white; color: #dc3545; border: 1px solid #dc3545; border-radius: 4px; cursor: pointer; font-weight: bold; white-space: nowrap; min-width: 80px;">
-                          ❌ 見送り
-                        </button>
+                        <div style="display: flex; gap: 8px; justify-content: center; align-items: center; flex-wrap: wrap;">
+                          <button (click)="updateStatus(allocation.id, 'ASSIGNED')" style="padding: 6px 12px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; white-space: nowrap; min-width: 80px;">
+                            ✅ 確定
+                          </button>
+                          <button (click)="updateStatus(allocation.id, 'REJECTED')" style="padding: 6px 12px; background-color: white; color: #dc3545; border: 1px solid #dc3545; border-radius: 4px; cursor: pointer; font-weight: bold; white-space: nowrap; min-width: 80px;">
+                            ❌ 見送り
+                          </button>
+                        </div>
                       }
                     </td>
                   </tr>

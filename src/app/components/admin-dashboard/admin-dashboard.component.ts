@@ -1675,6 +1675,11 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     return exception && exception.type === 'UNAVAILABLE';
   }
 
+  isToday(date: Date | null): boolean {
+    if (!date) return false;
+    return this.toLocalDateString(date) === this.toLocalDateString(new Date());
+  }
+
   openExceptionModal(date: Date) {
     this.selectedExceptionDate = new Date(date);
     this.selectedExceptionDate.setHours(0, 0, 0, 0);
