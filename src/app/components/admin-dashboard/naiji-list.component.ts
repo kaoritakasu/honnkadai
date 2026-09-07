@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ApiService } from '../../services/api.service';
@@ -53,6 +53,7 @@ interface Allocation {
 
           @if (!isLoading) {
             @if (allocations.length > 0) {
+            <input type="text" (input)="updateSearch($event)" placeholder="社員番号・社員名で検索..." style="padding: 10px; font-size: 1em; border: 1px solid #ddd; border-radius: 4px; width: 300px; margin-bottom: 20px;">
             <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
               <thead>
                 <tr style="background-color: #f5f5f5; border-bottom: 2px solid #ddd;">
@@ -66,7 +67,7 @@ interface Allocation {
                 </tr>
               </thead>
               <tbody>
-                @for (allocation of allocations; track allocation.id) {
+                @for (allocation of filteredAllocations; track allocation.id) {
                   <tr style="border-bottom: 1px solid #eee;">
                     <td style="padding: 12px;">{{ allocation.employee?.employeeNumber || '未設定' }}</td>
                     <td style="padding: 12px;">{{ allocation.employee?.user?.name || '名前未設定' }}</td>
@@ -120,30 +121,68 @@ export class NaijiListComponent implements OnInit {
   allocations: Allocation[] = [];
   isLoading = true;
   errorMessage: string | null = null;
+  searchQuery: string = '';
 
-  constructor(private router: Router, private apiService: ApiService) {}
+  constructor(private router: Router, private apiService: ApiService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     console.log('[NaijiListComponent] Initializing...');
     this.loadAllocations();
   }
 
+  get filteredAllocations(): Allocation[] {
+    let result = this.allocations;
+
+    // フィルタ処理：searchQuery がある場合
+    if (this.searchQuery.trim()) {
+      const query = this.searchQuery.trim().toLowerCase();
+      result = result.filter((allocation) => {
+        const employeeNumber = allocation.employee?.employeeNumber?.toLowerCase() || '';
+        const name = allocation.employee?.user?.name?.toLowerCase() || '';
+        return employeeNumber.includes(query) || name.includes(query);
+      });
+    }
+
+    // ソート処理：社員番号の昇順
+    return result.sort((a, b) => {
+      const numA = a.employee?.employeeNumber || '';
+      const numB = b.employee?.employeeNumber || '';
+      return numA.localeCompare(numB, 'ja');
+    });
+  }
+
+  updateSearch(event: any): void {
+    this.searchQuery = event.target.value;
+  }
+
   loadAllocations(): void {
     this.apiService.getAllAllocations().subscribe({
       next: (response: any) => {
-        // 配列でなければ中身を取り出す
-        const data = Array.isArray(response) ? response : (response.data || response.results || []);
-        console.log('一覧にセットするデータ:', data);
+        try {
+          // 配列でなければ中身を取り出す
+          const data = Array.isArray(response) ? response : (response?.data || response?.results || []);
+          console.log('一覧にセットするデータ:', data);
+          if (!Array.isArray(data)) {
+            console.error("Received data is not an array:", data);
+          }
 
-        // データを正規化：createdAt がない場合はデフォルト値をセット
-        const normalizedData = data.map((item: any) => ({
-          ...item,
-          createdAt: item.createdAt || new Date().toISOString()
-        }));
+          // データを正規化：createdAt がない場合はデフォルト値をセット
+          const normalizedData = data.map((item: any) => ({
+            ...item,
+            createdAt: item?.createdAt || new Date().toISOString()
+          }));
 
-        this.allocations = normalizedData;
-        this.isLoading = false;
-        this.errorMessage = null;
+          this.allocations = normalizedData;
+          this.errorMessage = null;
+        } catch (e) {
+          // レスポンス形式が想定外でもスピナーが固まらないようにする
+          console.error('内示データの解析に失敗しました:', e);
+          this.errorMessage = 'データの解析に失敗しました。';
+        } finally {
+          this.isLoading = false;
+          console.log("Current State:", { loading: this.isLoading, data: this.allocations, isArray: Array.isArray(this.allocations) });
+          this.cdr.detectChanges();
+        }
       },
       error: (error) => {
         console.error('API通信エラー詳細:', error);
@@ -151,6 +190,7 @@ export class NaijiListComponent implements OnInit {
         console.error('エラーメッセージ:', error?.error?.message || error?.message);
         this.errorMessage = `データの読み込みに失敗しました (${error?.status || '不明'})`;
         this.isLoading = false;
+        this.cdr.detectChanges();
       }
     });
   }

@@ -48,7 +48,6 @@ model Employee {
   userId          String   @unique
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  score           Int      @default(0)
   desiredDept     String?
   currentDept     String?
   status          String   @default("active")

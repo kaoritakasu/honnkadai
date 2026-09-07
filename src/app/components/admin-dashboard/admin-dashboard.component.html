@@ -96,7 +96,6 @@
     <button (click)="activeTab.set('employees')" [class.active]="activeTab() === 'employees'">社員一覧</button>
     @if (isHRUser) {
       <button (click)="activeTab.set('hr-management')" [class.active]="activeTab() === 'hr-management'">人事ダッシュボード</button>
-      <button (click)="navigateToNaiji()" style="background-color: #f39c12; color: white; font-weight: bold;">📋 内示管理</button>
     }
   </div>
 
