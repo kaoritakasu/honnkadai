@@ -1355,6 +1355,12 @@
               <option value="status">ステータス順</option>
             </select>
           </div>
+          @if (currentUserRole === 'ADMIN') {
+            <label style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; background-color: white; cursor: pointer; white-space: nowrap;">
+              <input type="checkbox" [(ngModel)]="employeeExecutiveCandidateOnly" />
+              👑 幹部候補のみ表示
+            </label>
+          }
         </div>
 
         <div style="max-height: 600px; overflow-y: auto; display: block; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-radius: 8px;">

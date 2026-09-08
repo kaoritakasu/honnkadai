@@ -58,12 +58,18 @@ router.get('/', authenticate, isAdmin, async (req: AuthRequest, res: Response) =
         careerGoals: true,
         workLifeBalance: true,
         createdAt: true,
+        managementForce: true,
+        developmentForce: true,
         user: true,
         allocations: { include: { department: true } },
       },
     });
+    const employeesWithFlags = employees.map((emp) => ({
+      ...emp,
+      isExecutiveCandidate: (emp.managementForce || 0) >= 70 && (emp.developmentForce || 0) >= 70,
+    }));
     // Ensure response is always an array
-    res.json(Array.isArray(employees) ? employees : []);
+    res.json(Array.isArray(employeesWithFlags) ? employeesWithFlags : []);
   } catch (error) {
     res.status(400).json({ error: (error as Error).message });
   }

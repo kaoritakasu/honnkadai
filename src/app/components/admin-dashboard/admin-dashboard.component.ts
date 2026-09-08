@@ -53,6 +53,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   currentUserRole: string = '';
   employeeSearchText: string = '';
   employeeSortKey: string = 'employeeNumber';
+  employeeExecutiveCandidateOnly: boolean = false;
   simulationSortKey: string = 'employeeNumber';
   simulationMode: 'balanced' | 'sales_focus' | 'tech_focus' | 'management_focus' = 'balanced';
   viewingHistoryDetail: boolean = false;
@@ -1598,6 +1599,10 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       if (status.includes(searchText)) return true;
       return false;
     });
+
+    if (this.employeeExecutiveCandidateOnly && this.currentUserRole === 'ADMIN') {
+      filtered = filtered.filter((emp: any) => !!emp.isExecutiveCandidate);
+    }
 
     if (this.employeeSortKey) {
       filtered.sort((a: any, b: any) => {
